@@ -1,0 +1,16 @@
+// packages/database/prisma/schema/settings.prisma
+
+model SystemSetting {
+  id              String   @id @default(uuid()) @db.Uuid
+  tenantId        String   @unique @map("tenant_id") @db.Uuid
+  
+  attendanceRules Json     @map("attendance_rules") @db.JsonB 
+  holidayCalendar Json     @map("holiday_calendar") @db.JsonB  
+  salaryRules     Json     @map("salary_rules") @db.JsonB     
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Fix: Linked back directly to the single target tenant configuration instance
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("system_settings")
+}

@@ -1,0 +1,24 @@
+// packages/database/prisma/schema/leave.prisma
+
+model LeaveRequest {
+  id           String    @id @default(uuid()) @db.Uuid
+  tenantId     String    @map("tenant_id") @db.Uuid
+  employeeId   String    @map("employee_id") @db.Uuid
+  leaveType    String    @map("leave_type") @db.VarChar(50)  // "SICK" | "ANNUAL" | "MATERNITY" | "CASUAL"
+  startDate    DateTime  @map("start_date") @db.Date
+  endDate      DateTime  @map("end_date") @db.Date
+  reason       String?   @db.Text
+  status       String    @default("PENDING") @db.VarChar(20) // "PENDING" | "APPROVED" | "REJECTED"
+  approvedById String?   @map("approved_by_id") @db.Uuid     // Admin user who authorized it
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Fix: Explicitly mapped reverse relations matching tenant.prisma and user.prisma
+  tenant       Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  employee     User      @relation("EmployeeLeaves", fields: [employeeId], references: [id], onDelete: Cascade)
+  approver     User?     @relation("AdminApprovals", fields: [approvedById], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([employeeId])
+  @@map("leave_requests")
+}
