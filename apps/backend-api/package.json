@@ -10,13 +10,10 @@
   "dependencies": {
     "@nestjs/common": "^10.3.0",
     "@nestjs/core": "^10.3.0",
-    "@nestjs/swagger": "^7.3.1",
     "@nestjs/platform-express": "^10.3.0",
     "@chronos/database": "*",
     "@nestjs/mapped-types": "*",
-    "@chronos/types-common": "*",
-    "class-transformer": "^0.5.1",
-    "class-validator": "^0.14.1",
+  "@chronos/types-common": "*",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.1"
   },

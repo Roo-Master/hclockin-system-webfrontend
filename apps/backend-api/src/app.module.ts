@@ -10,7 +10,6 @@ import { LeaveModule } from './leave/leave.module';
 import { SettingsModule } from './settings/settings.module';
 import { AuthModule } from './auth/auth.module';
 import { DeviceModule } from './device/device.module';
-import { ShiftModule } from './shift/shift.module';
 import { RosterModule } from './roster/roster.module';
 import { AttendanceModule } from './attendance/attendance.module';
 import { ReconciliationModule } from './reconciliation/reconciliation.module';
@@ -19,6 +18,6 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { PayrollModule } from './payroll/payroll.module';
 
 @Module({
-  imports: [DatabaseModule, QueueModule, WebsocketModule, JobsModule, TenantModule, DepartmentModule, EmployeeModule, LeaveModule, SettingsModule, AuthModule, DeviceModule, ShiftModule, RosterModule, AttendanceModule, ReconciliationModule, ReportsModule, NotificationsModule, PayrollModule]
+  imports: [DatabaseModule, QueueModule, WebsocketModule, JobsModule, TenantModule, DepartmentModule, EmployeeModule, LeaveModule, SettingsModule, AuthModule, DeviceModule, RosterModule, AttendanceModule, ReconciliationModule, ReportsModule, NotificationsModule, PayrollModule]
 })
 export class AppModule {}

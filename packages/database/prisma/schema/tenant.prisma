@@ -12,9 +12,6 @@ model Tenant {
   // Core Existing Relations
   departments       Department[]
   users             User[]
-  employees         Employee[]
-  shifts            Shift[]
-  employeeShifts    EmployeeShift[]
   shiftTemplates    ShiftTemplate[]
   rosterAssignments RosterAssignment[]
   attendance        AttendanceLog[]
@@ -39,8 +36,6 @@ model Department {
   // Relations
   tenant            Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   users             User[]
-  employees         Employee[]
-  shifts            Shift[]
   rosterAssignments RosterAssignment[] // Structural calendar bounds
 
   // Constraint: Department codes must be unique inside the same hospital
