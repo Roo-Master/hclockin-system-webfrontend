@@ -1,295 +1,370 @@
-/**
- * HOSPITAL CHRONOS SYSTEM - DATABASE SEED ENGINE
- * Location: packages/database/src/seed.ts
- * * Execution: npx ts-node src/seed.ts
- */
+// Location: packages/database/prisma/seed.ts
 
-import { PrismaClient, UserRole, ShiftType, ShiftStatus } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-// Uniform mock password hash for local development testing (corresponds to 'Password123!')
-const MOCK_PASSWORD_HASH = '$2b$10$EPf9XpBPXQv9/V5VfUWhKOnm.B5rU8L156C/K2b4U63V9R8S7Z21.';
-
 async function main() {
-  console.log('⏳ Starting Hospital Chronos database seeding sequence...');
+  console.log('🚀 Starting system data seeding loop...');
 
   // ==========================================
-  // 1. CLEAN REPOSITORY TABLES (Order matters due to Foreign Key Constraints)
+  // MODULE 1: TENANT DEPLOYMENT
   // ==========================================
-  console.log('🧹 Purging existing telemetry, settings, logs and structural tables...');
-  
-  // Wipe reports, leaves, and settings first to prevent dependencies hanging
-  await prisma.compiledReport.deleteMany({});
-  await prisma.leaveRequest.deleteMany({});
-  await prisma.systemSetting.deleteMany({});
-  
-  // Wipe core transaction, rotation, and entity records
-  await prisma.attendanceAudit.deleteMany({});
-  await prisma.attendanceLog.deleteMany({});
-  await prisma.rosterAssignment.deleteMany({});
-  await prisma.shiftTemplate.deleteMany({});
-  await prisma.user.deleteMany({});
-  await prisma.department.deleteMany({});
-  await prisma.tenant.deleteMany({});
-
-  // ==========================================
-  // 2. SEED TENANTS (2 Mock Hospitals)
-  // ==========================================
-  console.log('🏢 Seeding mock multi-tenant hospital structures...');
-  
-  const tenantA = await prisma.tenant.create({
-    data: {
+  console.log('🏢 Seeding Tenant Layer...');
+  const tenant = await prisma.tenant.upsert({
+    where: { subdomain: 'st-teresa' },
+    update: {},
+    create: {
       name: 'St. Teresa Referral Hospital',
       subdomain: 'st-teresa',
-      licenseKey: 'CHRONOS-LIC-TERESA-9921-X',
-      isActive: true,
-    },
-  });
-
-  const tenantB = await prisma.tenant.create({
-    data: {
-      name: 'Migori Metropolitan Hospital',
-      subdomain: 'migori-metro',
-      licenseKey: 'CHRONOS-LIC-METRO-4412-B',
+      licenseKey: 'CHRONOS-L4-STTERESA-99281-X',
       isActive: true,
     },
   });
 
   // ==========================================
-  // 3. [NEW] SEED SYSTEM SETTINGS (1-to-1 Configurations)
+  // MODULE 2: SYSTEM SETTINGS (GLOBAL RULES)
   // ==========================================
-  console.log('⚙️ Initializing global business rules and configuration JSONB matrix sheets...');
-  
-  await prisma.systemSetting.create({
-    data: {
-      tenantId: tenantA.id,
-      attendanceRules: { gracePeriodMinutes: 15, halfDayLateMinutes: 60, autoDeductBreakMinutes: 30 },
-      holidayCalendar: [{ date: '2026-01-01', label: 'New Year Day' }, { date: '2026-05-01', label: 'Labour Day' }],
-      salaryRules: { overtimeMultiplier: 1.5, nightShiftDifferential: 1.10 }
-    }
-  });
-
-  await prisma.systemSetting.create({
-    data: {
-      tenantId: tenantB.id,
-      attendanceRules: { gracePeriodMinutes: 20, halfDayLateMinutes: 90, autoDeductBreakMinutes: 45 },
-      holidayCalendar: [{ date: '2026-01-01', label: 'New Year Day' }],
-      salaryRules: { overtimeMultiplier: 1.4, nightShiftDifferential: 1.15 }
-    }
-  });
-
-  // ==========================================
-  // 4. SEED DEPARTMENTS
-  // ==========================================
-  console.log('🏥 Provisioning structural clinical departments...');
-  
-  const deptICU = await prisma.department.create({
-    data: { tenantId: tenantA.id, name: 'Intensive Care Unit', code: 'ICU' },
-  });
-
-  const deptOPD = await prisma.department.create({
-    data: { tenantId: tenantA.id, name: 'Outpatient Department', code: 'OPD' },
-  });
-
-  const deptPEDS = await prisma.department.create({
-    data: { tenantId: tenantB.id, name: 'Pediatrics Wing', code: 'PEDS' },
-  });
-
-  // ==========================================
-  // 5. SEED SHIFT TEMPLATES (3 Standard Shifts)
-  // ==========================================
-  console.log('⏱️ Mapping healthcare shift rotation boundaries...');
-  
-  const templateMorning = await prisma.shiftTemplate.create({
-    data: {
-      tenantId: tenantA.id,
-      name: 'Standard Clinical Morning',
-      type: ShiftType.MORNING,
-      startTime: '06:00',
-      endTime: '14:00',
-      gracePeriodMinutes: 15,
-    },
-  });
-
-  const templateAfternoon = await prisma.shiftTemplate.create({
-    data: {
-      tenantId: tenantA.id,
-      name: 'Standard Clinical Afternoon',
-      type: ShiftType.AFTERNOON,
-      startTime: '14:00',
-      endTime: '22:00',
-      gracePeriodMinutes: 15,
-    },
-  });
-
-  const templateNight = await prisma.shiftTemplate.create({
-    data: {
-      tenantId: tenantA.id,
-      name: 'Standard Clinical Night Rotation',
-      type: ShiftType.NIGHT,
-      startTime: '22:00',
-      endTime: '06:00',
-      gracePeriodMinutes: 30,
-    },
-  });
-
-  const templateHorizontalMorning = await prisma.shiftTemplate.create({
-    data: {
-      tenantId: tenantB.id,
-      name: 'Metro Morning Shift',
-      type: ShiftType.MORNING,
-      startTime: '07:00',
-      endTime: '15:00',
-      gracePeriodMinutes: 15,
-    },
-  });
-
-  // ==========================================
-  // 6. SEED USERS (10 Dummy Doctors / Nurses / Admins)
-  // ==========================================
-  console.log('👥 Creating staff identity profiles with biometric bindings...');
-  
-  const staffData = [
-    { tenantId: tenantA.id, deptId: deptICU.id, fName: 'John', lName: 'Dr. Kiprop', role: UserRole.DEPARTMENT_HEAD, pin: '1001' },
-    { tenantId: tenantA.id, deptId: deptICU.id, fName: 'Mary', lName: 'Nurse Atieno', role: UserRole.STAFF, pin: '1002' },
-    { tenantId: tenantA.id, deptId: deptICU.id, fName: 'David', lName: 'Nurse Mwangi', role: UserRole.STAFF, pin: '1003' },
-    { tenantId: tenantA.id, deptId: deptOPD.id, fName: 'Alice', lName: 'Dr. Ochieng', role: UserRole.DEPARTMENT_HEAD, pin: '1004' },
-    { tenantId: tenantA.id, deptId: deptOPD.id, fName: 'Samuel', lName: 'Nurse Kamau', role: UserRole.STAFF, pin: '1005' },
-    { tenantId: tenantA.id, deptId: deptOPD.id, fName: 'Grace', lName: 'Nurse Wanjiku', role: UserRole.STAFF, pin: '1006' },
-    { tenantId: tenantA.id, deptId: deptOPD.id, fName: 'Evans', lName: 'Admin Omwamba', role: UserRole.HOSPITAL_ADMIN, pin: '1007' },
-    { tenantId: tenantB.id, deptId: deptPEDS.id, fName: 'Beatrice', lName: 'Dr. Chacha', role: UserRole.DEPARTMENT_HEAD, pin: '2001' },
-    { tenantId: tenantB.id, deptId: deptPEDS.id, fName: 'Peter', lName: 'Nurse Marwa', role: UserRole.STAFF, pin: '2002' },
-    { tenantId: tenantB.id, deptId: deptPEDS.id, fName: 'Mercy', lName: 'Nurse Kwamboka', role: UserRole.STAFF, pin: '2003' }
-  ];
-
-  const seededUsers = [];
-
-  for (const staff of staffData) {
-    const user = await prisma.user.create({
-      data: {
-        tenantId: staff.tenantId,
-        departmentId: staff.deptId,
-        email: `${staff.fName.toLowerCase()}.${staff.lName.split(' ')[1].toLowerCase()}@chronos.local`,
-        passwordHash: MOCK_PASSWORD_HASH,
-        firstName: staff.fName,
-        lastName: staff.lName,
-        role: staff.role,
-        biometricUserId: staff.pin,
-        isActive: true,
+  console.log('⚙️  Seeding Global System Settings...');
+  await prisma.systemSetting.upsert({
+    where: { tenantId: tenant.id },
+    update: {},
+    create: {
+      tenantId: tenant.id,
+      attendanceRules: {
+        halfDayLateMinutes: 60,
+        absenteeismThresholdHours: 4.0,
+        maximumShiftLengthHours: 16,
       },
-    });
-    seededUsers.push({ ...user, departmentId: staff.deptId });
-  }
-
-  // Find your Hospital Administrator from Tenant A to assign as creator/approver
-  const adminUserTenantA = seededUsers.find(u => u.tenantId === tenantA.id && u.role === UserRole.HOSPITAL_ADMIN);
+      holidayCalendar: {
+        observedHolidays: [
+          { name: 'Madaraka Day', date: '2026-06-01' },
+          { name: 'Mashujaa Day', date: '2026-10-20' },
+          { name: 'Jamhuri Day', date: '2026-12-12' },
+        ],
+      },
+      salaryRules: {
+        shifRate: 0.0275,        // 2.75% Social Health Insurance Fund
+        housingLevyRate: 0.015,  // 1.5% Affordable Housing Levy
+        nssfMaxLimit: 2400.00,   // Tier II NSSF Cap
+        overtimeMultiplier: 1.5, // Standard overtime rate
+      },
+    },
+  });
 
   // ==========================================
-  // 7. [NEW] SEED LEAVE REQUESTS
+  // MODULE 3: DEPARTMENTAL SCALES & LOCAL RULES
   // ==========================================
-  console.log('🌴 Seeding mock employee absence history and approvals...');
+  console.log('🏥 Seeding Department Structures...');
   
-  const leaveStart = new Date();
-  leaveStart.setDate(leaveStart.getDate() + 5); // 5 days from now
-  const leaveEnd = new Date();
-  leaveEnd.setDate(leaveEnd.getDate() + 10); // 10 days from now
+  // ICU: High-intensity, zero tolerance rules
+  const icuDept = await prisma.department.upsert({
+    where: { tenantId_code: { tenantId: tenant.id, code: 'ICU' } },
+    update: {},
+    create: {
+      tenantId: tenant.id,
+      name: 'Intensive Care Unit',
+      code: 'ICU',
+      rules: {
+        gracePeriodMinutes: 0,
+        autoDeductBreakMinutes: 30,
+        nightPremiumRate: 0.15, // +15% hourly rate premium for ICU nights
+      },
+    },
+  });
 
+  // OPD: Standard administrative/clinical rules
+  const opdDept = await prisma.department.upsert({
+    where: { tenantId_code: { tenantId: tenant.id, code: 'OPD' } },
+    update: {},
+    create: {
+      tenantId: tenant.id,
+      name: 'Outpatient Department',
+      code: 'OPD',
+      rules: {
+        gracePeriodMinutes: 15,
+        autoDeductBreakMinutes: 45,
+        nightPremiumRate: 0.00,
+      },
+    },
+  });
+
+  // ==========================================
+  // MODULE 4: HUMAN RESOURCES (STAFF REGISTER)
+  // ==========================================
+  console.log('👥 Seeding User Directory...');
+  
+  // Administrator
+  const adminUser = await prisma.user.upsert({
+    where: { tenantId_email: { tenantId: tenant.id, email: 'admin@stteresa.or.ke' } },
+    update: {},
+    create: {
+      tenantId: tenant.id,
+      departmentId: opdDept.id,
+      payrollNumber: 'STTR-001',
+      firstName: 'Joseph',
+      lastName: 'Karanja',
+      email: 'admin@stteresa.or.ke',
+      passwordHash: '$2b$10$eFzMWW8.NreT6PZ2MDRYfO7zR1U6H.L0G26u4bZ0W3w1g4vK7V1S6', // Admin123!
+      role: 'HOSPITAL_ADMIN',
+      hourlyRate: 850.00,
+      devicePin: '9999',
+    },
+  });
+
+  // ICU Matron (Department Head)
+  const icuHead = await prisma.user.upsert({
+    where: { tenantId_email: { tenantId: tenant.id, email: 'matron.mercy@stteresa.or.ke' } },
+    update: {},
+    create: {
+      tenantId: tenant.id,
+      departmentId: icuDept.id,
+      payrollNumber: 'STTR-101',
+      firstName: 'Mercy',
+      lastName: 'Achieng',
+      email: 'matron.mercy@stteresa.or.ke',
+      passwordHash: '$2b$10$eFzMWW8.NreT6PZ2MDRYfO7zR1U6H.L0G26u4bZ0W3w1g4vK7V1S6',
+      role: 'DEPT_HEAD',
+      hourlyRate: 650.00,
+      devicePin: '1001',
+    },
+  });
+
+  // Clinical Floating Nurse (Our dynamic core test case)
+  const floatingNurse = await prisma.user.upsert({
+    where: { tenantId_email: { tenantId: tenant.id, email: 'nurse.mwangi@stteresa.or.ke' } },
+    update: {},
+    create: {
+      tenantId: tenant.id,
+      departmentId: opdDept.id, // Primary home base contract is OPD
+      payrollNumber: 'STTR-204',
+      firstName: 'David',
+      lastName: 'Mwangi',
+      email: 'nurse.mwangi@stteresa.or.ke',
+      passwordHash: '$2b$10$eFzMWW8.NreT6PZ2MDRYfO7zR1U6H.L0G26u4bZ0W3w1g4vK7V1S6',
+      role: 'EMPLOYEE',
+      hourlyRate: 450.00,
+      devicePin: '1002', // This hardcoded PIN is tracked inside on-prem physical scanner storage
+    },
+  });
+
+  // ==========================================
+  // MODULE 5: HARDWARE REGISTRY
+  // ==========================================
+  console.log('📟 Seeding Edge Hardware Terminals...');
+  const icuGateDevice = await prisma.device.upsert({
+    where: { serialCode: 'ZK-ADMS-ICUMAIN-01' },
+    update: {},
+    create: {
+      tenantId: tenant.id,
+      name: 'ICU Bio Entry Gate A',
+      serialCode: 'ZK-ADMS-ICUMAIN-01',
+      ipAddress: '192.168.10.45',
+      isActive: true,
+    },
+  });
+
+  // ==========================================
+  // MODULE 6: ROSTER & CLINICAL SHIFTS
+  // ==========================================
+  console.log('📅 Seeding Shift Templates & Floating Assignments...');
+  
+  const dayShiftTemplate = await prisma.shiftTemplate.upsert({
+    where: { id: '00000000-0000-0000-0000-000000000001' },
+    update: {},
+    create: {
+      id: '00000000-0000-0000-0000-000000000001',
+      tenantId: tenant.id,
+      name: 'Clinical Day Rotation',
+      type: 'MORNING',
+      startTime: '07:00',
+      endTime: '19:00',
+    },
+  });
+
+  // TEST SCENARIO: Assign the OPD-contracted floating nurse to work today's shift inside the ICU
+  const todayString = new Date().toISOString().split('T')[0];
+  const rosterAssignment = await prisma.rosterAssignment.upsert({
+    where: { userId_date: { userId: floatingNurse.id, date: new Date(todayString) } },
+    update: {},
+    create: {
+      tenantId: tenant.id,
+      userId: floatingNurse.id,
+      departmentId: icuDept.id, // FLOATED INTERNALLY TO ICU FOR THE DAY
+      shiftTemplateId: dayShiftTemplate.id,
+      date: new Date(todayString),
+      overriddenHourlyRate: 500.00, // Clinician gets an extra Ksh 50/hr premium rate for covering ICU
+      status: 'UNVERIFIED',
+    },
+  });
+
+  // ==========================================
+  // MODULE 7: ATTENDANCE TELEMETRY LOGS
+  // ==========================================
+  console.log('⏰ Seeding Asynchronous Hardware Attendance Logs...');
+  
+  // Clock In: 06:58 AM (Under the 07:00 target threshold)
+  const clockInTimestamp = new Date(`${todayString}T06:58:12Z`);
+  await prisma.attendanceLog.upsert({
+    where: {
+      userId_deviceId_direction_timestamp: {
+        userId: floatingNurse.id,
+        deviceId: icuGateDevice.id,
+        direction: 'IN',
+        timestamp: clockInTimestamp,
+      },
+    },
+    update: {},
+    create: {
+      tenantId: tenant.id,
+      userId: floatingNurse.id,
+      deviceId: icuGateDevice.id,
+      rosterAssignmentId: rosterAssignment.id,
+      direction: 'IN',
+      timestamp: clockInTimestamp,
+    },
+  });
+
+  // Clock Out: 19:02 PM
+  const clockOutTimestamp = new Date(`${todayString}T19:02:44Z`);
+  await prisma.attendanceLog.upsert({
+    where: {
+      userId_deviceId_direction_timestamp: {
+        userId: floatingNurse.id,
+        deviceId: icuGateDevice.id,
+        direction: 'OUT',
+        timestamp: clockOutTimestamp,
+      },
+    },
+    update: {},
+    create: {
+      tenantId: tenant.id,
+      userId: floatingNurse.id,
+      deviceId: icuGateDevice.id,
+      rosterAssignmentId: rosterAssignment.id,
+      direction: 'OUT',
+      timestamp: clockOutTimestamp,
+    },
+  });
+
+  // ==========================================
+  // MODULE 8: RECONCILIATION CALCULATION STATE
+  // ==========================================
+  console.log('🤖 Seeding State Machine Aggregations...');
+  await prisma.reconciliationLog.upsert({
+    where: { rosterAssignmentId: rosterAssignment.id },
+    update: {},
+    create: {
+      tenantId: tenant.id,
+      rosterAssignmentId: rosterAssignment.id,
+      clockInTime: clockInTimestamp,
+      clockOutTime: clockOutTimestamp,
+      calculatedBaseHours: 12.00,
+      calculatedOvertime: 0.00,
+      calculatedNightShift: 0.00,
+      isFlagged: false,
+      isResolved: true,
+    },
+  });
+
+  // ==========================================
+  // MODULE 9: LEAVE REGISTER
+  // ==========================================
+  console.log('🌴 Seeding Absence Management Records...');
   await prisma.leaveRequest.create({
     data: {
-      tenantId: tenantA.id,
-      employeeId: seededUsers[2].id, // Nurse Mwangi
+      tenantId: tenant.id,
+      employeeId: floatingNurse.id,
       leaveType: 'ANNUAL',
-      startDate: leaveStart,
-      endDate: leaveEnd,
-      reason: 'Scheduled rest period.',
+      startDate: new Date('2026-06-15'),
+      endDate: new Date('2026-06-22'),
+      reason: 'Visiting family in Nakuru',
       status: 'APPROVED',
-      approvedById: adminUserTenantA ? adminUserTenantA.id : null,
+      approvedById: icuHead.id,
     },
   });
 
   // ==========================================
-  // 8. [NEW] SEED COMPILED REPORTS
+  // MODULE 10: NOTIFICATION COMMUNICATIONS LOGS
   // ==========================================
-  console.log('📈 Pre-compiling analytical cached dashboard reports...');
-  
-  const reportRangeStart = new Date();
-  reportRangeStart.setMonth(reportRangeStart.getMonth() - 1);
+  console.log('💬 Seeding Notification Audit Logs...');
+  await prisma.notificationLog.create({
+    data: {
+      tenantId: tenant.id,
+      userId: floatingNurse.id,
+      channel: 'SMS',
+      recipient: '+254712345678',
+      title: 'Shift Confirmation',
+      body: 'Hello David, you have been scheduled for an internal float rotation in the ICU department today starting at 07:00.',
+      status: 'SENT',
+    },
+  });
 
-  if (adminUserTenantA) {
-    await prisma.compiledReport.create({
-      data: {
-        tenantId: tenantA.id,
-        reportType: 'MONTHLY_SUMMARY',
-        generatedById: adminUserTenantA.id,
-        dateRangeStart: reportRangeStart,
-        dateRangeEnd: new Date(),
-        compiledData: {
-          metrics: { totalWorkingHours: 1420, activeStaffCount: 6, flaggedExceptions: 4 },
-          departments: [{ name: 'Intensive Care Unit', overtimeHours: 42 }]
-        },
+  // ==========================================
+  // MODULE 11: CACHED ANALYTICAL REPORTS
+  // ==========================================
+  console.log('📈 Seeding Analytics Snapshot Matrices...');
+  await prisma.compiledReport.create({
+    data: {
+      tenantId: tenant.id,
+      reportType: 'OVERTIME_AUDIT',
+      generatedById: adminUser.id,
+      dateRangeStart: new Date('2026-05-01'),
+      dateRangeEnd: new Date('2026-05-31'),
+      compiledData: {
+        totalDepartmentalOvertimeHours: { ICU: 42.5, OPD: 12.0 },
+        estimatedOvertimePayoutKsh: { ICU: 27625.00, OPD: 5400.00 },
       },
-    });
-  }
+    },
+  });
 
   // ==========================================
-  // 9. SEED ROSTER ASSIGNMENTS (3 Active Shifts)
+  // MODULE 12: FINANCIALS AND PAYROLL LOGS
   // ==========================================
-  console.log('📅 Assigning active shifts to the calendar layout...');
-  
-  const targetDate = new Date();
-  targetDate.setHours(0, 0, 0, 0);
-
-  await prisma.rosterAssignment.create({
+  console.log('💰 Seeding Payroll Run Metrics...');
+  const payrollPeriod = await prisma.payrollPeriod.create({
     data: {
-      tenantId: tenantA.id,
-      userId: seededUsers[0].id, 
-      departmentId: seededUsers[0].departmentId,
-      shiftTemplateId: templateMorning.id,
-      date: targetDate,
-      status: ShiftStatus.PRESENT,
+      tenantId: tenant.id,
+      name: 'May 2026 Main Cycle',
+      startDate: new Date('2026-05-01'),
+      endDate: new Date('2026-05-31'),
+      status: 'OPEN',
     },
   });
 
-  await prisma.rosterAssignment.create({
+  await prisma.payslip.create({
     data: {
-      tenantId: tenantA.id,
-      userId: seededUsers[1].id,
-      departmentId: seededUsers[1].departmentId,
-      shiftTemplateId: templateAfternoon.id,
-      date: targetDate,
-      status: ShiftStatus.PRESENT,
+      tenantId: tenant.id,
+      periodId: payrollPeriod.id,
+      employeeId: floatingNurse.id,
+      hourlyRate: 500.00, // Reads from the overridden roster scale
+      regularHoursWorked: 168.00,
+      overtimeHoursWorked: 8.00,
+      baseSalary: 84000.00,
+      overtimePay: 6000.00,
+      allowances: 4500.00,
+      totalGross: 94500.00,
+      totalDeductions: 19830.00,
+      netPay: 74670.00,
+      deductionsBreakdown: {
+        nssf: 2400.00,
+        shif: 2598.75,
+        housingLevy: 1417.50,
+        paye: 13413.75,
+      },
+      allowancesBreakdown: {
+        uniformAllowance: 4500.00,
+      },
+      status: 'UNPAID',
     },
   });
 
-  await prisma.rosterAssignment.create({
-    data: {
-      tenantId: tenantA.id,
-      userId: seededUsers[2].id,
-      departmentId: seededUsers[2].departmentId,
-      shiftTemplateId: templateNight.id,
-      date: targetDate,
-      status: ShiftStatus.PRESENT,
-    },
-  });
-
-  await prisma.rosterAssignment.create({
-    data: {
-      tenantId: tenantB.id,
-      userId: seededUsers[7].id,
-      departmentId: seededUsers[7].departmentId,
-      shiftTemplateId: templateHorizontalMorning.id,
-      date: targetDate,
-      status: ShiftStatus.PRESENT,
-    },
-  });
-
-  console.log('✅ Seeding sequence executed successfully.');
+  console.log('🏁 Verification database population pipeline finished cleanly!');
 }
 
 main()
   .catch((e) => {
-    console.error('❌ Database seeding failed prematurely:', e);
+    console.error('❌ Critical failure detected in seed loop:', e);
     process.exit(1);
   })
   .finally(async () => {

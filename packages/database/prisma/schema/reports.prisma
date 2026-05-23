@@ -1,4 +1,4 @@
-// packages/database/prisma/schema/reports.prisma
+// Location: packages/database/prisma/schema/reports.prisma
 
 model CompiledReport {
   id             String   @id @default(uuid()) @db.Uuid
@@ -8,11 +8,11 @@ model CompiledReport {
   dateRangeStart DateTime @map("date_range_start") @db.Date
   dateRangeEnd   DateTime @map("date_range_end") @db.Date
   compiledData   Json     @map("compiled_data") @db.JsonB     
-  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  // Fix: Complete relational matching anchors
-  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  generatedBy    User     @relation(fields: [generatedById], references: [id], onDelete: Cascade)
+  // Relationships
+  tenant      Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  generatedBy User   @relation(fields: [generatedById], references: [id], onDelete: Cascade)
 
   @@index([tenantId, reportType])
   @@map("compiled_reports")
