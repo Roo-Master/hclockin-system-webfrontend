@@ -20,6 +20,7 @@ model User {
   rosterAssignments RosterAssignment[]
   attendance        AttendanceLog[]
   auditChanges      AttendanceAudit[]
+  employeeProfiles  Employee[]
 
   // [NEW] Added Multi-Tenant SaaS Extension Relations
   leaveRequests     LeaveRequest[]    @relation("EmployeeLeaves") // Absences belonging to this user

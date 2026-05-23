@@ -15,6 +15,9 @@ generator client {
 enum UserRole {
   SUPER_ADMIN
   HOSPITAL_ADMIN
+  HR_MANAGER
+  SUPERVISOR
+  EMPLOYEE
   DEPARTMENT_HEAD
   STAFF
   EDGE_GATEWAY
@@ -51,4 +54,33 @@ enum DayOfWeek {
   FRIDAY
   SATURDAY
   SUNDAY
+}
+
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  TEMPORARY
+  INTERN
+  LOCUM
+}
+
+enum EmployeeStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  TERMINATED
+}
+
+enum ShiftScheduleType {
+  FIXED
+  ROTATING
+  ON_CALL
+  CUSTOM
+}
+
+enum EmployeeShiftStatus {
+  ACTIVE
+  ENDED
+  CANCELLED
 }
