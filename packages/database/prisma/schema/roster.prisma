@@ -59,9 +59,9 @@ model RosterAssignment {
   reconciliationLog ReconciliationLog?
   histories         RosterAssignmentHistory[]
 
-  @@unique([userId, date]) // Guards clinician calendar from dual scheduling overlays
   @@index([tenantId, date])
   @@index([tenantId, userId, date])
+  @@index([tenantId, userId, date, status])
   @@index([departmentId, date]) // Allows department heads to pull clean daily floor rosters instantly
   @@map("roster_assignments")
 }

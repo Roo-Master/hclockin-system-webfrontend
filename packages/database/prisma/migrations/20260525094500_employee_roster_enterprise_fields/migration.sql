@@ -23,6 +23,8 @@ ALTER TABLE "shift_templates"
 CREATE INDEX "shift_templates_tenant_id_is_active_idx" ON "shift_templates"("tenant_id", "is_active");
 
 -- Assignment audit metadata and reassignment history.
+DROP INDEX IF EXISTS "roster_assignments_user_id_date_key";
+
 ALTER TABLE "roster_assignments"
   ADD COLUMN "effective_from" DATE,
   ADD COLUMN "effective_to" DATE,
@@ -31,6 +33,7 @@ ALTER TABLE "roster_assignments"
   ADD COLUMN "unassigned_reason" VARCHAR(255);
 
 CREATE INDEX "roster_assignments_tenant_id_user_id_date_idx" ON "roster_assignments"("tenant_id", "user_id", "date");
+CREATE INDEX "roster_assignments_tenant_id_user_id_date_status_idx" ON "roster_assignments"("tenant_id", "user_id", "date", "status");
 
 CREATE TABLE "roster_assignment_histories" (
   "id" UUID NOT NULL,

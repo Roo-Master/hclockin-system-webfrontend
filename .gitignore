@@ -9,5 +9,6 @@ build
 .env.local
 .turbo
 *.log
+*.tsbuildinfo
 .docker-data
 apps/edge-gateway-service/bin/

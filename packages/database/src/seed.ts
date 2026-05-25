@@ -184,10 +184,18 @@ async function main() {
 
   // TEST SCENARIO: Assign the OPD-contracted floating nurse to work today's shift inside the ICU
   const todayString = new Date().toISOString().split('T')[0];
-  const rosterAssignment = await prisma.rosterAssignment.upsert({
-    where: { userId_date: { userId: floatingNurse.id, date: new Date(todayString) } },
-    update: {},
-    create: {
+  const existingRosterAssignment = await prisma.rosterAssignment.findFirst({
+    where: {
+      tenantId: tenant.id,
+      userId: floatingNurse.id,
+      date: new Date(todayString),
+      status: { not: 'CANCELLED' },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  const rosterAssignment = existingRosterAssignment ?? await prisma.rosterAssignment.create({
+    data: {
       tenantId: tenant.id,
       userId: floatingNurse.id,
       departmentId: icuDept.id, // FLOATED INTERNALLY TO ICU FOR THE DAY

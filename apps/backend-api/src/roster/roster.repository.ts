@@ -84,48 +84,15 @@ export class RosterRepository {
       const results = [];
 
       for (const row of rows) {
-        const existing = await tx.rosterAssignment.findUnique({
-          where: { userId_date: { userId: row.userId, date: row.date } },
+        const previousAssignment = await tx.rosterAssignment.findFirst({
+          where: {
+            tenantId,
+            userId: row.userId,
+            date: row.date,
+            status: { not: 'CANCELLED' },
+          },
+          orderBy: { createdAt: 'desc' },
         });
-
-        if (existing) {
-          const updated = await tx.rosterAssignment.update({
-            where: { id: existing.id },
-            data: {
-              tenantId,
-              departmentId: row.departmentId,
-              shiftTemplateId,
-              overriddenHourlyRate: row.overriddenHourlyRate,
-              status: 'UNVERIFIED',
-              effectiveFrom: row.effectiveFrom,
-              effectiveTo: row.effectiveTo,
-              assignedByUserId: row.assignedByUserId,
-              unassignedAt: null,
-              unassignedReason: null,
-            },
-          });
-
-          await tx.rosterAssignmentHistory.create({
-            data: {
-              tenantId,
-              rosterAssignmentId: updated.id,
-              userId: row.userId,
-              previousShiftTemplateId: existing.shiftTemplateId,
-              newShiftTemplateId: shiftTemplateId,
-              previousDepartmentId: existing.departmentId,
-              newDepartmentId: row.departmentId,
-              previousStatus: existing.status,
-              newStatus: 'UNVERIFIED',
-              effectiveDate: row.date,
-              action: existing.shiftTemplateId === shiftTemplateId ? 'ASSIGNED' : 'REASSIGNED',
-              reason: row.reason,
-              actorUserId: row.assignedByUserId,
-            },
-          });
-
-          results.push(updated);
-          continue;
-        }
 
         const created = await tx.rosterAssignment.create({
           data: {
@@ -147,11 +114,14 @@ export class RosterRepository {
             tenantId,
             rosterAssignmentId: created.id,
             userId: row.userId,
+            previousShiftTemplateId: previousAssignment?.shiftTemplateId,
             newShiftTemplateId: shiftTemplateId,
+            previousDepartmentId: previousAssignment?.departmentId,
             newDepartmentId: row.departmentId,
+            previousStatus: previousAssignment?.status,
             newStatus: 'UNVERIFIED',
             effectiveDate: row.date,
-            action: 'ASSIGNED',
+            action: previousAssignment ? 'REASSIGNED' : 'ASSIGNED',
             reason: row.reason,
             actorUserId: row.assignedByUserId,
           },
@@ -175,17 +145,27 @@ export class RosterRepository {
             userId: row.userId,
             shiftTemplateId,
             date: row.date,
+            status: { not: 'CANCELLED' },
           },
+          orderBy: { createdAt: 'desc' },
         });
 
         if (!existing) {
           throw new ConflictException('One or more employees are not assigned to this shift for the requested date range.');
         }
 
-        const updated = await tx.rosterAssignment.update({
-          where: { id: existing.id },
+        const cancellation = await tx.rosterAssignment.create({
           data: {
+            tenantId,
+            userId: row.userId,
+            departmentId: existing.departmentId,
+            shiftTemplateId: existing.shiftTemplateId,
+            date: row.date,
+            overriddenHourlyRate: existing.overriddenHourlyRate,
             status: 'CANCELLED',
+            effectiveFrom: existing.effectiveFrom,
+            effectiveTo: existing.effectiveTo,
+            assignedByUserId: row.actorUserId,
             unassignedAt: new Date(),
             unassignedReason: row.reason,
           },
@@ -194,7 +174,7 @@ export class RosterRepository {
         await tx.rosterAssignmentHistory.create({
           data: {
             tenantId,
-            rosterAssignmentId: existing.id,
+            rosterAssignmentId: cancellation.id,
             userId: row.userId,
             previousShiftTemplateId: existing.shiftTemplateId,
             previousDepartmentId: existing.departmentId,
@@ -207,7 +187,7 @@ export class RosterRepository {
           },
         });
 
-        results.push(updated);
+        results.push(cancellation);
       }
 
       return results;
