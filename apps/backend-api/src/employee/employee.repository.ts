@@ -7,6 +7,7 @@ export interface EmployeeListFilters {
   employmentStatus?: string;
   employmentType?: string;
   includeDeleted?: boolean;
+  accessibleDepartmentIds?: string[];
   skip: number;
   take: number;
 }
@@ -20,6 +21,7 @@ export class EmployeeRepository {
       tenantId,
       ...(filters.includeDeleted ? {} : { deletedAt: null }),
       ...(filters.departmentId ? { departmentId: filters.departmentId } : {}),
+      ...(filters.accessibleDepartmentIds ? { departmentId: { in: filters.accessibleDepartmentIds } } : {}),
       ...(filters.employmentStatus ? { employmentStatus: filters.employmentStatus } : {}),
       ...(filters.employmentType ? { employmentType: filters.employmentType } : {}),
       ...(filters.search
@@ -38,7 +40,7 @@ export class EmployeeRepository {
     const [items, total] = await this.database.client.$transaction([
       this.database.client.user.findMany({
         where,
-        include: { department: true },
+        select: this.employeeSelect(),
         orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
         skip: filters.skip,
         take: filters.take,
@@ -56,7 +58,7 @@ export class EmployeeRepository {
         tenantId,
         ...(includeDeleted ? {} : { deletedAt: null }),
       },
-      include: { department: true },
+      select: this.employeeSelect(),
     });
 
     if (!employee) {
@@ -81,7 +83,7 @@ export class EmployeeRepository {
     try {
       return await this.database.client.user.create({
         data: { ...data, tenantId },
-        include: { department: true },
+        select: this.employeeSelect(),
       });
     } catch (error) {
       this.rethrowKnownUniqueError(error);
@@ -89,14 +91,37 @@ export class EmployeeRepository {
     }
   }
 
-  async update(tenantId: string, id: string, data: any) {
-    await this.findByIdOrThrow(tenantId, id);
+  async update(tenantId: string, id: string, data: any, audit?: any) {
+    const existing = await this.findByIdOrThrow(tenantId, id, true);
 
     try {
-      return await this.database.client.user.update({
-        where: { id },
-        data,
-        include: { department: true },
+      return await this.database.client.$transaction(async (tx) => {
+        const result = await tx.user.updateMany({
+          where: { id, tenantId },
+          data,
+        });
+
+        if (result.count !== 1) {
+          throw new NotFoundException('Employee was not found for this tenant.');
+        }
+
+        if (audit) {
+          await tx.employeeAudit.create({
+            data: {
+              tenantId,
+              employeeId: id,
+              actorUserId: audit.actorUserId,
+              action: audit.action,
+              previousValue: audit.previousValue,
+              newValue: audit.newValue,
+            },
+          });
+        }
+
+        return tx.user.findFirstOrThrow({
+          where: { id, tenantId },
+          select: this.employeeSelect(),
+        });
       });
     } catch (error) {
       this.rethrowKnownUniqueError(error);
@@ -104,18 +129,118 @@ export class EmployeeRepository {
     }
   }
 
-  async softDelete(tenantId: string, id: string) {
-    await this.findByIdOrThrow(tenantId, id);
+  async softDelete(tenantId: string, id: string, actorUserId: string) {
+    const existing = await this.findByIdOrThrow(tenantId, id);
 
-    return this.database.client.user.update({
-      where: { id },
-      data: {
-        deletedAt: new Date(),
-        isActive: false,
-        employmentStatus: 'TERMINATED',
-      },
-      include: { department: true },
+    return this.database.client.$transaction(async (tx) => {
+      const deletedAt = new Date();
+      const result = await tx.user.updateMany({
+        where: { id, tenantId, deletedAt: null },
+        data: {
+          deletedAt,
+          isActive: false,
+          employmentStatus: 'TERMINATED',
+        },
+      });
+
+      if (result.count !== 1) {
+        throw new NotFoundException('Employee was not found for this tenant.');
+      }
+
+      await tx.employeeAudit.create({
+        data: {
+          tenantId,
+          employeeId: id,
+          actorUserId,
+          action: 'SOFT_DELETE',
+          previousValue: this.lifecycleSnapshot(existing),
+          newValue: { employmentStatus: 'TERMINATED', isActive: false, deletedAt: deletedAt.toISOString() },
+        },
+      });
+
+      return tx.user.findFirstOrThrow({
+        where: { id, tenantId },
+        select: this.employeeSelect(),
+      });
     });
+  }
+
+  async restore(tenantId: string, id: string, actorUserId: string) {
+    const existing = await this.findByIdOrThrow(tenantId, id, true);
+
+    if (!existing.deletedAt) {
+      return existing;
+    }
+
+    return this.database.client.$transaction(async (tx) => {
+      const result = await tx.user.updateMany({
+        where: { id, tenantId, deletedAt: { not: null } },
+        data: {
+          deletedAt: null,
+          isActive: true,
+          employmentStatus: 'ACTIVE',
+        },
+      });
+
+      if (result.count !== 1) {
+        throw new NotFoundException('Employee was not found for this tenant.');
+      }
+
+      await tx.employeeAudit.create({
+        data: {
+          tenantId,
+          employeeId: id,
+          actorUserId,
+          action: 'RESTORE',
+          previousValue: this.lifecycleSnapshot(existing),
+          newValue: { employmentStatus: 'ACTIVE', isActive: true, deletedAt: null },
+        },
+      });
+
+      return tx.user.findFirstOrThrow({
+        where: { id, tenantId },
+        select: this.employeeSelect(),
+      });
+    });
+  }
+
+  private employeeSelect() {
+    return {
+      id: true,
+      tenantId: true,
+      departmentId: true,
+      payrollNumber: true,
+      firstName: true,
+      lastName: true,
+      email: true,
+      phoneNumber: true,
+      role: true,
+      hourlyRate: true,
+      isActive: true,
+      employmentType: true,
+      employmentStatus: true,
+      devicePin: true,
+      emergencyContacts: true,
+      profileMetadata: true,
+      deletedAt: true,
+      createdAt: true,
+      updatedAt: true,
+      department: {
+        select: {
+          id: true,
+          name: true,
+          code: true,
+        },
+      },
+    };
+  }
+
+  private lifecycleSnapshot(employee: any) {
+    return {
+      employmentStatus: employee.employmentStatus,
+      isActive: employee.isActive,
+      deletedAt: employee.deletedAt?.toISOString() ?? null,
+    };
   }
 
   private rethrowKnownUniqueError(error: unknown): void {

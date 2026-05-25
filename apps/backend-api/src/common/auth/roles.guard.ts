@@ -1,4 +1,4 @@
-import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { UserRole } from '@chronos/types-common';
 import { ROLES_KEY } from './roles.decorator';
@@ -18,7 +18,11 @@ export class RolesGuard implements CanActivate {
     }
 
     const request = context.switchToHttp().getRequest();
-    const role = request.user?.role ?? request.headers['x-user-role'];
+    const role = request.user?.role;
+
+    if (!request.user || typeof role !== 'string') {
+      throw new UnauthorizedException('Authenticated user context is required.');
+    }
 
     return typeof role === 'string' && roles.includes(role as UserRole);
   }

@@ -203,6 +203,11 @@ async function main() {
       date: new Date(todayString),
       overriddenHourlyRate: 500.00, // Clinician gets an extra Ksh 50/hr premium rate for covering ICU
       status: 'UNVERIFIED',
+      startTimeSnapshot: dayShiftTemplate.startTime,
+      endTimeSnapshot: dayShiftTemplate.endTime,
+      gracePeriodSnapshot: dayShiftTemplate.gracePeriodMinutes,
+      overtimeThresholdSnapshot: dayShiftTemplate.overtimeThresholdMinutes,
+      overnightSnapshot: dayShiftTemplate.isOvernight,
     },
   });
 

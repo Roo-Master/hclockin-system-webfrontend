@@ -9,6 +9,8 @@ import {
   ShiftTemplateType,
   ShiftTemplateUpdateDTO,
 } from '@chronos/types-common';
+import { AuthenticatedUser } from '../common/auth/authenticated-user';
+import { hasDepartmentScopedEmployeeAccess, hasTenantWideEmployeeAccess } from '../common/auth/role-policy';
 import { normalizePagination, paginatedResponse } from '../common/pagination';
 import {
   assertDate,
@@ -33,6 +35,10 @@ export class RosterService {
   async createShiftTemplate(tenantId: string, payload: ShiftTemplateCreateDTO) {
     const startTime = assertTime(payload.startTime, 'startTime');
     const endTime = assertTime(payload.endTime, 'endTime');
+    this.assertValidShiftWindow(startTime, endTime);
+    const effectiveFrom = payload.effectiveFrom ? assertDate(payload.effectiveFrom, 'effectiveFrom') : null;
+    const effectiveTo = payload.effectiveTo ? assertDate(payload.effectiveTo, 'effectiveTo') : null;
+    this.assertDateOrder(effectiveFrom, effectiveTo);
     const shiftTemplate = await this.rosterRepository.createShiftTemplate(tenantId, {
       name: assertRequiredString(payload.name, 'name', 100),
       type: assertEnumValue(payload.type, ShiftTemplateType, 'type'),
@@ -42,8 +48,8 @@ export class RosterService {
       earlyClockInWindowMinutes: assertOptionalNonNegativeInteger(payload.earlyClockInWindowMinutes, 'earlyClockInWindowMinutes') ?? 30,
       overtimeThresholdMinutes: assertOptionalNonNegativeInteger(payload.overtimeThresholdMinutes, 'overtimeThresholdMinutes') ?? 0,
       isOvernight: payload.isOvernight ?? this.crossesMidnight(startTime, endTime),
-      effectiveFrom: payload.effectiveFrom ? assertDate(payload.effectiveFrom, 'effectiveFrom') : null,
-      effectiveTo: payload.effectiveTo ? assertDate(payload.effectiveTo, 'effectiveTo') : null,
+      effectiveFrom,
+      effectiveTo,
       rules: assertPlainObject(payload.rules, 'rules') ?? {},
     });
 
@@ -94,9 +100,21 @@ export class RosterService {
 
     if ((data.startTime || data.endTime) && payload.isOvernight === undefined) {
       const current = await this.rosterRepository.findShiftTemplateOrThrow(tenantId, id);
+      this.assertValidShiftWindow(
+        String(data.startTime ?? current.startTime),
+        String(data.endTime ?? current.endTime),
+      );
       data.isOvernight = this.crossesMidnight(
         String(data.startTime ?? current.startTime),
         String(data.endTime ?? current.endTime),
+      );
+    }
+
+    if (data.effectiveFrom !== undefined || data.effectiveTo !== undefined) {
+      const current = await this.rosterRepository.findShiftTemplateOrThrow(tenantId, id);
+      this.assertDateOrder(
+        (data.effectiveFrom as Date | null | undefined) ?? current.effectiveFrom,
+        (data.effectiveTo as Date | null | undefined) ?? current.effectiveTo,
       );
     }
 
@@ -108,7 +126,7 @@ export class RosterService {
     return this.toShiftTemplateResponse(await this.rosterRepository.updateShiftTemplate(tenantId, id, { isActive: false }));
   }
 
-  async assignEmployees(tenantId: string, shiftTemplateId: string, payload: ShiftAssignmentCreateDTO) {
+  async assignEmployees(tenantId: string, actor: AuthenticatedUser, shiftTemplateId: string, payload: ShiftAssignmentCreateDTO) {
     assertUuid(shiftTemplateId, 'shiftTemplateId');
     const shiftTemplate = await this.rosterRepository.findShiftTemplateOrThrow(tenantId, shiftTemplateId);
 
@@ -125,23 +143,19 @@ export class RosterService {
       throw new BadRequestException('effectiveTo must be on or after effectiveFrom.');
     }
 
+    this.assertWithinTemplateEffectiveWindow(shiftTemplate, effectiveFrom, effectiveTo);
+
     const requestedDays = this.expandDateRange(effectiveFrom, effectiveTo);
     const overriddenHourlyRate = assertOptionalNumber(payload.overriddenHourlyRate, 'overriddenHourlyRate');
     const reason = assertOptionalString(payload.reason, 'reason', 255) ?? undefined;
-    const actorUserId = assertOptionalString(payload.actorUserId, 'actorUserId', 50);
-
-    if (actorUserId) {
-      assertUuid(actorUserId, 'actorUserId');
-    }
-
-    let departmentId = payload.departmentId;
+    const departmentId = payload.departmentId;
 
     if (departmentId) {
       assertUuid(departmentId, 'departmentId');
       await this.rosterRepository.assertDepartmentBelongsToTenant(tenantId, departmentId);
     }
 
-    const employeeById = new Map<string, { id: string; departmentId: string | null }>(
+    const employeeById = new Map<string, { id: string; departmentId: string | null; employmentStatus: string }>(
       employees.map((employee) => [employee.id, employee]),
     );
     const rows = employeeIds.flatMap((employeeId) => {
@@ -152,6 +166,12 @@ export class RosterService {
         throw new BadRequestException('departmentId is required when an employee has no home department.');
       }
 
+      if (employee?.employmentStatus === 'TERMINATED' || employee?.employmentStatus === 'SUSPENDED') {
+        throw new BadRequestException('Terminated or suspended employees cannot be assigned to shifts.');
+      }
+
+      this.assertCanScheduleDepartment(actor, resolvedDepartmentId);
+
       return requestedDays.map((date) => ({
         userId: employeeId,
         departmentId: resolvedDepartmentId,
@@ -160,16 +180,16 @@ export class RosterService {
         effectiveTo,
         overriddenHourlyRate,
         reason,
-        assignedByUserId: actorUserId ?? null,
+        assignedByUserId: actor.userId,
       }));
     });
 
-    const assignments = await this.rosterRepository.assignEmployees(tenantId, shiftTemplateId, rows);
+    const assignments = await this.rosterRepository.assignEmployees(tenantId, shiftTemplate, rows);
 
     return assignments.map((assignment) => this.toRosterAssignmentResponse(assignment));
   }
 
-  async unassignEmployees(tenantId: string, shiftTemplateId: string, payload: ShiftAssignmentUnassignDTO) {
+  async unassignEmployees(tenantId: string, actor: AuthenticatedUser, shiftTemplateId: string, payload: ShiftAssignmentUnassignDTO) {
     assertUuid(shiftTemplateId, 'shiftTemplateId');
     await this.rosterRepository.findShiftTemplateOrThrow(tenantId, shiftTemplateId);
 
@@ -183,18 +203,13 @@ export class RosterService {
     }
 
     const reason = assertOptionalString(payload.reason, 'reason', 255) ?? undefined;
-    const actorUserId = assertOptionalString(payload.actorUserId, 'actorUserId', 50);
-
-    if (actorUserId) {
-      assertUuid(actorUserId, 'actorUserId');
-    }
-
     const rows = employeeIds.flatMap((employeeId) =>
       this.expandDateRange(effectiveFrom, effectiveTo).map((date) => ({
         userId: employeeId,
         date,
         reason,
-        actorUserId: actorUserId ?? null,
+        actorUserId: actor.userId,
+        allowedDepartmentId: hasDepartmentScopedEmployeeAccess(actor.role) ? actor.deptId : undefined,
       })),
     );
 
@@ -222,6 +237,39 @@ export class RosterService {
 
   private crossesMidnight(startTime: string, endTime: string): boolean {
     return endTime <= startTime;
+  }
+
+  private assertValidShiftWindow(startTime: string, endTime: string): void {
+    if (startTime === endTime) {
+      throw new BadRequestException('Shift startTime and endTime cannot be equal.');
+    }
+  }
+
+  private assertDateOrder(start: Date | null | undefined, end: Date | null | undefined): void {
+    if (start && end && end < start) {
+      throw new BadRequestException('effectiveTo must be on or after effectiveFrom.');
+    }
+  }
+
+  private assertWithinTemplateEffectiveWindow(shiftTemplate: any, start: Date, end: Date): void {
+    if (shiftTemplate.effectiveFrom && start < shiftTemplate.effectiveFrom) {
+      throw new BadRequestException('Assignment starts before the shift template effective date.');
+    }
+    if (shiftTemplate.effectiveTo && end > shiftTemplate.effectiveTo) {
+      throw new BadRequestException('Assignment ends after the shift template effective date.');
+    }
+  }
+
+  private assertCanScheduleDepartment(actor: AuthenticatedUser, departmentId: string): void {
+    if (hasTenantWideEmployeeAccess(actor.role)) {
+      return;
+    }
+
+    if (hasDepartmentScopedEmployeeAccess(actor.role) && actor.deptId === departmentId) {
+      return;
+    }
+
+    throw new BadRequestException('You can only schedule employees in your assigned department.');
   }
 
   private toShiftTemplateResponse(shiftTemplate: any): ShiftTemplateResponseDTO {

@@ -12,7 +12,9 @@
 export enum UserRole {
   SUPER_ADMIN = 'SUPER_ADMIN',
   HOSPITAL_ADMIN = 'HOSPITAL_ADMIN',
+  HR_MANAGER = 'HR_MANAGER',
   DEPT_HEAD = 'DEPT_HEAD', // FIXED: Aligned with DB schema token
+  SUPERVISOR = 'SUPERVISOR',
   EMPLOYEE = 'EMPLOYEE'   // FIXED: Aligned with DB schema token
 }
 
@@ -311,7 +313,6 @@ export interface ShiftAssignmentCreateDTO {
   effectiveTo?: string;
   overriddenHourlyRate?: number;
   reason?: string;
-  actorUserId?: string;
 }
 
 export interface ShiftAssignmentUnassignDTO {
@@ -319,7 +320,6 @@ export interface ShiftAssignmentUnassignDTO {
   effectiveFrom: string;
   effectiveTo?: string;
   reason?: string;
-  actorUserId?: string;
 }
 
 export interface RosterAssignmentResponseDTO {

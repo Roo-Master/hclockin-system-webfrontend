@@ -106,13 +106,13 @@ export function assertOptionalNumber(value: unknown, fieldName: string): number 
 }
 
 export function assertDate(value: unknown, fieldName: string): Date {
-  if (typeof value !== 'string') {
-    throw new BadRequestException(`${fieldName} must be an ISO date string.`);
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    throw new BadRequestException(`${fieldName} must be an ISO date string in YYYY-MM-DD format.`);
   }
 
   const date = new Date(`${value}T00:00:00.000Z`);
 
-  if (Number.isNaN(date.getTime())) {
+  if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== value) {
     throw new BadRequestException(`${fieldName} must be a valid date.`);
   }
 

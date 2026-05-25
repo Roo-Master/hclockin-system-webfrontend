@@ -24,6 +24,7 @@ export class RosterRepository {
     const [items, total] = await this.database.client.$transaction([
       this.database.client.shiftTemplate.findMany({
         where,
+        select: this.shiftTemplateSelect(),
         orderBy: [{ isActive: 'desc' }, { name: 'asc' }],
         skip: filters.skip,
         take: filters.take,
@@ -37,6 +38,7 @@ export class RosterRepository {
   async findShiftTemplateOrThrow(tenantId: string, shiftTemplateId: string) {
     const shiftTemplate = await this.database.client.shiftTemplate.findFirst({
       where: { id: shiftTemplateId, tenantId },
+      select: this.shiftTemplateSelect(),
     });
 
     if (!shiftTemplate) {
@@ -58,7 +60,7 @@ export class RosterRepository {
   async assertEmployeesBelongToTenant(tenantId: string, employeeIds: string[]) {
     const employees = await this.database.client.user.findMany({
       where: { tenantId, id: { in: employeeIds }, deletedAt: null },
-      select: { id: true, departmentId: true },
+      select: { id: true, departmentId: true, employmentStatus: true },
     });
 
     if (employees.length !== employeeIds.length) {
@@ -79,35 +81,64 @@ export class RosterRepository {
     }
   }
 
-  async assignEmployees(tenantId: string, shiftTemplateId: string, rows: any[]) {
-    return this.database.client.$transaction(async (tx) => {
+  async assignEmployees(tenantId: string, shiftTemplate: any, rows: any[]) {
+    try {
+      return await this.database.client.$transaction(async (tx) => {
       const results = [];
 
       for (const row of rows) {
+        const closedAt = new Date();
         const previousAssignment = await tx.rosterAssignment.findFirst({
           where: {
             tenantId,
             userId: row.userId,
             date: row.date,
+            supersededAt: null,
             status: { not: 'CANCELLED' },
           },
           orderBy: { createdAt: 'desc' },
         });
+
+        if (previousAssignment) {
+          await tx.rosterAssignment.updateMany({
+            where: {
+              id: previousAssignment.id,
+              tenantId,
+              supersededAt: null,
+            },
+            data: {
+              supersededAt: closedAt,
+              status: 'REASSIGNED',
+            },
+          });
+        }
 
         const created = await tx.rosterAssignment.create({
           data: {
             tenantId,
             userId: row.userId,
             departmentId: row.departmentId,
-            shiftTemplateId,
+            shiftTemplateId: shiftTemplate.id,
             date: row.date,
             overriddenHourlyRate: row.overriddenHourlyRate,
             status: 'UNVERIFIED',
             effectiveFrom: row.effectiveFrom,
             effectiveTo: row.effectiveTo,
             assignedByUserId: row.assignedByUserId,
+            startTimeSnapshot: shiftTemplate.startTime,
+            endTimeSnapshot: shiftTemplate.endTime,
+            gracePeriodSnapshot: shiftTemplate.gracePeriodMinutes,
+            overtimeThresholdSnapshot: shiftTemplate.overtimeThresholdMinutes,
+            overnightSnapshot: shiftTemplate.isOvernight,
           },
         });
+
+        if (previousAssignment) {
+          await tx.rosterAssignment.updateMany({
+            where: { id: previousAssignment.id, tenantId },
+            data: { supersededByAssignmentId: created.id },
+          });
+        }
 
         await tx.rosterAssignmentHistory.create({
           data: {
@@ -115,7 +146,7 @@ export class RosterRepository {
             rosterAssignmentId: created.id,
             userId: row.userId,
             previousShiftTemplateId: previousAssignment?.shiftTemplateId,
-            newShiftTemplateId: shiftTemplateId,
+            newShiftTemplateId: shiftTemplate.id,
             previousDepartmentId: previousAssignment?.departmentId,
             newDepartmentId: row.departmentId,
             previousStatus: previousAssignment?.status,
@@ -131,20 +162,28 @@ export class RosterRepository {
       }
 
       return results;
-    });
+      }, { isolationLevel: 'Serializable' as any });
+    } catch (error) {
+      this.rethrowAssignmentConflict(error);
+      throw error;
+    }
   }
 
   async unassignEmployees(tenantId: string, shiftTemplateId: string, rows: any[]) {
-    return this.database.client.$transaction(async (tx) => {
+    try {
+      return await this.database.client.$transaction(async (tx) => {
       const results = [];
 
       for (const row of rows) {
+        const closedAt = new Date();
         const existing = await tx.rosterAssignment.findFirst({
           where: {
             tenantId,
             userId: row.userId,
             shiftTemplateId,
             date: row.date,
+            ...(row.allowedDepartmentId ? { departmentId: row.allowedDepartmentId } : {}),
+            supersededAt: null,
             status: { not: 'CANCELLED' },
           },
           orderBy: { createdAt: 'desc' },
@@ -153,6 +192,17 @@ export class RosterRepository {
         if (!existing) {
           throw new ConflictException('One or more employees are not assigned to this shift for the requested date range.');
         }
+
+        await tx.rosterAssignment.updateMany({
+          where: {
+            id: existing.id,
+            tenantId,
+            supersededAt: null,
+          },
+          data: {
+            supersededAt: closedAt,
+          },
+        });
 
         const cancellation = await tx.rosterAssignment.create({
           data: {
@@ -168,7 +218,17 @@ export class RosterRepository {
             assignedByUserId: row.actorUserId,
             unassignedAt: new Date(),
             unassignedReason: row.reason,
+            startTimeSnapshot: existing.startTimeSnapshot,
+            endTimeSnapshot: existing.endTimeSnapshot,
+            gracePeriodSnapshot: existing.gracePeriodSnapshot,
+            overtimeThresholdSnapshot: existing.overtimeThresholdSnapshot,
+            overnightSnapshot: existing.overnightSnapshot,
           },
+        });
+
+        await tx.rosterAssignment.updateMany({
+          where: { id: existing.id, tenantId },
+          data: { supersededByAssignmentId: cancellation.id },
         });
 
         await tx.rosterAssignmentHistory.create({
@@ -191,6 +251,39 @@ export class RosterRepository {
       }
 
       return results;
-    });
+      }, { isolationLevel: 'Serializable' as any });
+    } catch (error) {
+      this.rethrowAssignmentConflict(error);
+      throw error;
+    }
+  }
+
+  private shiftTemplateSelect() {
+    return {
+      id: true,
+      tenantId: true,
+      name: true,
+      type: true,
+      startTime: true,
+      endTime: true,
+      gracePeriodMinutes: true,
+      earlyClockInWindowMinutes: true,
+      overtimeThresholdMinutes: true,
+      isOvernight: true,
+      isActive: true,
+      effectiveFrom: true,
+      effectiveTo: true,
+      rules: true,
+      createdAt: true,
+      updatedAt: true,
+    };
+  }
+
+  private rethrowAssignmentConflict(error: unknown): void {
+    const code = (error as { code?: string }).code;
+
+    if (code === 'P2002' || code === 'P2034') {
+      throw new ConflictException('Concurrent roster update conflict. Please retry the assignment.');
+    }
   }
 }

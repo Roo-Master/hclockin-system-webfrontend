@@ -41,20 +41,27 @@ model RosterAssignment {
   /// Overrides the default user base hourly wage for specific locum or intensive care coverage
   overriddenHourlyRate Decimal? @map("overridden_hourly_rate") @db.Decimal(12, 2)
 
-  status           String    @default("UNVERIFIED") @db.VarChar(30) // "PRESENT" | "ABSENT" | "OFF" | "UNVERIFIED"
-  effectiveFrom    DateTime? @map("effective_from") @db.Date
-  effectiveTo      DateTime? @map("effective_to") @db.Date
-  assignedByUserId String?   @map("assigned_by_user_id") @db.Uuid
-  unassignedAt     DateTime? @map("unassigned_at") @db.Timestamptz(6)
-  unassignedReason String?   @map("unassigned_reason") @db.VarChar(255)
-  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  status                    String    @default("UNVERIFIED") @db.VarChar(30) // "PRESENT" | "ABSENT" | "OFF" | "UNVERIFIED"
+  effectiveFrom             DateTime? @map("effective_from") @db.Date
+  effectiveTo               DateTime? @map("effective_to") @db.Date
+  assignedByUserId          String?   @map("assigned_by_user_id") @db.Uuid
+  supersededAt              DateTime? @map("superseded_at") @db.Timestamptz(6)
+  supersededByAssignmentId  String?   @map("superseded_by_assignment_id") @db.Uuid
+  unassignedAt              DateTime? @map("unassigned_at") @db.Timestamptz(6)
+  unassignedReason          String?   @map("unassigned_reason") @db.VarChar(255)
+  startTimeSnapshot         String    @map("start_time_snapshot") @db.VarChar(5)
+  endTimeSnapshot           String    @map("end_time_snapshot") @db.VarChar(5)
+  gracePeriodSnapshot       Int       @map("grace_period_snapshot")
+  overtimeThresholdSnapshot Int       @map("overtime_threshold_snapshot")
+  overnightSnapshot         Boolean   @map("overnight_snapshot")
+  createdAt                 DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                 DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   // Relationships
   tenant            Tenant                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  user              User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  department        Department                @relation(fields: [departmentId], references: [id], onDelete: Cascade)
-  shiftTemplate     ShiftTemplate             @relation(fields: [shiftTemplateId], references: [id], onDelete: Cascade)
+  user              User                      @relation(fields: [userId], references: [id], onDelete: Restrict)
+  department        Department                @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  shiftTemplate     ShiftTemplate             @relation(fields: [shiftTemplateId], references: [id], onDelete: Restrict)
   attendanceLogs    AttendanceLog[]
   reconciliationLog ReconciliationLog?
   histories         RosterAssignmentHistory[]
@@ -62,6 +69,7 @@ model RosterAssignment {
   @@index([tenantId, date])
   @@index([tenantId, userId, date])
   @@index([tenantId, userId, date, status])
+  @@index([tenantId, userId, date, supersededAt])
   @@index([departmentId, date]) // Allows department heads to pull clean daily floor rosters instantly
   @@map("roster_assignments")
 }
@@ -84,8 +92,8 @@ model RosterAssignmentHistory {
   createdAt               DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
   tenant           Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  rosterAssignment RosterAssignment @relation(fields: [rosterAssignmentId], references: [id], onDelete: Cascade)
-  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rosterAssignment RosterAssignment @relation(fields: [rosterAssignmentId], references: [id], onDelete: Restrict)
+  user             User             @relation(fields: [userId], references: [id], onDelete: Restrict)
   newShiftTemplate ShiftTemplate?   @relation(fields: [newShiftTemplateId], references: [id], onDelete: SetNull)
 
   @@index([tenantId, userId, effectiveDate])

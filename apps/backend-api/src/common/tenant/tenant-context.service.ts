@@ -13,6 +13,10 @@ export class TenantContextService {
     return this.storage.run(store, callback);
   }
 
+  set(store: TenantContextStore): void {
+    this.storage.enterWith(store);
+  }
+
   get tenantId(): string | undefined {
     return this.storage.getStore()?.tenantId;
   }
