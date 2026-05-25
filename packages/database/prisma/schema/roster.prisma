@@ -1,46 +1,50 @@
 // Location: packages/database/prisma/schema/roster.prisma
 
 model ShiftTemplate {
-  id                 String          @id @default(uuid()) @db.Uuid
-  tenantId           String          @db.Uuid
-  name               String          @db.VarChar(100) // e.g., "Nurse Main Morning"
-  type               ShiftType       @default(MORNING)
-  startTime          String          @db.VarChar(5)   // 24hr format string baseline: "06:00"
-  endTime            String          @db.VarChar(5)   // 24hr format string baseline: "14:00"
-  gracePeriodMinutes Int             @default(15)
-  createdAt          DateTime        @default(now()) @db.Timestamptz(6)
-  updatedAt          DateTime        @updatedAt @db.Timestamptz(6)
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  name      String   @db.VarChar(100)                 // e.g., "Standard 12-Hour Night Shift"
+  type      String   @db.VarChar(30)                  // "MORNING" | "AFTERNOON" | "NIGHT" | "FLEXIBLE"
+  startTime String   @map("start_time") @db.VarChar(5) // HH:mm format
+  endTime   String   @map("end_time") @db.VarChar(5)   // HH:mm format
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  // Relations
-  tenant      Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  assignments RosterAssignment[]
+  // Relationships
+  tenant            Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  rosterAssignments RosterAssignment[]
 
-  @@unique([tenantId, name])
   @@index([tenantId])
   @@map("shift_templates")
 }
 
 model RosterAssignment {
-  id              String      @id @default(uuid()) @db.Uuid
-  tenantId        String      @db.Uuid
-  userId          String      @db.Uuid
-  departmentId    String?     @db.Uuid // Patched: Added to satisfy bidirectional relation constraint
-  shiftTemplateId String      @db.Uuid
-  date            DateTime    @db.Date        // Pure calendar date: YYYY-MM-DD
-  status          ShiftStatus @default(PRESENT)
-  createdAt       DateTime    @default(now()) @db.Timestamptz(6)
-  updatedAt       DateTime    @updatedAt @db.Timestamptz(6)
+  id                   String   @id @default(uuid()) @db.Uuid
+  tenantId             String   @map("tenant_id") @db.Uuid
+  userId               String   @map("user_id") @db.Uuid
+  
+  /// CRITICAL: The exact department where the shift is performed. Natively supports internal floating staff.
+  departmentId         String   @map("department_id") @db.Uuid
+  shiftTemplateId      String   @map("shift_template_id") @db.Uuid
+  date                 DateTime @db.Date
+  
+  /// Overrides the default user base hourly wage for specific locum or intensive care coverage
+  overriddenHourlyRate Decimal? @map("overridden_hourly_rate") @db.Decimal(12, 2)
+  
+  status               String   @default("UNVERIFIED") @db.VarChar(30) // "PRESENT" | "ABSENT" | "OFF" | "UNVERIFIED"
+  createdAt            DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  // Relations
-  tenant        Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  department    Department?   @relation(fields: [departmentId], references: [id], onDelete: SetNull) // Patched back-relation
-  shiftTemplate ShiftTemplate @relation(fields: [shiftTemplateId], references: [id], onDelete: Cascade)
+  // Relationships
+  tenant            Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  department        Department         @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  shiftTemplate     ShiftTemplate      @relation(fields: [shiftTemplateId], references: [id], onDelete: Cascade)
+  attendanceLogs    AttendanceLog[]
+  reconciliationLog ReconciliationLog?
 
-  // Constraints: An employee can only have one explicit shift assignment per calendar date
-  @@unique([userId, date])
-  @@index([tenantId])
-  @@index([departmentId])
-  @@index([date])
+  @@unique([userId, date]) // Guards clinician calendar from dual scheduling overlays
+  @@index([tenantId, date])
+  @@index([departmentId, date]) // Allows department heads to pull clean daily floor rosters instantly
   @@map("roster_assignments")
 }

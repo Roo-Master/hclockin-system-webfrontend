@@ -1,9 +1,8 @@
 /**
  * HOSPITAL CHRONOS SYSTEM - GLOBAL API CONTRACT LAYER
  * Location: packages/types-common/src/api-contracts.ts
- * 
- * Strict Source of Truth for NestJS Backend and Next.js Frontend.
- * DO NOT use loose types or 'any' within this domain.
+ * * Strict Source of Truth for NestJS Backend and Next.js Frontend.
+ * FIXED: Aligned enums perfectly with PostgreSQL DB states and secured auth inputs.
  */
 
 // ==========================================
@@ -13,9 +12,8 @@
 export enum UserRole {
   SUPER_ADMIN = 'SUPER_ADMIN',
   HOSPITAL_ADMIN = 'HOSPITAL_ADMIN',
-  DEPARTMENT_HEAD = 'DEPARTMENT_HEAD',
-  STAFF = 'STAFF',
-  EDGE_GATEWAY = 'EDGE_GATEWAY'
+  DEPT_HEAD = 'DEPT_HEAD', // FIXED: Aligned with DB schema token
+  EMPLOYEE = 'EMPLOYEE'   // FIXED: Aligned with DB schema token
 }
 
 export enum ClockAction {
@@ -58,7 +56,7 @@ export interface JwtPayload {
 
 export interface AuthLoginRequestDTO {
   email: string;
-  passwordHash: string; // Pre-hashed or handled securely over HTTPS
+  password: string; // FIXED: Changed from passwordHash to raw text over HTTPS
 }
 
 export interface AuthResponseDTO {
@@ -138,8 +136,9 @@ export interface ShiftScheduleResponseDTO {
  * or processed via NestJS proxy ingestion.
  */
 export interface BiometricLogIngestionDTO {
+  tenantId: string;        // FIXED: Absolute requirement for early tenant context routing
   deviceId: string;
-  biometricUserId: string; // Pin or unique hardware fingerprint mapping identifier
+  biometricUserId: string; // Pin mapping identifier from hardware device memory
   timestamp: string;       // Exact ISO8601 punch instant clock recorded
 }
 

@@ -1,38 +1,45 @@
 // Location: packages/database/prisma/schema/attendance.prisma
 
 model AttendanceLog {
-  id             String          @id @default(uuid()) @db.Uuid
-  tenantId       String          @db.Uuid
-  userId         String          @db.Uuid
-  deviceId       String          @db.VarChar(100)
-  timestamp      DateTime        @db.Timestamptz(6) // Actual machine log entry point
-  actionDetected ClockAction     @default(UNKNOWN)
-  isDeduplicated Boolean         @default(false)
-  processedAt    DateTime        @default(now()) @db.Timestamptz(6)
+  id                 String   @id @default(uuid()) @db.Uuid
+  tenantId           String   @map("tenant_id") @db.Uuid
+  userId             String   @map("user_id") @db.Uuid
+  deviceId           String   @map("device_id") @db.Uuid
+  rosterAssignmentId String?  @map("roster_assignment_id") @db.Uuid
+  direction          String   @db.VarChar(10) // "IN" | "OUT"
+  
+  /// Captured straight from the hardware clock terminal to prevent data corruption during network retry lag
+  timestamp          DateTime @map("timestamp") @db.Timestamptz(6)
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  // Relations
-  tenant Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  user   User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  audits AttendanceAudit[]
+  // Relationships
+  tenant           Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  device           Device            @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  rosterAssignment RosterAssignment? @relation(fields: [rosterAssignmentId], references: [id], onDelete: SetNull)
 
-  @@index([userId, timestamp])
-  @@index([tenantId])
+  /// CRITICAL FOR ASSURED IDEMPOTENCY:
+  /// Prevents duplicate entries when the Go gateway pushes cached local logs back up following internet connectivity restoration.
+  @@unique([userId, deviceId, direction, timestamp])
+  
+  @@index([tenantId, timestamp])
+  @@index([userId])
   @@map("attendance_logs")
 }
 
 model AttendanceAudit {
-  id              String        @id @default(uuid()) @db.Uuid
-  attendanceLogId String        @db.Uuid
-  adminUserId     String        @db.Uuid
-  originalAction  ClockAction
-  correctedAction ClockAction
-  reasonForChange String        @db.Text
-  changedAt       DateTime      @default(now()) @db.Timestamptz(6)
+  id            String   @id @default(uuid()) @db.Uuid
+  tenantId      String   @map("tenant_id") @db.Uuid
+  userId        String   @map("user_id") @db.Uuid // Admin executing the override
+  targetLogId   String?  @map("target_log_id") @db.Uuid
+  actionType    String   @map("action_type") @db.VarChar(50) // "MANUAL_CLOCK" | "OVERRIDE"
+  justification String   @db.Text
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  // Relations
-  attendanceLog AttendanceLog @relation(fields: [attendanceLogId], references: [id], onDelete: Cascade)
-  adminUser     User          @relation(fields: [adminUserId], references: [id], onDelete: Restrict)
+  // Relationships
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([attendanceLogId])
+  @@index([tenantId])
   @@map("attendance_audits")
 }
