@@ -2,10 +2,16 @@ import { Request, Response } from "express";
 import { prisma } from "@chronos/database";
 
 import { sendEmail } from "../utils/email/sendEmail";
-import { forgotPasswordTemplate } from "../templates/forgotPassword";
-import { generateResetToken } from "../utils/token/generateResetToken";
 
-export const forgotPassword = async (req: Request, res: Response) => {
+import { forgotPasswordTemplate } from "../templates/forgotPassword";
+
+import { generateOtp } from "../utils/otp/generateOtp";
+import { hashOtp } from "../utils/otp/hashOtp";
+
+export const forgotPassword = async (
+  req: Request,
+  res: Response
+) => {
   try {
     const { email } = req.body;
 
@@ -20,38 +26,50 @@ export const forgotPassword = async (req: Request, res: Response) => {
       where: { email },
     });
 
+    // Prevent email enumeration
     if (!user) {
       return res.status(200).json({
         success: true,
-        message: "If email exists, reset link sent",
+        message: "If email exists, OTP sent",
       });
     }
 
-    // ONLY USE UTILS
-    const { rawToken, hashedToken } = generateResetToken();
+    // Generate OTP from utils
+    const otp = generateOtp();
 
-    const expires = new Date(Date.now() + 15 * 60 * 1000);
+    // Hash OTP before saving
+    const hashedOtp = hashOtp(otp);
 
+    // OTP expiry (10 minutes)
+    const otpExpires = new Date(
+      Date.now() + 10 * 60 * 1000
+    );
+
+    // Save hashed OTP in DB
     await prisma.user.update({
       where: { id: user.id },
       data: {
-        passwordResetToken: hashedToken,
-        passwordResetExpires: expires,
+        otpCode: hashedOtp,
+        otpExpires,
       },
     });
 
-    const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${rawToken}&email=${email}`;
-
+    // Generate email HTML
     const html = forgotPasswordTemplate({
       name: user.firstName,
-      resetLink,
+      otp,
     });
 
-    await sendEmail(user.email, "Password Reset Request", html);
+    // Send OTP email
+    await sendEmail(
+      user.email,
+      "Password Reset OTP",
+      html
+    );
 
     return res.status(200).json({
       success: true,
-      message: "If email exists, reset link sent",
+      message: "If email exists, OTP sent",
     });
   } catch (error) {
     return res.status(500).json({

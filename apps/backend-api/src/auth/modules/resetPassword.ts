@@ -2,16 +2,29 @@ import { Request, Response } from "express";
 import { prisma } from "@chronos/database";
 
 import { hashPassword } from "../utils/password/hashPassword";
-import { verifyResetToken } from "../utils/token/verifyResetToken";
 
-export const resetPassword = async (req: Request, res: Response) => {
+import { verifyOtp } from "../utils/otp/verifyOtp";
+
+export const resetPassword = async (
+  req: Request,
+  res: Response
+) => {
   try {
-    const { email, token, newPassword } = req.body;
+    const {
+      email,
+      otp,
+      newPassword,
+    } = req.body;
 
-    if (!email || !token || !newPassword) {
+    if (
+      !email ||
+      !otp ||
+      !newPassword
+    ) {
       return res.status(400).json({
         success: false,
-        message: "Email, token and new password are required",
+        message:
+          "Email, OTP and new password are required",
       });
     }
 
@@ -19,51 +32,62 @@ export const resetPassword = async (req: Request, res: Response) => {
       where: { email },
     });
 
-    if (!user || !user.passwordResetToken || !user.passwordResetExpires) {
+    if (
+      !user ||
+      !user.otpCode ||
+      !user.otpExpires
+    ) {
       return res.status(400).json({
         success: false,
-        message: "Invalid reset request",
+        message: "Invalid OTP request",
       });
     }
 
-    // check expiry
-    if (new Date() > user.passwordResetExpires) {
+    // Check OTP expiry
+    if (new Date() > user.otpExpires) {
       return res.status(400).json({
         success: false,
-        message: "Reset token expired",
+        message: "OTP expired",
       });
     }
 
-    // verify token (via utils)
-    const isValid = verifyResetToken(token, user.passwordResetToken);
+    // Verify OTP using utils
+    const isValidOtp = verifyOtp(
+      otp,
+      user.otpCode
+    );
 
-    if (!isValid) {
+    if (!isValidOtp) {
       return res.status(400).json({
         success: false,
-        message: "Invalid reset token",
+        message: "Invalid OTP",
       });
     }
 
-    // hash new password (via utils)
-    const hashedPassword = await hashPassword(newPassword);
+    // Hash new password using utils
+    const hashedPassword =
+      await hashPassword(newPassword);
 
+    // Update password + clear OTP
     await prisma.user.update({
       where: { id: user.id },
       data: {
         passwordHash: hashedPassword,
-        passwordResetToken: null,
-        passwordResetExpires: null,
+        otpCode: null,
+        otpExpires: null,
       },
     });
 
     return res.status(200).json({
       success: true,
-      message: "Password reset successfully",
+      message:
+        "Password reset successfully",
     });
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: "Failed to reset password",
+      message:
+        "Failed to reset password",
     });
   }
 };
