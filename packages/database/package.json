@@ -9,11 +9,14 @@
     "db:seed": "ts-node src/seed.ts"
   },
   "dependencies": {
-    "@prisma/client": "^5.0.0"
+    "@prisma/client": "^5.22.0",
+    "express-rate-limit": "^8.5.2",
+    "nodemailer": "^8.0.8",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/node": "^25.9.1",
-    "prisma": "^5.0.0",
+    "prisma": "^5.22.0",
     "ts-node": "^10.9.0",
     "typescript": "^5.0.0"
   }

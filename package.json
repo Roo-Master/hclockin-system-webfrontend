@@ -6,13 +6,22 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "turbo run build",
-    "dev": "turbo run dev",
-    "lint": "turbo run lint",
-    "infra:up": "docker compose -f docker-compose.infra.yml up -d",
-    "infra:down": "docker compose -f docker-compose.infra.yml down",
-    "db:generate": "turbo run db:generate",
-    "db:migrate": "turbo run db:migrate"
+  "build": "turbo run build",
+  "dev": "turbo run dev",
+  "lint": "turbo run lint",
+  "test": "turbo run test",
+
+  "db:generate": "turbo run db:generate",
+  "db:migrate": "turbo run db:migrate",
+  "db:studio": "turbo run db:studio",
+  "db:push": "turbo run db:push",
+  "db:seed": "turbo run db:seed",
+
+  "infra:up": "docker compose -f docker-compose.infra.yml up -d",
+  "infra:down": "docker compose -f docker-compose.infra.yml down",
+
+  "clean": "turbo run clean && rm -rf node_modules",
+  "format": "prettier --write ."
   },
   "devDependencies": {
     "turbo": "^2.0.0"
