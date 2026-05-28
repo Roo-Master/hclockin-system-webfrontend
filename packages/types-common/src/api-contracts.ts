@@ -158,7 +158,7 @@ export interface EmployeeCreateDTO {
   firstName: string;
   lastName: string;
   email: string;
-  passwordHash: string;
+  password: string;
   phoneNumber?: string;
   departmentId?: string;
   deviceUserId: string;

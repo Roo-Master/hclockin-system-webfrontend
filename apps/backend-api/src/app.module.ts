@@ -4,7 +4,6 @@ import { QueueModule } from './queue/queue.module';
 import { WebsocketModule } from './websocket/websocket.module';
 import { JobsModule } from './jobs/jobs.module';
 import { TenantContextMiddleware } from './common/tenant/tenant-context.middleware';
-import { TenantContextService } from './common/tenant/tenant-context.service';
 import { TenantModule } from './tenant/tenant.module';
 import { DepartmentModule } from './department/department.module';
 import { EmployeeModule } from './employee/employee.module';
@@ -21,7 +20,7 @@ import { PayrollModule } from './payroll/payroll.module';
 
 @Module({
   imports: [DatabaseModule, QueueModule, WebsocketModule, JobsModule, TenantModule, DepartmentModule, EmployeeModule, LeaveModule, SettingsModule, AuthModule, DeviceModule, RosterModule, AttendanceModule, ReconciliationModule, ReportsModule, NotificationsModule, PayrollModule],
-  providers: [TenantContextService, TenantContextMiddleware]
+  providers: [TenantContextMiddleware]
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

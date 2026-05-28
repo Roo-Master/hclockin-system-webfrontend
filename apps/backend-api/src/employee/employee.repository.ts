@@ -79,11 +79,28 @@ export class EmployeeRepository {
     }
   }
 
-  async create(tenantId: string, data: any) {
+  async create(tenantId: string, data: any, audit?: any) {
     try {
-      return await this.database.client.user.create({
-        data: { ...data, tenantId },
-        select: this.employeeSelect(),
+      return await this.database.client.$transaction(async (tx) => {
+        const employee = await tx.user.create({
+          data: { ...data, tenantId },
+          select: this.employeeSelect(),
+        });
+
+        if (audit) {
+          await tx.employeeAudit.create({
+            data: {
+              tenantId,
+              employeeId: employee.id,
+              actorUserId: audit.actorUserId,
+              action: audit.action,
+              previousValue: audit.previousValue,
+              newValue: audit.newValue,
+            },
+          });
+        }
+
+        return employee;
       });
     } catch (error) {
       this.rethrowKnownUniqueError(error);

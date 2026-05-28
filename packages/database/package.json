@@ -1,10 +1,14 @@
 {
   "name": "@chronos/database",
   "version": "1.0.0",
-  "main": "./src/client.ts",
-  "types": "./src/client.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "private": true,
+  "files": [
+    "dist"
+  ],
   "scripts": {
+    "build": "tsc",
     "db:generate": "prisma generate",
     "db:seed": "ts-node src/seed.ts"
   },

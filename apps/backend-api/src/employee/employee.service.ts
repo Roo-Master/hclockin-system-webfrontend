@@ -1,4 +1,5 @@
 import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
+import * as bcrypt from 'bcrypt';
 import {
   EmployeeCreateDTO,
   EmployeeDepartmentUpdateDTO,
@@ -27,6 +28,8 @@ import { EmployeeRepository } from './employee.repository';
 
 @Injectable()
 export class EmployeeService {
+  private static readonly passwordSaltRounds = 12;
+
   constructor(private readonly employeeRepository: EmployeeRepository) {}
 
   async create(tenantId: string, actor: AuthenticatedUser, payload: EmployeeCreateDTO) {
@@ -44,12 +47,15 @@ export class EmployeeService {
       throw new ForbiddenException('You can only create employees in your assigned department.');
     }
 
+    const password = assertRequiredString(payload.password, 'password', 128);
+    const passwordHash = await bcrypt.hash(password, EmployeeService.passwordSaltRounds);
+
     const employee = await this.employeeRepository.create(tenantId, {
       payrollNumber: assertRequiredString(payload.employeeCode, 'employeeCode', 50),
       firstName: assertRequiredString(payload.firstName, 'firstName', 100),
       lastName: assertRequiredString(payload.lastName, 'lastName', 100),
       email: assertRequiredString(payload.email, 'email', 255).toLowerCase(),
-      passwordHash: assertRequiredString(payload.passwordHash, 'passwordHash', 255),
+      passwordHash,
       phoneNumber: assertOptionalString(payload.phoneNumber, 'phoneNumber', 30),
       departmentId: departmentId ?? null,
       devicePin: assertRequiredString(payload.deviceUserId, 'deviceUserId', 50),
@@ -64,6 +70,16 @@ export class EmployeeService {
       emergencyContacts: this.normalizeEmergencyContacts(payload.emergencyContacts),
       profileMetadata: assertPlainObject(payload.profileMetadata, 'profileMetadata') ?? {},
       isActive: (payload.employmentStatus ?? EmploymentStatus.ACTIVE) === EmploymentStatus.ACTIVE,
+    }, {
+      actorUserId: actor.userId,
+      action: 'CREATE',
+      previousValue: null,
+      newValue: {
+        employeeCode: payload.employeeCode,
+        email: assertRequiredString(payload.email, 'email', 255).toLowerCase(),
+        role: targetRole,
+        departmentId: departmentId ?? null,
+      },
     });
 
     return this.toResponse(employee);
