@@ -3,22 +3,24 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "nest start --watch",
+    "dev": "tsc --watch & nodemon --watch dist dist/main.js",
     "build": "nest build",
     "start": "node dist/main"
   },
   "dependencies": {
+    "@chronos/database": "*",
+    "@chronos/types-common": "*",
     "@nestjs/common": "^10.3.0",
     "@nestjs/core": "^10.3.0",
-    "@nestjs/platform-express": "^10.3.0",
-    "@chronos/database": "*",
     "@nestjs/mapped-types": "*",
-  "@chronos/types-common": "*",
+    "@nestjs/platform-express": "^10.3.0",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.1"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",
+    "@types/node": "^25.9.1",
+    "nodemon": "^3.1.0",
     "typescript": "^5.3.3"
   }
 }

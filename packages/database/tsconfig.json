@@ -9,8 +9,16 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "baseUrl": ".",
-    "ignoreDeprecations": "6.0",
-    "types": ["node"]
+    "types": ["node"],
+    
+    // Explicit compilation boundaries
+    "rootDir": "./src",
+    "outDir": "./dist",
+    
+    // Generate type declarations for NestJS consumption
+    "declaration": true,
+    "declarationMap": true
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "prisma"]
 }
