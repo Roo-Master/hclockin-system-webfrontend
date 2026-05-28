@@ -18,6 +18,24 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { PayrollModule } from './payroll/payroll.module';
 
 @Module({
-  imports: [DatabaseModule, QueueModule, WebsocketModule, JobsModule, TenantModule, DepartmentModule, EmployeeModule, LeaveModule, SettingsModule, AuthModule, DeviceModule, RosterModule, AttendanceModule, ReconciliationModule, ReportsModule, NotificationsModule, PayrollModule]
+  imports: [
+    DatabaseModule,
+    QueueModule,
+    WebsocketModule,
+    JobsModule,
+    TenantModule,
+    DepartmentModule,
+    EmployeeModule,
+    LeaveModule,
+    SettingsModule,
+    AuthModule,
+    DeviceModule,
+    RosterModule,
+    AttendanceModule,
+    ReconciliationModule,
+    ReportsModule,
+    NotificationsModule,
+    PayrollModule,
+  ],
 })
 export class AppModule {}
