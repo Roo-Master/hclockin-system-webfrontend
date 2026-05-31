@@ -212,6 +212,12 @@ Attendance/Reconciliation/Payroll
 
 If another module needs to know who an employee is, whether they are active, which device ID maps to them, or where they were scheduled, it should consume Employee/Roster records. If another module needs to change employee lifecycle or roster assignment state, it should go through these module pathways rather than writing directly to the underlying tables.
 
+Integration rule:
+
+- Other modules should consume Employee and Roster evidence; they should not rewrite employee lifecycle or roster history directly.
+- Schedule mutations should go through the Roster service/repository path so supersession, snapshots, and history are preserved.
+- Employee lifecycle mutations should go through the Employee service/repository path so role policy, tenant isolation, password handling, and audit insertion remain intact.
+
 ## If You Need To Change Something
 
 This is the maintenance map for common future edits.
@@ -792,7 +798,7 @@ What teammates should preserve:
 - Keep history insertion inside the transaction.
 - Keep reassignment as supersession, not in-place mutation.
 
-## Merge Guide For Teammates
+## Merge Guide And Checklist For Teammates
 
 Use this checklist before merging changes that touch Employee or Shift/Roster behavior.
 
@@ -825,6 +831,23 @@ curl -i http://localhost:3000/api/roster/shifts
 ```
 
 Unauthenticated responses should be `401 Unauthorized`, which confirms the routes are reachable and guarded.
+
+### After Merging
+
+Verify:
+
+- Employee routes are reachable.
+- Roster routes are reachable.
+- Migrations applied successfully.
+- Assignment creation works.
+- Employee audit insertion works.
+- Route guards still return `401` without a token.
+
+Expected unauthenticated result:
+
+```txt
+HTTP/1.1 401 Unauthorized
+```
 
 ### Common Merge Conflicts
 
@@ -913,85 +936,6 @@ The roster assignment path uses serializable transactions because duplicate acti
 ### Supersession Model
 
 Supersession keeps the old assignment row and creates a replacement. It is more verbose than direct update, but it preserves evidence. That is the correct tradeoff for staffing and payroll-facing data.
-
-## How Other Modules Will Use My Work
-
-### Employee Module Provides
-
-- Employee records.
-- Role information.
-- Department/home-base information.
-- Device mapping through `devicePin`.
-- Employment status.
-- Active/deleted lifecycle state.
-- Employee audit history.
-
-Consumers:
-
-- Auth can use user identity and role.
-- Attendance can map biometric/device IDs to employees.
-- Payroll can use employment status, hourly rate, and employee identity.
-- Reporting can group staff by tenant, department, role, or status.
-- Leave management can reference employees and departments.
-
-### Shift/Roster Module Provides
-
-- Active assignment information.
-- Shift schedules.
-- Assignment history.
-- Shift snapshots.
-- Work department per date.
-- Reassignment/cancellation evidence.
-
-Consumers:
-
-- Attendance can compare clock-in events to scheduled shifts.
-- Reconciliation can compare actual attendance against planned roster.
-- Payroll can use roster snapshots and overridden rates to calculate shift-related compensation.
-- Reporting can display staffing coverage by department/date.
-- Notifications can alert employees or managers about assignment changes.
-
-Integration rule:
-
-- Other modules should consume roster evidence; they should not rewrite roster history directly. Schedule mutations should go through the Roster service/repository path so supersession, snapshots, and history are preserved.
-
-## Questions Teammates Will Probably Ask
-
-### Why not update assignments directly?
-
-Because a direct update destroys the old schedule. Reassignment is an event, and the system needs to preserve it. Supersession gives us both the old assignment and the replacement.
-
-### Why store snapshots?
-
-Because templates change. Payroll and reconciliation need the template values from the time the assignment was created, not the current template values.
-
-### Why use serializable transactions?
-
-Because two planners can edit the same employee/date at the same time. Serializable transactions plus the partial unique index protect the active-assignment invariant.
-
-### Why create audit rows?
-
-Because employee lifecycle changes are sensitive HR actions. If role, department, device mapping, status, or deletion changes, the system must know who did it and what changed.
-
-### Why use repositories?
-
-Because the database layer contains important invariants: tenant filters, transactions, projections, conflict mapping, audit/history writes. Keeping those in repositories makes them easier to review and test.
-
-### Why not query Prisma directly in controllers?
-
-Controllers are HTTP adapters. If they query Prisma directly, routing, validation, authorization, and persistence become tangled. That makes the code harder to review safely.
-
-### Why use tenant filtering everywhere?
-
-Because this is a multi-tenant system. Tenant filtering is the core data boundary. Every read/write must prove which hospital owns the data.
-
-### Why not implement payroll here?
-
-Payroll should consume Employee and Roster evidence, not live inside Roster. Keeping payroll separate prevents scheduling logic from being mixed with financial calculations.
-
-### Why not implement attendance here?
-
-Roster is the planned schedule. Attendance is actual clock-in/out behavior. They are related, but they are different bounded contexts.
 
 ## Lessons Learned During Implementation
 
@@ -1123,76 +1067,13 @@ Tenant filtering is the SaaS data boundary. It is how the backend ensures one ho
 
 Because reassignment is a historical event. Supersession preserves the previous assignment, the replacement assignment, and the link between them.
 
-## Merge Checklist
+### Why not implement payroll here?
 
-### Before Merging
+Payroll should consume Employee and Roster evidence, not live inside these modules. Keeping payroll separate prevents scheduling and HR lifecycle logic from being mixed with financial calculations.
 
-- Pull latest main branch.
-- Sync schema updates.
-- Resolve Prisma schema conflicts.
-- Resolve shared contract conflicts.
-- Run Prisma generate.
-- Run Prisma migrations.
-- Build Turborepo.
-- Run tests.
-- Verify `JWT_SECRET`.
-- Verify `DATABASE_URL`.
+### Why not implement attendance here?
 
-Suggested command flow:
-
-```bash
-git pull origin main
-npm run db:generate
-npm run db:migrate
-npm run build
-```
-
-### After Merging
-
-- Verify employee routes.
-- Verify roster routes.
-- Verify migrations.
-- Verify assignment creation.
-- Verify audit insertion.
-- Verify route guards still return `401` without a token.
-
-Smoke checks:
-
-```bash
-curl -i http://localhost:3000/api/employees
-curl -i http://localhost:3000/api/roster/shifts
-```
-
-Expected unauthenticated result:
-
-```txt
-HTTP/1.1 401 Unauthorized
-```
-
-### Common Merge Failure Points
-
-Prisma conflicts:
-
-- Preserve employee lifecycle fields.
-- Preserve roster snapshot fields.
-- Preserve `RosterAssignmentHistory`.
-- Preserve the active-assignment partial unique index.
-
-Shared contract conflicts:
-
-- Keep `EmployeeCreateDTO.password`.
-- Do not reintroduce `passwordHash` as an API input.
-- Keep roster DTOs aligned with controller/service expectations.
-
-Auth conflicts:
-
-- JWT payload must still provide `sub`, `email`, `tenantId`, `role`, and `deptId`.
-- `@TenantId()` must continue reading from authenticated user context.
-
-Build/runtime conflicts:
-
-- Shared packages must keep compiled `dist` entrypoints.
-- Backend must bootstrap with `NestFactory.create(AppModule)`.
+Roster is the planned schedule. Attendance is the observed clock-in/clock-out reality. They are related, but they are different bounded contexts and should integrate through employee, device, and assignment records.
 
 ### Employee Update Lifecycle
 
@@ -4415,37 +4296,9 @@ These are the practical notes a maintainer should know. They are not conceptual 
 
 ## Scope Boundaries & Non-Implemented Systems
 
-The assigned implementation focuses on Employee and Shift/Roster runtime integration and domain behavior.
+The canonical scope list is at the top in `My Assigned Scope`. This section exists only to restate the boundary in design terms: these modules own employee truth and planned roster truth. They do not own observed attendance, payroll outcomes, reconciliation, notifications, leave approval, or reporting dashboards.
 
-Implemented in scope:
-
-- Employee management.
-- Employee create/update/status/department/device/soft-delete/restore flows.
-- Employee audit trail.
-- Shift template creation, listing, reading, updating, and deactivation.
-- Shift assignment, reassignment, and unassignment.
-- Tenant isolation for assigned modules.
-- RBAC and department-scoped scheduling access.
-- Assignment history.
-- Shift snapshot preservation.
-- Serializable transaction protection for roster edits.
-
-Not implemented here because they belong to adjacent bounded contexts:
-
-- Attendance ingestion.
-- Clock-in/clock-out processing.
-- Biometric device synchronization.
-- Payroll engine.
-- Overtime calculation engine.
-- Attendance reconciliation engine.
-- Notification delivery.
-- Real-time websocket scheduling updates.
-- Leave management.
-- Shift auto-generation or AI-assisted scheduling.
-- Reporting dashboards.
-- Auth login issuance and refresh-token lifecycle.
-
-Why these are separate:
+Why those are separate:
 
 - Attendance ingestion is event/telemetry heavy and has different throughput concerns.
 - Payroll has financial rules, period locking, and compliance requirements that deserve a separate bounded context.
@@ -5701,24 +5554,7 @@ Employee lifecycle changes affect access, payroll, department reporting, and sta
 
 Application logic checks for existing assignments, but concurrent requests can still race. The partial unique index makes the database enforce the invariant even if application logic misses a case.
 
-## 32. Architecture Defense Questions
-
-The detailed teammate-facing answers are in `Questions Teammates Will Probably Ask`. This short section is the presentation version: the answers to keep ready during supervisor review.
-
-| Question | Short answer |
-| --- | --- |
-| Why repositories? | They centralize tenant filters, projections, transactions, audit/history writes, and Prisma conflict mapping. |
-| Why services? | They keep business rules out of controllers and database code. |
-| Why serializable roster transactions? | Preventing duplicate active assignments is more important than maximizing write throughput. |
-| Why snapshots? | Historical assignments must keep the shift rules that existed when the schedule was created. |
-| Why supersession? | Reassignment is evidence; updating in place would erase the previous schedule. |
-| Why audit rows? | HR-sensitive changes need actor, before, after, and timestamp evidence. |
-| Why soft delete employees? | Historical roster, attendance, payroll, and audit references must remain intact. |
-| Why tenant filtering everywhere? | Tenant ID is the SaaS data boundary; every query must enforce it. |
-| Why not payroll here? | Payroll consumes roster/attendance evidence; it is a separate bounded context. |
-| Why not attendance here? | Roster is the plan; attendance is the observed reality. |
-
-## 33. Enterprise Readiness Assessment
+## 32. Enterprise Readiness Assessment
 
 ### Strengths
 
