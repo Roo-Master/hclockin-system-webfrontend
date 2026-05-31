@@ -1,67 +1,63 @@
-import { Request, Response } from "express";
-import { prisma } from "../../../config/prisma"; // adjust path if needed
-import { comparePassword } from "../utils/comparePassword";
-import { generateAccessToken } from "../utils/token/generateAccessToken";
-import { generateRefreshToken } from "../utils/token/generateRefreshToken";
-import { sendAuthResponse } from "../utils/sendAuthResponse";
+import { Injectable, UnauthorizedException } from "@nestjs/common";
+import { PrismaService } from "../../database/database.service";
+import { TokenService } from "../services/token.service";
+import * as bcrypt from "bcrypt";
 
-export const login = async (req: Request, res: Response) => {
-  try {
-    const { email, password } = req.body;
+@Injectable()
+export class Login {
+  constructor(
+    private prisma: PrismaService,
+    private tokenService: TokenService,
+  ) {}
 
-    const user = await prisma.user.findUnique({
-      where: { email },
+  async execute(dto: any, req?: any) {
+    const { tenantId, identifier, password } = dto;
+
+    const user = await this.prisma.user.findFirst({
+      where: {
+        tenantId,
+        OR: [
+          { email: identifier },
+          { payrollNumber: identifier },
+        ],
+      },
     });
 
     if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid credentials",
-      });
+      throw new UnauthorizedException("Invalid credentials");
     }
 
-    if (!user.isActive) {
-      return res.status(403).json({
-        success: false,
-        message: "Account is disabled",
-      });
-    }
-
-    const isPasswordValid = await comparePassword(
+    const isPasswordValid = await bcrypt.compare(
       password,
-      user.passwordHash
+      user.passwordHash,
     );
 
     if (!isPasswordValid) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid credentials",
-      });
+      throw new UnauthorizedException("Invalid credentials");
     }
 
-    const payload = {
-      userId: user.id,
-      role: user.role,
-      tenantId: user.tenantId,
-    };
+    const accessToken = this.tokenService.generateAccessToken(user);
+    const refreshToken = this.tokenService.generateRefreshToken(user);
 
-    const accessToken = generateAccessToken(payload);
-    const refreshToken = generateRefreshToken(payload);
-
-    const safeUser = {
-      id: user.id,
-      email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      role: user.role,
-      tenantId: user.tenantId,
-    };
-
-    return sendAuthResponse(res, safeUser, accessToken, refreshToken);
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Login failed",
+    await this.prisma.session.create({
+      data: {
+        userId: user.id,
+        refreshToken,
+        ipAddress: req?.ip,
+        userAgent: req?.headers?.["user-agent"],
+        expiresAt: this.tokenService.refreshExpiry(),
+      },
     });
+
+    return {
+      accessToken,
+      refreshToken,
+      user: this.sanitize(user),
+    };
   }
-};
+
+  private sanitize(user: any) {
+    const { passwordHash, otpCode, passwordResetToken, ...safe } = user;
+    return safe;
+  }
+}
