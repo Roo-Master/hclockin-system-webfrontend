@@ -8,6 +8,69 @@ For onboarding, read it top to bottom: it starts with assigned scope, then moves
 
 To reduce repetition, the handbook treats authentication, RBAC, tenant isolation, and repository layering as central reference concepts. Later sections may mention those ideas briefly, but the canonical explanations live in `Authentication & RBAC Flow`, `Multi-Tenancy Implementation`, `Dependency Injection & Provider Wiring`, and `Repository Layer Documentation`.
 
+## 5-Minute Overview
+
+This section is the quick handoff for a teammate who needs to understand the branch before reviewing or merging it.
+
+### Modules Owned
+
+- Employee Module.
+- Shift/Roster Module.
+
+### Core Responsibilities
+
+Employee Module:
+
+- Employee creation.
+- Employee updates.
+- Lifecycle management.
+- Role management.
+- Department assignment.
+- Device mapping.
+- Audit tracking.
+
+Roster Module:
+
+- Shift template management.
+- Shift assignment.
+- Reassignment.
+- Unassignment.
+- History tracking.
+- Shift snapshots.
+
+### Key Architectural Decisions
+
+- Repository Pattern: keeps Prisma access, tenant filtering, transactions, and conflict handling out of controllers/services.
+- Service Layer: keeps business rules, validation, RBAC policy, scheduling rules, and audit orchestration centralized.
+- Tenant Isolation: every relevant read/write is scoped to the authenticated tenant.
+- JWT Authentication: tenant/user/role context comes from verified token payload.
+- RBAC Authorization: route-level roles plus service-level role hierarchy and department checks.
+- Audit Trail: employee lifecycle changes and roster changes are recorded.
+- Assignment Supersession: reassignment closes old rows and creates replacement rows instead of mutating history.
+- Serializable Transactions: assignment writes prioritize correctness under concurrency.
+
+### Critical Invariants
+
+- Tenant filtering must always exist.
+- Employee audits must always be written for sensitive lifecycle changes.
+- Shift assignments must remain historically correct.
+- Active assignment uniqueness must be preserved.
+- Shift snapshots must never be removed.
+
+### Quick Runtime Flow
+
+```txt
+HTTP
+  -> Guard
+  -> Controller
+  -> Service
+  -> Repository
+  -> Prisma
+  -> PostgreSQL
+```
+
+If a future change bypasses one of these layers, check carefully whether it bypasses tenant filtering, RBAC, audit creation, history creation, or transaction safety.
+
 ## My Assigned Scope
 
 This implementation owns the Employee module and Shift/Roster module integration work. The rest of the platform may consume these modules, but this guide intentionally centers on what was implemented here.
@@ -96,6 +159,185 @@ This table is the fastest way for a teammate to understand where the implementat
 | `packages/types-common/package.json`, `packages/database/package.json`, `packages/database/tsconfig.json` | Package runtime/build entrypoint fixes for shared workspace packages. | Critical: without compiled `dist` entrypoints backend startup fails. |
 
 Before modifying any critical file, ask: does this preserve tenant isolation, auditability, role safety, and roster history?
+
+## How My Work Connects To The Rest Of The System
+
+This implementation creates module-level truth that adjacent modules can consume. It does not own the full workflow after scheduling or employee setup.
+
+### Employee Module Produces
+
+- Employee records.
+- Employment status.
+- Department/home-base information.
+- Roles.
+- Device mappings.
+- Audit history.
+
+How other modules use it:
+
+- Auth uses identity, role, tenant, and department context.
+- Attendance can use `devicePin` / `deviceUserId` to map device events to employees.
+- Payroll can use employee identity, hourly rate, employment status, and tenant context.
+- Reporting can aggregate employees by tenant, department, status, or role.
+
+### Roster Module Produces
+
+- Shift templates.
+- Active assignments.
+- Assignment history.
+- Shift snapshots.
+- Reassignment and cancellation evidence.
+
+How other modules use it:
+
+- Attendance can compare clock-in/out events against planned assignments.
+- Payroll can consume shift snapshots and assignment history to avoid recalculating old work from changed templates.
+- Reporting can show daily/monthly staffing coverage and scheduling changes.
+- Reconciliation can compare scheduled roster state with actual attendance outcomes.
+
+### Where My Responsibility Ends
+
+My modules stop at employee truth and planned schedule truth. They do not calculate attendance, payroll, overtime, reconciliation outcomes, notifications, reports, or analytics.
+
+```txt
+Employee Module
+  -> provides staff identity and lifecycle state
+
+Roster Module
+  -> provides planned schedule and history
+
+Attendance/Reconciliation/Payroll
+  -> consume that evidence and produce their own outcomes
+```
+
+If another module needs to know who an employee is, whether they are active, which device ID maps to them, or where they were scheduled, it should consume Employee/Roster records. If another module needs to change employee lifecycle or roster assignment state, it should go through these module pathways rather than writing directly to the underlying tables.
+
+## If You Need To Change Something
+
+This is the maintenance map for common future edits.
+
+### Modifying Employee Creation
+
+Read:
+
+- `apps/backend-api/src/employee/employee.controller.ts`
+- `apps/backend-api/src/employee/employee.service.ts`
+- `apps/backend-api/src/employee/employee.repository.ts`
+- `packages/types-common/src/api-contracts.ts`
+- `packages/database/prisma/schema/user.prisma`
+
+Understand:
+
+- RBAC checks.
+- Role hierarchy enforcement.
+- Tenant filtering.
+- Department ownership validation.
+- Password hashing.
+- Audit creation.
+- Response projection excluding `passwordHash`.
+
+Potential risks:
+
+- Role escalation.
+- Missing audits.
+- Tenant leakage.
+- Credential handling regression.
+- Frontend/backend contract mismatch.
+
+### Modifying Employee Updates Or Lifecycle
+
+Read:
+
+- `employee.service.ts`
+- `employee.repository.ts`
+- `role-policy.ts`
+- `user.prisma`
+
+Understand:
+
+- `update()` handles profile/role updates.
+- `updateStatus()` handles employment status transitions.
+- `softDelete()` marks employees terminated without deleting rows.
+- `restore()` is an explicit HR/admin workflow.
+- Audit rows are part of the same transaction as the mutation.
+
+Potential risks:
+
+- Employees restored through the wrong path.
+- Soft-deleted employees appearing in normal lists.
+- Lifecycle changes without audit evidence.
+- Department-scoped actors editing employees outside their scope.
+
+### Modifying Shift Assignment
+
+Read:
+
+- `apps/backend-api/src/roster/roster.controller.ts`
+- `apps/backend-api/src/roster/roster.service.ts`
+- `apps/backend-api/src/roster/roster.repository.ts`
+- `packages/database/prisma/schema/roster.prisma`
+- Employee/Roster migration SQL that creates the partial unique index.
+
+Understand:
+
+- Supersession logic.
+- Shift snapshots.
+- Serializable transactions.
+- Active assignment lookup.
+- History creation.
+- Department scheduling restrictions.
+
+Potential risks:
+
+- Duplicate active assignments.
+- Payroll inconsistencies.
+- History corruption.
+- Lost reassignment evidence.
+- Broken department scheduling boundaries.
+
+### Modifying Authentication
+
+Read:
+
+- `apps/backend-api/src/common/auth/jwt-auth.guard.ts`
+- `apps/backend-api/src/common/auth/roles.guard.ts`
+- `apps/backend-api/src/common/auth/role-policy.ts`
+- `apps/backend-api/src/common/auth/current-user.decorator.ts`
+
+Understand:
+
+- `request.user` is created by `JwtAuthGuard`.
+- `RolesGuard` depends on `request.user.role`.
+- `@CurrentUser()` is used for actor/audit attribution.
+- `role-policy.ts` enforces domain-specific role hierarchy.
+
+Potential risks:
+
+- Privilege escalation.
+- Missing actor attribution.
+- Broken route-level authorization.
+- Department-scoped access bypass.
+
+### Modifying Tenant Logic
+
+Read:
+
+- `apps/backend-api/src/common/tenant/tenant-id.decorator.ts`
+- `apps/backend-api/src/common/auth/jwt-auth.guard.ts`
+- `apps/backend-api/src/common/tenant/tenant-context.service.ts`
+- Employee and Roster repositories.
+
+Understand:
+
+- Tenant ID must come from authenticated context.
+- Repositories should receive tenant ID explicitly.
+- Tenant filters are the data isolation boundary.
+
+Potential risks:
+
+- Cross-tenant data leakage.
+- Broken SaaS isolation.
+- Tests passing with single tenant but failing in production multi-tenant scenarios.
 
 ## Critical Logic That Must Not Be Broken
 
@@ -750,6 +992,207 @@ Payroll should consume Employee and Roster evidence, not live inside Roster. Kee
 ### Why not implement attendance here?
 
 Roster is the planned schedule. Attendance is actual clock-in/out behavior. They are related, but they are different bounded contexts.
+
+## Lessons Learned During Implementation
+
+These are the practical observations that shaped the final implementation.
+
+- The repository pattern increased file count, but it made tenant filtering, transactions, projections, and audit/history writes much easier to review.
+- Business rules became easier to reason about once they lived in services instead of controllers. Controllers now mostly extract request context and delegate.
+- Assignment history cannot be reconstructed reliably if assignments are mutated directly. Once an old value is overwritten, the original schedule is gone unless history was written first.
+- Shift snapshots were required because templates can change over time. Payroll and reconciliation need the shift rules from the assignment date, not the current template configuration.
+- Tenant IDs should only come from authenticated context. Accepting tenant IDs from request bodies or arbitrary headers would make cross-tenant spoofing easier.
+- Database constraints are more trustworthy than service validation alone. The active-assignment partial unique index protects the invariant even during concurrent requests.
+- Serializable transactions reduced concurrency risk but introduced retry scenarios. That is a reasonable tradeoff for roster writes because conflicting schedules are worse than asking one user to retry.
+- Audit rows should be written in the same transaction as the change they describe. Separate audit writes can drift from reality when failures happen midway.
+- Shared interface DTOs are convenient for frontend/backend reuse, but they do not replace runtime validation. The explicit validation helpers exist for that reason.
+
+## Common Integration Mistakes
+
+### Removing Tenant Filters
+
+Impact:
+
+- Cross-tenant data exposure.
+- Unauthorized mutation of another hospital’s records.
+
+Why it happens:
+
+- A developer sees `id` as globally unique and forgets that tenant filtering is a security invariant, not just a lookup convenience.
+
+### Writing Directly To Prisma From Controllers
+
+Impact:
+
+- Business rules bypassed.
+- Audit writes skipped.
+- Role hierarchy and department restrictions may not run.
+
+Safe path:
+
+```txt
+Controller -> Service -> Repository -> Prisma
+```
+
+### Updating Assignments Instead Of Superseding Them
+
+Impact:
+
+- Historical integrity broken.
+- Reassignment trail lost.
+- Payroll/reconciliation cannot explain how a schedule changed.
+
+Safe path:
+
+- Mark old assignment superseded.
+- Create new assignment.
+- Link old to new.
+- Insert history.
+
+### Removing Shift Snapshots
+
+Impact:
+
+- Payroll and reconciliation become inaccurate when shift templates change.
+- Historical assignments become dependent on mutable configuration.
+
+### Skipping Audit Writes
+
+Impact:
+
+- Employee lifecycle changes become untraceable.
+- HR investigations lose actor/before/after evidence.
+
+### Ignoring Shared Contracts
+
+Impact:
+
+- Frontend and backend contract drift.
+- Runtime payloads no longer match service expectations.
+- DTO build may pass in one package and fail in another.
+
+### Reintroducing Client-Provided Password Hashes
+
+Impact:
+
+- Server loses control over hashing algorithm and cost factor.
+- Credential handling becomes inconsistent.
+
+Safe path:
+
+- Accept raw password over HTTPS.
+- Hash server-side.
+- Store only `passwordHash`.
+- Never return `passwordHash`.
+
+## Frequently Asked Team Questions
+
+### Why use repositories?
+
+Repositories keep database behavior in one place: tenant filters, Prisma transactions, projections, conflict mapping, and audit/history writes.
+
+### Why not query Prisma directly?
+
+Direct Prisma access from controllers or unrelated services can bypass business rules. Employee/Roster writes should go through the service/repository path so validation, RBAC, tenant filtering, and audit/history remain intact.
+
+### Why use serializable transactions?
+
+Roster assignment conflicts are operationally expensive. Serializable transactions reduce the risk of two planners creating conflicting active assignments for the same employee/date.
+
+### Why snapshot shift data?
+
+Because shift templates can change. Snapshots preserve the shift rules that existed when the assignment was created.
+
+### Why create audit records?
+
+Because employee lifecycle changes affect HR, access control, scheduling, payroll, and investigations. The system needs actor, before, after, and timestamp evidence.
+
+### Why use soft delete?
+
+Employees are referenced by roster, attendance, payroll, audit, and reports. Soft delete preserves history while removing the employee from normal active workflows.
+
+### Why not hard delete employees?
+
+Hard deletion can break foreign keys and destroy historical evidence.
+
+### Why tenant-filter every query?
+
+Tenant filtering is the SaaS data boundary. It is how the backend ensures one hospital cannot see or mutate another hospital’s records.
+
+### Why supersede assignments instead of updating them?
+
+Because reassignment is a historical event. Supersession preserves the previous assignment, the replacement assignment, and the link between them.
+
+## Merge Checklist
+
+### Before Merging
+
+- Pull latest main branch.
+- Sync schema updates.
+- Resolve Prisma schema conflicts.
+- Resolve shared contract conflicts.
+- Run Prisma generate.
+- Run Prisma migrations.
+- Build Turborepo.
+- Run tests.
+- Verify `JWT_SECRET`.
+- Verify `DATABASE_URL`.
+
+Suggested command flow:
+
+```bash
+git pull origin main
+npm run db:generate
+npm run db:migrate
+npm run build
+```
+
+### After Merging
+
+- Verify employee routes.
+- Verify roster routes.
+- Verify migrations.
+- Verify assignment creation.
+- Verify audit insertion.
+- Verify route guards still return `401` without a token.
+
+Smoke checks:
+
+```bash
+curl -i http://localhost:3000/api/employees
+curl -i http://localhost:3000/api/roster/shifts
+```
+
+Expected unauthenticated result:
+
+```txt
+HTTP/1.1 401 Unauthorized
+```
+
+### Common Merge Failure Points
+
+Prisma conflicts:
+
+- Preserve employee lifecycle fields.
+- Preserve roster snapshot fields.
+- Preserve `RosterAssignmentHistory`.
+- Preserve the active-assignment partial unique index.
+
+Shared contract conflicts:
+
+- Keep `EmployeeCreateDTO.password`.
+- Do not reintroduce `passwordHash` as an API input.
+- Keep roster DTOs aligned with controller/service expectations.
+
+Auth conflicts:
+
+- JWT payload must still provide `sub`, `email`, `tenantId`, `role`, and `deptId`.
+- `@TenantId()` must continue reading from authenticated user context.
+
+Build/runtime conflicts:
+
+- Shared packages must keep compiled `dist` entrypoints.
+- Backend must bootstrap with `NestFactory.create(AppModule)`.
 
 ### Employee Update Lifecycle
 
@@ -5321,3 +5764,51 @@ High. The modules are understandable because controller, service, repository, sc
 Good to strong. This is not just prototype code; it has production-shaped concerns. The remaining work is less about rewriting the modules and more about operational hardening: tests, tracing, retry behavior, template versioning, and integration with adjacent systems.
 
 Final view: the implementation is a solid enterprise foundation. It does not pretend to solve the entire hospital workforce platform, and that restraint is part of its quality. It defines the core truths for staff identity and scheduling, protects them with tenant/RBAC/audit boundaries, and leaves payroll, attendance, reconciliation, notifications, and reporting to their own bounded contexts.
+
+## Executive Summary
+
+### Implemented
+
+✓ Employee Management  
+✓ Employee Lifecycle  
+✓ Role Controls  
+✓ Department Assignment  
+✓ Device Mapping  
+✓ Audit Infrastructure  
+✓ Shift Templates  
+✓ Shift Assignment  
+✓ Shift Reassignment  
+✓ Shift Unassignment  
+✓ Assignment History  
+✓ Shift Snapshots  
+✓ JWT Security  
+✓ RBAC  
+✓ Tenant Isolation  
+
+### Out Of Scope
+
+✗ Attendance Engine  
+✗ Payroll Engine  
+✗ Leave Management  
+✗ Notifications  
+✗ Reporting  
+✗ Analytics  
+
+### Most Important Files
+
+- `apps/backend-api/src/employee/employee.service.ts`
+- `apps/backend-api/src/employee/employee.repository.ts`
+- `apps/backend-api/src/roster/roster.service.ts`
+- `apps/backend-api/src/roster/roster.repository.ts`
+
+### Most Important Business Rules
+
+- Tenant isolation.
+- Audit creation.
+- Assignment uniqueness.
+- Assignment supersession.
+- Historical integrity.
+
+### Final Goal
+
+Ensure Employee and Shift/Roster data remain secure, auditable, tenant-isolated, and historically correct for future Attendance, Reconciliation, Payroll, and Reporting modules to consume safely.
