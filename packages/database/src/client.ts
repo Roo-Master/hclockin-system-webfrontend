@@ -1,14 +1,26 @@
 // Location: packages/database/src/client.ts
-import { PrismaClient } from '@prisma/client'; // 🛡️ FIX: Import from the global path
+import { PrismaClient } from '@prisma/client';
 
+// Declare type safety bindings cleanly atop the global runtime namespace
 declare global {
-  var prisma: PrismaClient | undefined;
+  interface typeofThis {
+    prismaInstance?: PrismaClient;
+  }
 }
 
-export const db = globalThis.prisma || new PrismaClient({
-  log: process.env.NODE_ENV === 'production' ? ['error'] : ['query', 'error', 'warn'],
+const localGlobal = globalThis as unknown as { prismaInstance?: PrismaClient };
+
+/**
+ * Shared Monorepo Infrastructure Connection Singleton Pool.
+ * Configured defensively to prevent socket exhaustion during local dev hot-reloads.
+ */
+export const db = localGlobal.prismaInstance || new PrismaClient({
+  log: process.env.NODE_ENV === 'production' 
+    ? ['error'] 
+    : ['query', 'error', 'warn'],
 });
 
-if (process.env.NODE_ENV !== 'production') globalThis.prisma = db;
-
-export * from '@prisma/client'; // 🛡️ FIX: Export types from the global path
+// Cache the active baseline engine socket reference context during non-production runs
+if (process.env.NODE_ENV !== 'production') {
+  localGlobal.prismaInstance = db;
+}
