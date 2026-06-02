@@ -33,6 +33,9 @@
   },
   "packageManager": "npm@10.0.0",
   "dependencies": {
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.15.1",
+    "next": "^16.2.7"
     "@nestjs/passport": "^11.0.5",
     "bcrypt": "^6.0.0",
     "class-transformer": "^0.5.1",
