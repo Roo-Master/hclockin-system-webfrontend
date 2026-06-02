@@ -1,5 +1,5 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { DatabaseService } from '../database/database.service';
+import { PrismaService } from '../database/prisma.service';
 
 export interface EmployeeListFilters {
   search?: string;
@@ -14,7 +14,7 @@ export interface EmployeeListFilters {
 
 @Injectable()
 export class EmployeeRepository {
-  constructor(private readonly database: DatabaseService) {}
+  constructor(private readonly database: PrismaService) {}
 
   async list(tenantId: string, filters: EmployeeListFilters) {
     const where: any = {

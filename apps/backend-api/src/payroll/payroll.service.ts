@@ -1,9 +1,9 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { DatabaseService } from '../database/database.service';
+import { PrismaService } from '../database/prisma.service';
 
 @Injectable()
 export class PayrollService {
-  constructor(private readonly db: DatabaseService) {}
+  constructor(private readonly db: PrismaService) {}
 
   async createPeriod(tenantId: string, name: string, startDate: string, endDate: string) {
     return this.db.payrollPeriod.create({

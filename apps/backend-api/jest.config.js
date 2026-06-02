@@ -1,4 +1,8 @@
 // Location: apps/backend-api/jest.config.js
+const path = require('path');
+
+// Step up to apps/, step up to root, step down to packages/database/.env
+require('dotenv').config({ path: path.resolve(__dirname, '../../packages/database/.env') });
 
 /** @type {import('jest').Config} */
 module.exports = {
