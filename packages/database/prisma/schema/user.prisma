@@ -1,4 +1,9 @@
-// Location: packages/database/prisma/schema/user.prisma
+enum Role {
+  SUPER_ADMIN
+  HOSPITAL_ADMIN
+  DEPT_HEAD
+  EMPLOYEE
+}
 
 model User {
   id               String  @id @default(uuid()) @db.Uuid
@@ -39,7 +44,7 @@ model User {
   rosterAssignmentHistories RosterAssignmentHistory[]
   notificationLogs          NotificationLog[]
 
-  // Enforces data validation boundaries isolated securely per hospital tenant
+
   @@unique([tenantId, email])
   @@unique([tenantId, payrollNumber])
   @@unique([tenantId, devicePin])
