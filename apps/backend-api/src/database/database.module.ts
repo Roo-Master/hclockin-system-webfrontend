@@ -1,10 +1,11 @@
 // Location: apps/backend/src/database/database.module.ts
 import { Module, Global } from '@nestjs/common';
 import { PrismaService } from './prisma.service';
+import { DatabaseService } from './database.service';
 
 @Global()
 @Module({
-  providers: [PrismaService],
-  exports: [PrismaService],
+  providers: [PrismaService, DatabaseService],
+  exports: [PrismaService, DatabaseService],
 })
 export class DatabaseModule {}

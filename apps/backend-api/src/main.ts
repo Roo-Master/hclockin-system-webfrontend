@@ -1,3 +1,15 @@
+<<<<<<< HEAD
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+  app.enableCors();
+  await app.listen(3001);
+  console.log('🚀 Backend API running on http://localhost:3001');
+}
+
+=======
 // Location: backend-api/src/main.ts
 import { NestFactory } from '@nestjs/core'; // 🛡️ CRITICAL: This line fixes the error
 import { AppModule } from './app.module';
@@ -13,4 +25,5 @@ async function bootstrap() {
   await app.listen(3001);
   console.log('🚀 NestJS Backend API running safely on http://localhost:3001');
 }
+>>>>>>> origin/main
 bootstrap();
