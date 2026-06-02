@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 
-import { db } from '@chronos/database';
+import { PrismaService } from '../database/prisma.service';
 import { UserRole } from '@chronos/types-common';
 
 import { CreateDepartmentDto } from './dto/create-department.dto';
@@ -12,10 +12,11 @@ import { UpdateDepartmentDto } from './dto/update-department.dto';
 
 @Injectable()
 export class DepartmentService {
+  constructor(private readonly prisma: PrismaService) {}
 
   // CREATE
   async create(dto: CreateDepartmentDto, tenantId: string) {
-    const exists = await db.department.findFirst({
+    const exists = await this.prisma.client.department.findFirst({
       where: { tenantId, code: dto.code },
     });
 
@@ -25,7 +26,7 @@ export class DepartmentService {
       );
     }
 
-    return db.department.create({
+    return this.prisma.client.department.create({
       data: {
         tenantId,
         name: dto.name,
@@ -48,7 +49,7 @@ export class DepartmentService {
     }
 
     if (dto.code && dto.code !== department.code) {
-      const existingDepartment = await db.department.findFirst({
+      const existingDepartment = await this.prisma.client.department.findFirst({
         where: { tenantId, code: dto.code },
       });
 
@@ -57,7 +58,7 @@ export class DepartmentService {
       }
     }
 
-    return db.department.update({
+    return this.prisma.client.department.update({
       where: { id: departmentId },
       data: {
         ...(dto.name && { name: dto.name }),
@@ -69,7 +70,7 @@ export class DepartmentService {
 
   // LIST
   async listDepartments(tenantId: string) {
-    return db.department.findMany({
+    return this.prisma.client.department.findMany({
       where: { tenantId },
       orderBy: { createdAt: 'desc' },
     });
@@ -83,7 +84,7 @@ export class DepartmentService {
       throw new BadRequestException('Unauthorized');
     }
 
-    return db.department.delete({
+    return this.prisma.client.department.delete({
       where: { id: departmentId },
     });
   }
@@ -95,7 +96,7 @@ export class DepartmentService {
 
     this.assertTenantMatch(department.tenantId, user.tenantId);
 
-    return db.user.update({
+    return this.prisma.client.user.update({
       where: { id: userId },
       data: {
         departmentId,
@@ -111,7 +112,7 @@ export class DepartmentService {
 
     this.assertTenantMatch(department.tenantId, user.tenantId);
 
-    return db.user.update({
+    return this.prisma.client.user.update({
       where: { id: userId },
       data: {
         departmentId,
@@ -124,20 +125,20 @@ export class DepartmentService {
   async listDepartmentStaff(departmentId: string) {
     await this.getDepartmentOrThrow(departmentId);
 
-    return db.user.findMany({
+    return this.prisma.client.user.findMany({
       where: { departmentId },
     });
   }
 
   // HELPERS
   private async getDepartmentOrThrow(id: string) {
-    const dept = await db.department.findUnique({ where: { id } });
+    const dept = await this.prisma.client.department.findUnique({ where: { id } });
     if (!dept) throw new NotFoundException('Department not found');
     return dept;
   }
 
   private async getUserOrThrow(id: string) {
-    const user = await db.user.findUnique({ where: { id } });
+    const user = await this.prisma.client.user.findUnique({ where: { id } });
     if (!user) throw new NotFoundException('User not found');
     return user;
   }
