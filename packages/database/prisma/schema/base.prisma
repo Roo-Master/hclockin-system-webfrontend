@@ -1,5 +1,3 @@
-// Location: packages/database/prisma/schema/base.prisma
-
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -7,8 +5,8 @@ datasource db {
 
 generator client {
   provider        = "prisma-client-js"
-  previewFeatures = ["prismaSchemaFolder"]
-  output          = "../../../../node_modules/.prisma/client"
+  //previewFeatures = ["prismaSchemaFolder"]
+  //output          = "../../src/generated/client"
 }
 
 enum UserRole {
@@ -33,13 +31,11 @@ enum ShiftStatus {
   GHOST_SESSION
 }
 
-// Append to: packages/database/prisma/schema/base.prisma
-
 enum ShiftType {
-  MORNING // e.g., 06:00 - 14:00
-  AFTERNOON // e.g., 14:00 - 22:00
-  NIGHT // e.g., 22:00 - 06:00 (Crosses midnight boundary)
-  CUSTOM // Special ad-hoc on-call or emergency tracking
+  MORNING   
+  AFTERNOON 
+  NIGHT     
+  CUSTOM    
 }
 
 enum DayOfWeek {

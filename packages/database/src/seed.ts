@@ -1,8 +1,5 @@
 // Location: packages/database/prisma/seed.ts
-
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { db as prisma } from '../src/client'; // 🛡️ Link to the hot-reload protected singleton
 
 async function main() {
   console.log('🚀 Starting system data seeding loop...');
@@ -57,7 +54,6 @@ async function main() {
   // ==========================================
   console.log('🏥 Seeding Department Structures...');
   
-  // ICU: High-intensity, zero tolerance rules
   const icuDept = await prisma.department.upsert({
     where: { tenantId_code: { tenantId: tenant.id, code: 'ICU' } },
     update: {},
@@ -68,12 +64,11 @@ async function main() {
       rules: {
         gracePeriodMinutes: 0,
         autoDeductBreakMinutes: 30,
-        nightPremiumRate: 0.15, // +15% hourly rate premium for ICU nights
+        nightPremiumRate: 0.15,
       },
     },
   });
 
-  // OPD: Standard administrative/clinical rules
   const opdDept = await prisma.department.upsert({
     where: { tenantId_code: { tenantId: tenant.id, code: 'OPD' } },
     update: {},
@@ -94,7 +89,6 @@ async function main() {
   // ==========================================
   console.log('👥 Seeding User Directory...');
   
-  // Administrator
   const adminUser = await prisma.user.upsert({
     where: { tenantId_email: { tenantId: tenant.id, email: 'admin@stteresa.or.ke' } },
     update: {},
@@ -112,7 +106,6 @@ async function main() {
     },
   });
 
-  // ICU Matron (Department Head)
   const icuHead = await prisma.user.upsert({
     where: { tenantId_email: { tenantId: tenant.id, email: 'matron.mercy@stteresa.or.ke' } },
     update: {},
@@ -130,13 +123,12 @@ async function main() {
     },
   });
 
-  // Clinical Floating Nurse (Our dynamic core test case)
   const floatingNurse = await prisma.user.upsert({
     where: { tenantId_email: { tenantId: tenant.id, email: 'nurse.mwangi@stteresa.or.ke' } },
     update: {},
     create: {
       tenantId: tenant.id,
-      departmentId: opdDept.id, // Primary home base contract is OPD
+      departmentId: opdDept.id,
       payrollNumber: 'STTR-204',
       firstName: 'David',
       lastName: 'Mwangi',
@@ -144,7 +136,7 @@ async function main() {
       passwordHash: '$2b$10$eFzMWW8.NreT6PZ2MDRYfO7zR1U6H.L0G26u4bZ0W3w1g4vK7V1S6',
       role: 'EMPLOYEE',
       hourlyRate: 450.00,
-      devicePin: '1002', // This hardcoded PIN is tracked inside on-prem physical scanner storage
+      devicePin: '1002',
     },
   });
 
@@ -182,7 +174,6 @@ async function main() {
     },
   });
 
-  // TEST SCENARIO: Assign the OPD-contracted floating nurse to work today's shift inside the ICU
   const todayString = new Date().toISOString().split('T')[0];
   const existingRosterAssignment = await prisma.rosterAssignment.findFirst({
     where: {
@@ -198,10 +189,10 @@ async function main() {
     data: {
       tenantId: tenant.id,
       userId: floatingNurse.id,
-      departmentId: icuDept.id, // FLOATED INTERNALLY TO ICU FOR THE DAY
+      departmentId: icuDept.id,
       shiftTemplateId: dayShiftTemplate.id,
       date: new Date(todayString),
-      overriddenHourlyRate: 500.00, // Clinician gets an extra Ksh 50/hr premium rate for covering ICU
+      overriddenHourlyRate: 500.00,
       status: 'UNVERIFIED',
       startTimeSnapshot: dayShiftTemplate.startTime,
       endTimeSnapshot: dayShiftTemplate.endTime,
@@ -216,7 +207,6 @@ async function main() {
   // ==========================================
   console.log('⏰ Seeding Asynchronous Hardware Attendance Logs...');
   
-  // Clock In: 06:58 AM (Under the 07:00 target threshold)
   const clockInTimestamp = new Date(`${todayString}T06:58:12Z`);
   await prisma.attendanceLog.upsert({
     where: {
@@ -238,7 +228,6 @@ async function main() {
     },
   });
 
-  // Clock Out: 19:02 PM
   const clockOutTimestamp = new Date(`${todayString}T19:02:44Z`);
   await prisma.attendanceLog.upsert({
     where: {
@@ -350,7 +339,7 @@ async function main() {
       tenantId: tenant.id,
       periodId: payrollPeriod.id,
       employeeId: floatingNurse.id,
-      hourlyRate: 500.00, // Reads from the overridden roster scale
+      hourlyRate: 500.00,
       regularHoursWorked: 168.00,
       overtimeHoursWorked: 8.00,
       baseSalary: 84000.00,
@@ -379,7 +368,5 @@ main()
   .catch((e) => {
     console.error('❌ Critical failure detected in seed loop:', e);
     process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
   });
+  // 🚀 CLEAN: Disconnect hook is entirely handled by the runtime lifecycle of the singleton!
