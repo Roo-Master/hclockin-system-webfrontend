@@ -4,13 +4,6 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "private": true,
-  "files": [
-    "dist"
-  ],
-  "scripts": {
-    "build": "tsc",
-    "db:generate": "prisma generate",
-    "db:seed": "ts-node src/seed.ts"
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -28,16 +21,6 @@
     "clean": "rm -rf dist tsconfig.tsbuildinfo .turbo"
   },
   "dependencies": {
-    "@prisma/client": "^5.22.0",
-    "express-rate-limit": "^8.5.2",
-    "nodemailer": "^8.0.8",
-    "zod": "^4.4.3"
-  },
-  "devDependencies": {
-    "@types/node": "^25.9.1",
-    "prisma": "^5.22.0",
-    "ts-node": "^10.9.0",
-    "typescript": "^5.0.0"
     "@prisma/client": "^6.19.3"
   },
   "devDependencies": {
