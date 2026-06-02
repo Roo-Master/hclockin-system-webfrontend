@@ -1,16 +1,16 @@
 // Location: packages/database/prisma/schema/attendance.prisma
 
 model AttendanceLog {
-  id                 String   @id @default(uuid()) @db.Uuid
-  tenantId           String   @map("tenant_id") @db.Uuid
-  userId             String   @map("user_id") @db.Uuid
-  deviceId           String   @map("device_id") @db.Uuid
-  rosterAssignmentId String?  @map("roster_assignment_id") @db.Uuid
-  direction          String   @db.VarChar(10) // "IN" | "OUT"
-  
+  id                 String  @id @default(uuid()) @db.Uuid
+  tenantId           String  @map("tenant_id") @db.Uuid
+  userId             String  @map("user_id") @db.Uuid
+  deviceId           String  @map("device_id") @db.Uuid
+  rosterAssignmentId String? @map("roster_assignment_id") @db.Uuid
+  direction          String  @db.VarChar(10) // "IN" | "OUT"
+
   /// Captured straight from the hardware clock terminal to prevent data corruption during network retry lag
-  timestamp          DateTime @map("timestamp") @db.Timestamptz(6)
-  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  timestamp DateTime @map("timestamp") @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
   // Relationships
   tenant           Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -21,7 +21,6 @@ model AttendanceLog {
   /// CRITICAL FOR ASSURED IDEMPOTENCY:
   /// Prevents duplicate entries when the Go gateway pushes cached local logs back up following internet connectivity restoration.
   @@unique([userId, deviceId, direction, timestamp])
-  
   @@index([tenantId, timestamp])
   @@index([userId])
   @@map("attendance_logs")

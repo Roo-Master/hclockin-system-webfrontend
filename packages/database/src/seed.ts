@@ -175,10 +175,18 @@ async function main() {
   });
 
   const todayString = new Date().toISOString().split('T')[0];
-  const rosterAssignment = await prisma.rosterAssignment.upsert({
-    where: { userId_date: { userId: floatingNurse.id, date: new Date(todayString) } },
-    update: {},
-    create: {
+  const existingRosterAssignment = await prisma.rosterAssignment.findFirst({
+    where: {
+      tenantId: tenant.id,
+      userId: floatingNurse.id,
+      date: new Date(todayString),
+      status: { not: 'CANCELLED' },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  const rosterAssignment = existingRosterAssignment ?? await prisma.rosterAssignment.create({
+    data: {
       tenantId: tenant.id,
       userId: floatingNurse.id,
       departmentId: icuDept.id,
@@ -186,6 +194,11 @@ async function main() {
       date: new Date(todayString),
       overriddenHourlyRate: 500.00,
       status: 'UNVERIFIED',
+      startTimeSnapshot: dayShiftTemplate.startTime,
+      endTimeSnapshot: dayShiftTemplate.endTime,
+      gracePeriodSnapshot: dayShiftTemplate.gracePeriodMinutes,
+      overtimeThresholdSnapshot: dayShiftTemplate.overtimeThresholdMinutes,
+      overnightSnapshot: dayShiftTemplate.isOvernight,
     },
   });
 
