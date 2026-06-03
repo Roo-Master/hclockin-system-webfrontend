@@ -1,51 +1,17 @@
-import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const logger = new Logger('Bootstrap');
-  const port = Number(process.env.PORT ?? 5000);
-
   const app = await NestFactory.create(AppModule);
 
-  app.enableCors();
-  app.useGlobalPipes(new ValidationPipe({
-    whitelist: true,
-    transform: true,
-    forbidNonWhitelisted: true,
-  }));
+  app.enableCors({
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+  });
 
+  const port = process.env.PORT || 3001;
   await app.listen(port);
-
-  logger.log(`Backend API listening on port ${port}`);
-  logger.log('Routes use controller-level /api prefixes; no global prefix is configured.');
+  console.log(`Hospital Chronos API running on http://localhost:${port}`);
 }
 
-bootstrap().catch((error) => {
-  const logger = new Logger('Bootstrap');
-  logger.error('Backend API failed to start', error instanceof Error ? error.stack : String(error));
-  process.exit(1);
-});
-  const app = await NestFactory.create(AppModule);
-  app.enableCors();
-  await app.listen(3001);
-  console.log('🚀 Backend API running on http://localhost:3001');
-}
-
-// Location: backend-api/src/main.ts
-import { NestFactory } from '@nestjs/core'; // 🛡️ CRITICAL: This line fixes the error
-import { AppModule } from './app.module';
-import { TenantInterceptor } from './database/tenant.interceptor';
-
-async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-  
-  // Enforce data isolation globally across all request endpoints
-  app.useGlobalInterceptors(new TenantInterceptor());
-  
-  // Run backend explicitly on port 3001 to avoid Next.js port 3000 collisions
-  await app.listen(3001);
-  console.log('🚀 NestJS Backend API running safely on http://localhost:3001');
-}
 bootstrap();
-

@@ -4,7 +4,7 @@ import {
   BadRequestException,
   NotFoundException,
 } from '@nestjs/common';
-import { DatabaseService } from '../database/database.service';
+import { PrismaService } from '../database/prisma.service';
 import { QueueService } from '../queue/queue.service';
 import { Prisma } from '@chronos/database';
 import { AttendanceStatus } from '@chronos/database';
@@ -37,7 +37,7 @@ export class AttendanceService {
   private readonly logger = new Logger(AttendanceService.name);
 
   constructor(
-    private readonly db: DatabaseService,
+    private readonly db: PrismaService,
     private readonly queue: QueueService,
   ) {}
 

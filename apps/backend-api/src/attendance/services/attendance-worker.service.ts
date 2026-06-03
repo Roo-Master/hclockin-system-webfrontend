@@ -1,6 +1,6 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { QueueService } from '../../queue/queue.service';
-import { DatabaseService } from '../../database/database.service';
+import { PrismaService } from '../../database/prisma.service';
 import { AttendanceProcessorService } from './attendance-processor.service';
 
 @Injectable()
@@ -9,7 +9,7 @@ export class AttendanceWorkerService implements OnModuleInit {
 
   constructor(
     private readonly queue: QueueService,
-    private readonly db: DatabaseService,
+    private readonly db: PrismaService,
     private readonly processor: AttendanceProcessorService,
   ) {}
 

@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { set } from 'date-fns';
-import { DatabaseService } from '../../database/database.service';
+import { PrismaService } from '../../database/prisma.service';
 import { LeaveService } from '../../leave/leave.service';
 
 @Injectable()
@@ -8,7 +8,7 @@ export class AttendanceProcessorService {
   private readonly logger = new Logger(AttendanceProcessorService.name);
 
   constructor(
-    private readonly databaseService: DatabaseService,
+    private readonly PrismaService: PrismaService,
     private readonly leaveService: LeaveService,
   ) {}
 
@@ -43,7 +43,7 @@ export class AttendanceProcessorService {
     endOfDay.setHours(23, 59, 59, 999);
 
     // 1. Find roster assignment for this user on this date
-    const roster = await this.databaseService.rosterAssignment.findFirst({
+    const roster = await this.PrismaService.rosterAssignment.findFirst({
       where: {
         userId,
         tenantId,
