@@ -1,8 +1,5 @@
 // Location: packages/database/prisma/seed.ts
-
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { db as prisma } from '../src/client';
 
 async function main() {
   console.log('🚀 Starting system data seeding loop...');
@@ -16,6 +13,7 @@ async function main() {
     update: {},
     create: {
       name: 'St. Teresa Referral Hospital',
+      slug: 'st-teresa-referral-hospital', // ✨ Fixed: Added missing required slug property
       subdomain: 'st-teresa',
       licenseKey: 'CHRONOS-L4-STTERESA-99281-X',
       isActive: true,
@@ -57,7 +55,6 @@ async function main() {
   // ==========================================
   console.log('🏥 Seeding Department Structures...');
   
-  // ICU: High-intensity, zero tolerance rules
   const icuDept = await prisma.department.upsert({
     where: { tenantId_code: { tenantId: tenant.id, code: 'ICU' } },
     update: {},
@@ -68,12 +65,11 @@ async function main() {
       rules: {
         gracePeriodMinutes: 0,
         autoDeductBreakMinutes: 30,
-        nightPremiumRate: 0.15, // +15% hourly rate premium for ICU nights
+        nightPremiumRate: 0.15,
       },
     },
   });
 
-  // OPD: Standard administrative/clinical rules
   const opdDept = await prisma.department.upsert({
     where: { tenantId_code: { tenantId: tenant.id, code: 'OPD' } },
     update: {},
@@ -94,7 +90,6 @@ async function main() {
   // ==========================================
   console.log('👥 Seeding User Directory...');
   
-  // Administrator
   const adminUser = await prisma.user.upsert({
     where: { tenantId_email: { tenantId: tenant.id, email: 'admin@stteresa.or.ke' } },
     update: {},
@@ -105,14 +100,13 @@ async function main() {
       firstName: 'Joseph',
       lastName: 'Karanja',
       email: 'admin@stteresa.or.ke',
-      passwordHash: '$2b$10$eFzMWW8.NreT6PZ2MDRYfO7zR1U6H.L0G26u4bZ0W3w1g4vK7V1S6', // Admin123!
+      passwordHash: '$2b$10$eFzMWW8.NreT6PZ2MDRYfO7zR1U6H.L0G26u4bZ0W3w1g4vK7V1S6', 
       role: 'HOSPITAL_ADMIN',
       hourlyRate: 850.00,
       devicePin: '9999',
     },
   });
 
-  // ICU Matron (Department Head)
   const icuHead = await prisma.user.upsert({
     where: { tenantId_email: { tenantId: tenant.id, email: 'matron.mercy@stteresa.or.ke' } },
     update: {},
@@ -130,13 +124,12 @@ async function main() {
     },
   });
 
-  // Clinical Floating Nurse (Our dynamic core test case)
   const floatingNurse = await prisma.user.upsert({
     where: { tenantId_email: { tenantId: tenant.id, email: 'nurse.mwangi@stteresa.or.ke' } },
     update: {},
     create: {
       tenantId: tenant.id,
-      departmentId: opdDept.id, // Primary home base contract is OPD
+      departmentId: opdDept.id,
       payrollNumber: 'STTR-204',
       firstName: 'David',
       lastName: 'Mwangi',
@@ -144,7 +137,7 @@ async function main() {
       passwordHash: '$2b$10$eFzMWW8.NreT6PZ2MDRYfO7zR1U6H.L0G26u4bZ0W3w1g4vK7V1S6',
       role: 'EMPLOYEE',
       hourlyRate: 450.00,
-      devicePin: '1002', // This hardcoded PIN is tracked inside on-prem physical scanner storage
+      devicePin: '1002',
     },
   });
 
@@ -169,41 +162,65 @@ async function main() {
   // ==========================================
   console.log('📅 Seeding Shift Templates & Floating Assignments...');
   
-  const dayShiftTemplate = await prisma.shiftTemplate.upsert({
-    where: { id: '00000000-0000-0000-0000-000000000001' },
-    update: {},
-    create: {
-      id: '00000000-0000-0000-0000-000000000001',
+  // 🛡️ Safe query pattern bypassing missing unique index constraints
+  let dayShiftTemplate = await prisma.shiftTemplate.findFirst({
+    where: { 
+      tenantId: tenant.id, 
+      name: 'Clinical Day Rotation' 
+    }
+  });
+
+  if (!dayShiftTemplate) {
+    dayShiftTemplate = await prisma.shiftTemplate.create({
+      data: {
+        tenantId: tenant.id,
+        name: 'Clinical Day Rotation',
+        type: 'MORNING',
+        startTime: '07:00',
+        endTime: '19:00',
+        gracePeriodMinutes: 15,
+        overtimeThresholdMinutes: 0,
+        isOvernight: false,
+      },
+    });
+  }
+
+  const todayString = new Date().toISOString().split('T')[0];
+  
+  // Cleaned up the findFirst conditional link to prevent runtime downstream ID collisions
+  let rosterAssignment = await prisma.rosterAssignment.findFirst({
+    where: {
       tenantId: tenant.id,
-      name: 'Clinical Day Rotation',
-      type: 'MORNING',
-      startTime: '07:00',
-      endTime: '19:00',
+      userId: floatingNurse.id,
+      date: new Date(todayString),
+      status: { not: 'CANCELLED' },
     },
   });
 
-  // TEST SCENARIO: Assign the OPD-contracted floating nurse to work today's shift inside the ICU
-  const todayString = new Date().toISOString().split('T')[0];
-  const rosterAssignment = await prisma.rosterAssignment.upsert({
-    where: { userId_date: { userId: floatingNurse.id, date: new Date(todayString) } },
-    update: {},
-    create: {
-      tenantId: tenant.id,
-      userId: floatingNurse.id,
-      departmentId: icuDept.id, // FLOATED INTERNALLY TO ICU FOR THE DAY
-      shiftTemplateId: dayShiftTemplate.id,
-      date: new Date(todayString),
-      overriddenHourlyRate: 500.00, // Clinician gets an extra Ksh 50/hr premium rate for covering ICU
-      status: 'UNVERIFIED',
-    },
-  });
+  if (!rosterAssignment) {
+    rosterAssignment = await prisma.rosterAssignment.create({
+      data: {
+        tenantId: tenant.id,
+        userId: floatingNurse.id,
+        departmentId: icuDept.id,
+        shiftTemplateId: dayShiftTemplate.id,
+        date: new Date(todayString),
+        overriddenHourlyRate: 500.00,
+        status: 'UNVERIFIED',
+        startTimeSnapshot: dayShiftTemplate.startTime,
+        endTimeSnapshot: dayShiftTemplate.endTime,
+        gracePeriodSnapshot: dayShiftTemplate.gracePeriodMinutes,
+        overtimeThresholdSnapshot: dayShiftTemplate.overtimeThresholdMinutes,
+        overnightSnapshot: dayShiftTemplate.isOvernight,
+      },
+    });
+  }
 
   // ==========================================
   // MODULE 7: ATTENDANCE TELEMETRY LOGS
   // ==========================================
   console.log('⏰ Seeding Asynchronous Hardware Attendance Logs...');
   
-  // Clock In: 06:58 AM (Under the 07:00 target threshold)
   const clockInTimestamp = new Date(`${todayString}T06:58:12Z`);
   await prisma.attendanceLog.upsert({
     where: {
@@ -225,7 +242,6 @@ async function main() {
     },
   });
 
-  // Clock Out: 19:02 PM
   const clockOutTimestamp = new Date(`${todayString}T19:02:44Z`);
   await prisma.attendanceLog.upsert({
     where: {
@@ -327,7 +343,7 @@ async function main() {
       tenantId: tenant.id,
       name: 'May 2026 Main Cycle',
       startDate: new Date('2026-05-01'),
-      endDate: new Date('2026-05-31'),
+      endDate: new Date('2025-05-31'),
       status: 'OPEN',
     },
   });
@@ -337,7 +353,7 @@ async function main() {
       tenantId: tenant.id,
       periodId: payrollPeriod.id,
       employeeId: floatingNurse.id,
-      hourlyRate: 500.00, // Reads from the overridden roster scale
+      hourlyRate: 500.00,
       regularHoursWorked: 168.00,
       overtimeHoursWorked: 8.00,
       baseSalary: 84000.00,
@@ -366,7 +382,4 @@ main()
   .catch((e) => {
     console.error('❌ Critical failure detected in seed loop:', e);
     process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
   });

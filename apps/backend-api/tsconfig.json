@@ -1,21 +1,50 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
-    "declaration": true,
-    "removeComments": true,
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "rootDir": "./",
+    "outDir": "./dist",
+    "skipLibCheck": true,
+    
+    // NestJS & Dependency Injection Configuration
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
-    "target": "ES2022",
+    
+    // Build Artifacts & Source Mapping
+    "declaration": true,
     "sourceMap": true,
-    "outDir": "./dist",
-    "baseUrl": "./",
     "incremental": true,
-    "skipLibCheck": true,
+    "removeComments": true,
+    
+    // Testing Framework (Jest) Compatibility
+    "isolatedModules": true,
+    "types": [
+      "node",
+      "jest"
+    ],
+    
+    // Internal Path Mapping
+    "paths": {
+      "src/*": ["./src/*"]
+    },
+    
+    // Type Checking Laxity Constraints
     "strictNullChecks": false,
     "noImplicitAny": false,
     "strictBindCallApply": false,
+    
+    // Code Quality Rules
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": true
-  }
+  },
+  "include": [
+    "src/**/*",
+    "test/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
 }

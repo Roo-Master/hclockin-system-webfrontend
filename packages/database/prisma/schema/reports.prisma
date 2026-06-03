@@ -7,7 +7,7 @@ model CompiledReport {
   generatedById  String   @map("generated_by_id") @db.Uuid
   dateRangeStart DateTime @map("date_range_start") @db.Date
   dateRangeEnd   DateTime @map("date_range_end") @db.Date
-  compiledData   Json     @map("compiled_data") @db.JsonB     
+  compiledData   Json     @map("compiled_data") @db.JsonB
   createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
   // Relationships
