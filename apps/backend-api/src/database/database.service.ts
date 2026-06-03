@@ -1,10 +1,4 @@
-import { Injectable } from '@nestjs/common';
-import { db } from '@chronos/database';
-
-@Injectable()
-export class DatabaseService {
-  readonly client = db;
-}
+// src/database/database.service.ts
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 

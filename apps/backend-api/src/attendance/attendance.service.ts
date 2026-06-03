@@ -1,17 +1,14 @@
+// src/attendance/attendance.service.ts
 import {
   Injectable,
   Logger,
   BadRequestException,
   NotFoundException,
 } from '@nestjs/common';
-import { DatabaseService } from '../database/database.service';
+import { PrismaService } from '../database/prisma.service';  // ← Changed from DatabaseService
 import { QueueService } from '../queue/queue.service';
-import { Prisma } from '@chronos/database';
-import { AttendanceStatus } from '@chronos/database';
-// Add this import at the top of attendance.service.ts
-//impAttendanceLog } from '@chronos/database';
-// ✅ Correct
-import { AttendanceLog } from '@chronos/database';
+import { Prisma, AttendanceStatus, AttendanceLog } from '@chronos/database';
+
 export interface CreateAttendanceLogDto {
   tenantId: string;
   userId: string;
@@ -37,13 +34,13 @@ export class AttendanceService {
   private readonly logger = new Logger(AttendanceService.name);
 
   constructor(
-    private readonly db: DatabaseService,
+    private readonly db: PrismaService,  // ← Changed from DatabaseService
     private readonly queue: QueueService,
   ) {}
 
   async ingestLog(data: CreateAttendanceLogDto) {
     try {
-      const user = await this.db.user.findFirst({
+      const user = await this.db.client.user.findFirst({  // ← Note: use .client
         where: {
           id: data.userId,
           tenantId: data.tenantId,
@@ -55,7 +52,7 @@ export class AttendanceService {
         throw new BadRequestException('Invalid user or user not active');
       }
 
-      const log = await this.db.attendanceLog.upsert({
+      const log = await this.db.client.attendanceLog.upsert({  // ← use .client
         where: {
           userId_deviceId_direction_timestamp: {
             userId: data.userId,
@@ -140,7 +137,7 @@ export class AttendanceService {
     };
 
     if (departmentId) {
-      const users = await this.db.user.findMany({
+      const users = await this.db.client.user.findMany({  // ← use .client
         where: { tenantId, departmentId },
         select: { id: true },
       });
@@ -148,7 +145,7 @@ export class AttendanceService {
     }
 
     const [summaries, total] = await Promise.all([
-      this.db.attendanceSummary.findMany({
+      this.db.client.attendanceSummary.findMany({  // ← use .client
         where,
         include: {
           user: {
@@ -172,7 +169,7 @@ export class AttendanceService {
         skip: (page - 1) * limit,
         take: limit,
       }),
-      this.db.attendanceSummary.count({ where }),
+      this.db.client.attendanceSummary.count({ where }),  // ← use .client
     ]);
 
     return {
@@ -193,7 +190,7 @@ export class AttendanceService {
     const endDate = new Date(date);
     endDate.setHours(23, 59, 59, 999);
 
-    return this.db.attendanceSummary.findMany({
+    return this.db.client.attendanceSummary.findMany({  // ← use .client
       where: {
         tenantId,
         date: { gte: startDate, lte: endDate },
@@ -231,7 +228,7 @@ export class AttendanceService {
       justification: string;
     },
   ) {
-    const existing = await this.db.attendanceSummary.findUnique({
+    const existing = await this.db.client.attendanceSummary.findUnique({  // ← use .client
       where: { id: summaryId },
     });
 
@@ -239,8 +236,8 @@ export class AttendanceService {
       throw new NotFoundException('Attendance summary not found');
     }
 
-    const [updated] = await this.db.$transaction([
-      this.db.attendanceSummary.update({
+    const [updated] = await this.db.client.$transaction([  // ← use .client
+      this.db.client.attendanceSummary.update({  // ← use .client
         where: { id: summaryId },
         data: {
           firstIn: data.firstIn ?? existing.firstIn,
@@ -253,7 +250,7 @@ export class AttendanceService {
           reprocessedCount: { increment: 1 },
         },
       }),
-      this.db.attendanceAudit.create({
+      this.db.client.attendanceAudit.create({  // ← use .client
         data: {
           tenantId,
           userId: adminUserId,
@@ -274,12 +271,12 @@ export class AttendanceService {
     this.logger.warn(`Manual override on ${summaryId} by ${adminUserId}`);
     return updated;
   }
-  
+
   async getAuditTrail(
     tenantId: string,
     summaryId: string,
   ): Promise<any[]> {
-    return this.db.attendanceAudit.findMany({
+    return this.db.client.attendanceAudit.findMany({  // ← use .client
       where: {
         tenantId,
         targetSummaryId: summaryId,
@@ -311,7 +308,7 @@ export class AttendanceService {
 
     if (userId) where.userId = userId;
 
-    const summaries = await this.db.attendanceSummary.findMany({
+    const summaries = await this.db.client.attendanceSummary.findMany({  // ← use .client
       where,
       select: { id: true, userId: true, date: true },
     });
@@ -328,40 +325,36 @@ export class AttendanceService {
     return { queued: summaries.length };
   }
 
+  async getRawLogs(
+    tenantId: string,
+    filters: any,
+  ): Promise<{ data: AttendanceLog[]; total: number; page: number; limit: number }> {
+    const { userId, startDate, endDate, direction, page = 1, limit = 100 } = filters;
 
+    const where: any = {
+      tenantId,
+      ...(userId && { userId }),
+      ...(direction && { direction }),
+      ...(startDate && { timestamp: { gte: startDate } }),
+      ...(endDate && { timestamp: { lte: endDate } }),
+    };
 
-// Then add return type to getRawLogs method (line 328)
-async getRawLogs(
-  tenantId: string,
-  filters: any,
-): Promise<{ data: AttendanceLog[]; total: number; page: number; limit: number }> {
-  const { userId, startDate, endDate, direction, page = 1, limit = 100 } = filters;
+    const [logs, total] = await Promise.all([
+      this.db.client.attendanceLog.findMany({  // ← use .client
+        where,
+        include: {
+          user: true,
+          device: true,
+        },
+        orderBy: { timestamp: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      this.db.client.attendanceLog.count({ where }),  // ← use .client
+    ]);
 
-  const where: any = {
-    tenantId,
-    ...(userId && { userId }),
-    ...(direction && { direction }),
-    ...(startDate && { timestamp: { gte: startDate } }),
-    ...(endDate && { timestamp: { lte: endDate } }),
-  };
-
-  const [logs, total] = await Promise.all([
-    this.db.attendanceLog.findMany({
-      where,
-      include: {
-        user: true,
-        device: true,
-      },
-      orderBy: { timestamp: 'desc' },
-      skip: (page - 1) * limit,
-      take: limit,
-    }),
-    this.db.attendanceLog.count({ where }),
-  ]);
-
-  return { data: logs, total, page, limit };
-}
-
+    return { data: logs, total, page, limit };
+  }
 
   async getDashboardStats(tenantId: string, date: Date) {
     const startDate = new Date(date);
@@ -370,39 +363,39 @@ async getRawLogs(
     const endDate = new Date(date);
     endDate.setHours(23, 59, 59, 999);
 
-    const stats = await this.db.$transaction([
-      this.db.attendanceSummary.count({
+    const stats = await this.db.client.$transaction([  // ← use .client
+      this.db.client.attendanceSummary.count({  // ← use .client
         where: { tenantId, date: { gte: startDate, lte: endDate } },
       }),
-      this.db.attendanceSummary.count({
+      this.db.client.attendanceSummary.count({  // ← use .client
         where: {
           tenantId,
           date: { gte: startDate, lte: endDate },
           status: 'PRESENT',
         },
       }),
-      this.db.attendanceSummary.count({
+      this.db.client.attendanceSummary.count({  // ← use .client
         where: {
           tenantId,
           date: { gte: startDate, lte: endDate },
           lateMinutes: { gt: 0 },
         },
       }),
-      this.db.attendanceSummary.count({
+      this.db.client.attendanceSummary.count({  // ← use .client
         where: {
           tenantId,
           date: { gte: startDate, lte: endDate },
           status: 'ABSENT',
         },
       }),
-      this.db.attendanceSummary.count({
+      this.db.client.attendanceSummary.count({  // ← use .client
         where: {
           tenantId,
           date: { gte: startDate, lte: endDate },
           status: 'ON_LEAVE',
         },
       }),
-      this.db.user.count({
+      this.db.client.user.count({  // ← use .client
         where: { tenantId, isActive: true },
       }),
     ]);

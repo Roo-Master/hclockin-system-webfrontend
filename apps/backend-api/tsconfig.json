@@ -14,7 +14,6 @@
     "incremental": true,
     "skipLibCheck": true,
     
-    // 🛡️ FIX 1: Satisfy ts-jest's Node16 compilation requirement
     "isolatedModules": true,
     
     "types": ["node", "jest"],
@@ -30,11 +29,7 @@
     "strictBindCallApply": false,
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": true
-  }
-  
-}
-
-  },
+  },  // ← Only ONE closing brace for compilerOptions
   "include": ["src/**/*", "test/**/*"],
   "exclude": ["node_modules", "dist"]
 }
