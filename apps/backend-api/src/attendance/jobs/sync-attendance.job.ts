@@ -30,7 +30,8 @@ export class SyncAttendanceJob {
         report,
       };
     } catch (error) {
-      this.logger.error(`Sync job failed: ${error.message}`);
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.error(`Sync job failed: ${err.message}`, err.stack);
       throw error;
     }
   }

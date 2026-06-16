@@ -1,24 +1,37 @@
+// src/main.ts
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+//import { TenantInterceptor } from '../database/tenant.interceptor';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
-  const port = Number(process.env.PORT ?? 5000);
+  const port = Number(process.env.PORT ?? 3001);
 
   const app = await NestFactory.create(AppModule);
 
-  app.enableCors();
+  // Enable CORS for frontend access
+  app.enableCors({
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    credentials: true,
+  });
+
+  // Global validation pipe
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
     transform: true,
     forbidNonWhitelisted: true,
   }));
 
+  // Enforce data isolation globally across all request endpoints
+ // app.useGlobalInterceptors(new TenantInterceptor());
+
+  // Start the server
   await app.listen(port);
 
-  logger.log(`Backend API listening on port ${port}`);
-  logger.log('Routes use controller-level /api prefixes; no global prefix is configured.');
+  logger.log(`🚀 Backend API running on http://localhost:${port}`);
+  logger.log('Routes use controller-level /api prefixes');
+  logger.log(`CORS enabled for origin: ${process.env.FRONTEND_URL || 'http://localhost:3000'}`);
 }
 
 bootstrap().catch((error) => {
@@ -26,26 +39,3 @@ bootstrap().catch((error) => {
   logger.error('Backend API failed to start', error instanceof Error ? error.stack : String(error));
   process.exit(1);
 });
-  const app = await NestFactory.create(AppModule);
-  app.enableCors();
-  await app.listen(3001);
-  console.log('🚀 Backend API running on http://localhost:3001');
-}
-
-// Location: backend-api/src/main.ts
-import { NestFactory } from '@nestjs/core'; // 🛡️ CRITICAL: This line fixes the error
-import { AppModule } from './app.module';
-import { TenantInterceptor } from './database/tenant.interceptor';
-
-async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-  
-  // Enforce data isolation globally across all request endpoints
-  app.useGlobalInterceptors(new TenantInterceptor());
-  
-  // Run backend explicitly on port 3001 to avoid Next.js port 3000 collisions
-  await app.listen(3001);
-  console.log('🚀 NestJS Backend API running safely on http://localhost:3001');
-}
-bootstrap();
-
