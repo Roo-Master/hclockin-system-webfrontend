@@ -2,8 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { superAdminApi, Tenant } from '@/lib/api/super-admin';
-
+import { superAdminApi, Tenant } from '@/lib/(super-admin)/api/super-admin';
 type TenantStatus = 'ACTIVE' | 'TRIAL' | 'SUSPENDED' | 'CANCELLED';
 type PlanTier = 'STARTER' | 'PROFESSIONAL' | 'ENTERPRISE';
 
