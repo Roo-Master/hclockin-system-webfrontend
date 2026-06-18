@@ -1,123 +1,156 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Mock data
-const MOCK_ADMINS = [
-  {
-    id: 'admin-1',
-    name: 'John Doe',
-    email: 'john.doe@citycare.com',
-    role: 'super_admin',
-    status: 'active',
-    tenantId: null,
-    lastLogin: '2024-12-15T10:00:00Z',
-    joinedAt: '2024-01-01T10:00:00Z',
-    avatarInitials: 'JD',
-  },
-  {
-    id: 'admin-2',
-    name: 'Jane Smith',
-    email: 'jane.smith@knh.go.ke',
-    role: 'hospital_admin',
-    status: 'active',
-    tenantId: 'tenant-1',
-    lastLogin: '2024-12-14T15:30:00Z',
-    joinedAt: '2024-03-15T10:00:00Z',
-    avatarInitials: 'JS',
-  },
-  {
-    id: 'admin-3',
-    name: 'Peter Kimani',
-    email: 'peter.kimani@akuh.edu',
-    role: 'hr_manager',
-    status: 'pending',
-    tenantId: 'tenant-2',
-    lastLogin: '2024-12-10T09:00:00Z',
-    joinedAt: '2024-06-01T10:00:00Z',
-    avatarInitials: 'PK',
-  },
-];
+// Backend API base URL
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
 
 export async function GET(request: NextRequest) {
   try {
+    // Get token from Authorization header or cookies
+    let token = request.headers.get('Authorization');
+    
+    if (!token) {
+      const cookieToken = request.cookies.get('accessToken')?.value;
+      if (cookieToken) {
+        token = `Bearer ${cookieToken}`;
+      }
+    }
+    
+    if (!token) {
+      const headerToken = request.headers.get('x-access-token');
+      if (headerToken) {
+        token = `Bearer ${headerToken}`;
+      }
+    }
+
+    if (!token) {
+      console.log('[Super Admin Admins] No token found in request');
+      return NextResponse.json(
+        { error: 'Unauthorized - No token provided' },
+        { status: 401 }
+      );
+    }
+
+    // Get query parameters
     const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get('search');
     const role = searchParams.get('role');
     const status = searchParams.get('status');
     const tenantId = searchParams.get('tenantId');
+    const page = searchParams.get('page') || '1';
+    const limit = searchParams.get('limit') || '20';
 
-    let admins = [...MOCK_ADMINS];
+    // Build query string
+    const queryParams = new URLSearchParams();
+    if (search) queryParams.append('search', search);
+    if (role && role !== 'all') queryParams.append('role', role);
+    if (status && status !== 'all') queryParams.append('status', status);
+    if (tenantId) queryParams.append('tenantId', tenantId);
+    queryParams.append('page', page);
+    queryParams.append('limit', limit);
 
-    // Apply filters
-    if (search) {
-      admins = admins.filter(
-        (a) =>
-          a.name.toLowerCase().includes(search.toLowerCase()) ||
-          a.email.toLowerCase().includes(search.toLowerCase())
+    const queryString = queryParams.toString();
+    const url = `${API_BASE_URL}/super-admin/admins${queryString ? `?${queryString}` : ''}`;
+
+    console.log('[Super Admin Admins] Fetching from:', url);
+
+    // Forward the request to the backend API
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': token.startsWith('Bearer ') ? token : `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.log('[Super Admin Admins] Backend error:', response.status, errorData);
+      return NextResponse.json(
+        { error: errorData.message || `Backend API error: ${response.status}` },
+        { status: response.status }
       );
     }
 
-    if (role && role !== 'all') {
-      admins = admins.filter((a) => a.role === role);
-    }
-
-    if (status && status !== 'all') {
-      admins = admins.filter((a) => a.status === status);
-    }
-
-    if (tenantId) {
-      admins = admins.filter((a) => a.tenantId === tenantId);
-    }
-
-    return NextResponse.json({
-      admins,
-      total: admins.length,
-    });
+    const data = await response.json();
+    return NextResponse.json(data);
   } catch (error) {
-    console.error('Get admins error:', error);
+    console.error('[Super Admin Admins] Error:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+      { error: 'Failed to connect to backend API. Please check if the server is running.' },
+      { status: 503 }
     );
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { email, role, tenantId } = body;
+    // Get token
+    let token = request.headers.get('Authorization');
+    
+    if (!token) {
+      const cookieToken = request.cookies.get('accessToken')?.value;
+      if (cookieToken) {
+        token = `Bearer ${cookieToken}`;
+      }
+    }
 
-    if (!email || !role || !tenantId) {
+    if (!token) {
       return NextResponse.json(
-        { error: 'Email, role, and tenantId are required' },
+        { error: 'Unauthorized - No token provided' },
+        { status: 401 }
+      );
+    }
+
+    const body = await request.json();
+    const { email, role, tenantId, name } = body;
+
+    // Validate required fields
+    if (!email || !role) {
+      return NextResponse.json(
+        { error: 'Email and role are required' },
         { status: 400 }
       );
     }
 
-    // In production, create admin in database and send invitation email
-    const newAdmin = {
-      id: `admin-${Date.now()}`,
-      name: email.split('@')[0],
-      email,
-      role,
-      status: 'pending',
-      tenantId,
-      lastLogin: 'Never',
-      joinedAt: new Date().toISOString(),
-      avatarInitials: email
-        .split('@')[0]
-        .split('.')
-        .map((n: string) => n[0])
-        .join('')
-        .toUpperCase()
-        .slice(0, 2),
-    };
+    if (!tenantId) {
+      return NextResponse.json(
+        { error: 'TenantId is required' },
+        { status: 400 }
+      );
+    }
 
-    return NextResponse.json(newAdmin, { status: 201 });
+    console.log('[Super Admin Admins] Creating admin:', { email, role, tenantId, name });
+
+    // Forward the request to the backend API
+    const response = await fetch(`${API_BASE_URL}/super-admin/admins`, {
+      method: 'POST',
+      headers: {
+        'Authorization': token.startsWith('Bearer ') ? token : `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email,
+        role,
+        tenantId,
+        name: name || email.split('@')[0],
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.log('[Super Admin Admins] Backend error:', response.status, errorData);
+      return NextResponse.json(
+        { error: errorData.message || `Backend API error: ${response.status}` },
+        { status: response.status }
+      );
+    }
+
+    const data = await response.json();
+    return NextResponse.json(data, { status: 201 });
   } catch (error) {
-    console.error('Create admin error:', error);
+    console.error('[Super Admin Admins] Error:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+      { error: 'Failed to connect to backend API. Please check if the server is running.' },
+      { status: 503 }
     );
   }
 }

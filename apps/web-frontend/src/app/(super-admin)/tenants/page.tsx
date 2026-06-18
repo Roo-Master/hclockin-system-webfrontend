@@ -2,26 +2,10 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { superAdminApi, Tenant } from '@/lib/api/super-admin';
 
 type TenantStatus = 'ACTIVE' | 'TRIAL' | 'SUSPENDED' | 'CANCELLED';
 type PlanTier = 'STARTER' | 'PROFESSIONAL' | 'ENTERPRISE';
-
-type Tenant = {
-  id: string;
-  name: string;
-  slug: string;
-  status: TenantStatus;
-  plan: PlanTier;
-  staffCount: number;
-  adminEmail: string;
-  mrr: number;
-  createdAt: string;
-  trialEndsAt?: string | null;
-  country: string;
-  lastActive: string;
-  contactName?: string | null;
-  notes?: string | null;
-};
 
 type DrawerMode = 'view' | 'edit' | 'create' | null;
 
@@ -279,6 +263,7 @@ function CreateTenantModal({
 }) {
   const [step, setStep] = useState(1);
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     name: '',
     subdomain: '',
@@ -351,48 +336,57 @@ function CreateTenantModal({
     setSubmitted(true);
     if (!step1Valid || !step2Valid) return;
 
-    const trialDays = parseInt(form.trial);
-    const trialEndsAt = isNaN(trialDays)
-      ? undefined
-      : new Date(Date.now() + trialDays * 86400000).toISOString();
+    setLoading(true);
+    try {
+      const trialDays = parseInt(form.trial);
+      const trialEndsAt = isNaN(trialDays)
+        ? undefined
+        : new Date(Date.now() + trialDays * 86400000).toISOString();
 
-    const payload = {
-      name: form.name.trim(),
-      subdomain: form.subdomain.trim().toLowerCase(),
-      slug: form.slug.trim().toLowerCase(),
-      licenseKey: form.licenseKey.trim(),
-      billingCycle: form.billingCycle,
-      country: form.country,
-      adminEmail: form.adminEmail.trim(),
-      contactName: form.contactName.trim(),
-      plan: form.plan,
-      status: trialEndsAt ? 'TRIAL' : 'ACTIVE',
-      trialEndsAt: trialEndsAt ?? null,
-    };
+      const payload = {
+        name: form.name.trim(),
+        slug: form.slug.trim().toLowerCase(),
+        planId: form.plan === 'STARTER' ? 'plan_starter' : 
+                form.plan === 'PROFESSIONAL' ? 'plan_professional' : 'plan_enterprise',
+        settings: {
+          subdomain: form.subdomain.trim().toLowerCase(),
+          country: form.country,
+          adminEmail: form.adminEmail.trim(),
+          contactName: form.contactName.trim(),
+          billingCycle: form.billingCycle,
+          licenseKey: form.licenseKey.trim(),
+          trialEndsAt: trialEndsAt ?? null,
+        }
+      };
 
-    const res = await fetch('/api/tenants', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-
-    if (res.ok) {
-      const data = await res.json();
-      onCreate(data.tenant ?? data);
+      const result = await superAdminApi.createTenant(payload);
+      
+      // Map the response to our Tenant type
+      const newTenant: Tenant = {
+        id: result.id,
+        name: result.name,
+        slug: result.slug,
+        status: trialEndsAt ? 'TRIAL' : 'ACTIVE',
+        plan: form.plan,
+        staffCount: 0,
+        adminEmail: form.adminEmail.trim(),
+        mrr: 0,
+        createdAt: new Date().toISOString(),
+        trialEndsAt: trialEndsAt ?? null,
+        country: form.country,
+        lastActive: 'Just now',
+        contactName: form.contactName.trim(),
+        notes: '',
+      };
+      
+      onCreate(newTenant);
       onClose();
-      return;
+    } catch (error) {
+      console.error('Failed to create tenant:', error);
+      alert('Failed to create tenant. Please try again.');
+    } finally {
+      setLoading(false);
     }
-
-    onCreate({
-      ...EMPTY_TENANT,
-      id: `temp-${Date.now()}`,
-      ...payload,
-      staffCount: 0,
-      mrr: 0,
-      lastActive: 'Just now',
-      createdAt: new Date().toISOString(),
-    });
-    onClose();
   }
 
   return (
@@ -536,7 +530,7 @@ function CreateTenantModal({
                 <select
                   required
                   value={form.plan}
-                  onChange={(e) => f('plan', e.target.value)}
+                  onChange={(e) => f('plan', e.target.value as PlanTier)}
                   className={fieldClass('plan')}
                 >
                   <option value="STARTER">Starter</option>
@@ -567,6 +561,7 @@ function CreateTenantModal({
           <button
             onClick={step === 1 ? onClose : () => setStep(1)}
             className="text-sm text-[#6B7280] hover:text-[#111827] transition-colors"
+            disabled={loading}
           >
             {step === 1 ? 'Cancel' : '← Back'}
           </button>
@@ -576,9 +571,10 @@ function CreateTenantModal({
               if (step === 1 && step1Valid) setStep(2);
               else if (step === 2 && step2Valid) handleCreate();
             }}
-            className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-sm font-medium px-5 py-2 rounded-lg transition-colors disabled:opacity-50"
+            disabled={loading}
+            className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-sm font-medium px-5 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {step === 1 ? 'Continue →' : 'Create & Send Invite'}
+            {loading ? 'Creating...' : step === 1 ? 'Continue →' : 'Create & Send Invite'}
           </button>
         </div>
       </div>
@@ -630,7 +626,7 @@ function TableView({
               return (
                 <tr key={t.id} className="hover:bg-[#F5F6FA] transition-colors group">
                   <td className="px-5 py-4">
-                    <Link href={`/tenants/${t.id}`} className="flex items-center gap-3 cursor-pointer">
+                    <Link href={`/super-admin/tenants/${t.id}`} className="flex items-center gap-3 cursor-pointer">
                       <div className="w-8 h-8 rounded-lg bg-[#DBEAFE] border border-[#2563EB]/20 flex items-center justify-center text-xs font-bold text-[#2563EB] flex-shrink-0">
                         {t.name.charAt(0)}
                       </div>
@@ -667,7 +663,7 @@ function TableView({
                   <td className="px-5 py-4" onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Link
-                        href={`/tenants/${t.id}`}
+                        href={`/super-admin/tenants/${t.id}`}
                         className="px-2.5 py-1 text-xs bg-[#DBEAFE] text-[#2563EB] hover:bg-[#2563EB] hover:text-white rounded transition-colors"
                       >
                         View
@@ -711,7 +707,7 @@ function GridView({ filtered }: { filtered: Tenant[] }) {
         return (
           <Link
             key={t.id}
-            href={`/tenants/${t.id}`}
+            href={`/super-admin/tenants/${t.id}`}
             className="bg-white border border-[#E5E7EB] hover:border-[#2563EB] rounded-xl p-5 cursor-pointer transition-all hover:shadow-md group"
           >
             <div className="flex items-start justify-between mb-4">
@@ -748,9 +744,206 @@ function GridView({ filtered }: { filtered: Tenant[] }) {
   );
 }
 
+// Tenant Drawer Component (simplified version)
+function TenantDrawer({ 
+  tenant, 
+  mode, 
+  onClose, 
+  onSave, 
+  onDelete, 
+  onSuspend, 
+  onActivate 
+}: { 
+  tenant: Tenant; 
+  mode: DrawerMode; 
+  onClose: () => void; 
+  onSave: (t: Tenant) => void; 
+  onDelete: (id: string) => void; 
+  onSuspend: (id: string) => void; 
+  onActivate: (id: string) => void; 
+}) {
+  const [editData, setEditData] = useState(tenant);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setEditData(tenant);
+  }, [tenant]);
+
+  const isView = mode === 'view';
+  const isEdit = mode === 'edit';
+  const isCreate = mode === 'create';
+
+  const handleSave = async () => {
+    setLoading(true);
+    try {
+      await onSave(editData);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex justify-end bg-black/30 backdrop-blur-sm">
+      <div className="w-full max-w-2xl bg-white h-full shadow-xl overflow-y-auto">
+        <div className="sticky top-0 bg-white border-b border-[#E5E7EB] px-6 py-4 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-[#111827]">
+            {isCreate ? 'New Tenant' : isView ? 'Tenant Details' : 'Edit Tenant'}
+          </h2>
+          <button onClick={onClose} className="text-[#6B7280] hover:text-[#111827] text-xl">
+            ✕
+          </button>
+        </div>
+
+        <div className="p-6 space-y-6">
+          {/* Basic Info */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs font-medium text-[#6B7280]">Name</label>
+              {isView ? (
+                <p className="text-sm text-[#111827] mt-1">{tenant.name}</p>
+              ) : (
+                <input
+                  value={editData.name}
+                  onChange={(e) => setEditData({ ...editData, name: e.target.value })}
+                  className="w-full border border-[#E5E7EB] rounded-lg px-3 py-2 text-sm mt-1"
+                />
+              )}
+            </div>
+            <div>
+              <label className="text-xs font-medium text-[#6B7280]">Slug</label>
+              {isView ? (
+                <p className="text-sm text-[#111827] mt-1">/{tenant.slug}</p>
+              ) : (
+                <input
+                  value={editData.slug}
+                  onChange={(e) => setEditData({ ...editData, slug: e.target.value })}
+                  className="w-full border border-[#E5E7EB] rounded-lg px-3 py-2 text-sm mt-1"
+                />
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs font-medium text-[#6B7280]">Status</label>
+              <div className="mt-1">
+                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${STATUS_COLORS[tenant.status].bg} ${STATUS_COLORS[tenant.status].text} ${STATUS_COLORS[tenant.status].border}`}>
+                  {cap(tenant.status)}
+                </span>
+              </div>
+            </div>
+            <div>
+              <label className="text-xs font-medium text-[#6B7280]">Plan</label>
+              {isView ? (
+                <p className="text-sm text-[#111827] mt-1">{cap(tenant.plan)}</p>
+              ) : (
+                <select
+                  value={editData.plan}
+                  onChange={(e) => setEditData({ ...editData, plan: e.target.value as PlanTier })}
+                  className="w-full border border-[#E5E7EB] rounded-lg px-3 py-2 text-sm mt-1"
+                >
+                  <option value="STARTER">Starter</option>
+                  <option value="PROFESSIONAL">Professional</option>
+                  <option value="ENTERPRISE">Enterprise</option>
+                </select>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs font-medium text-[#6B7280]">Admin Email</label>
+              {isView ? (
+                <p className="text-sm text-[#111827] mt-1">{tenant.adminEmail}</p>
+              ) : (
+                <input
+                  value={editData.adminEmail}
+                  onChange={(e) => setEditData({ ...editData, adminEmail: e.target.value })}
+                  className="w-full border border-[#E5E7EB] rounded-lg px-3 py-2 text-sm mt-1"
+                />
+              )}
+            </div>
+            <div>
+              <label className="text-xs font-medium text-[#6B7280]">Staff Count</label>
+              <p className="text-sm text-[#111827] mt-1">{tenant.staffCount.toLocaleString()}</p>
+            </div>
+          </div>
+
+          {tenant.trialEndsAt && (
+            <div>
+              <label className="text-xs font-medium text-[#6B7280]">Trial Ends</label>
+              <p className="text-sm text-[#EA580C] mt-1">
+                {new Date(tenant.trialEndsAt).toLocaleDateString('en-GB', { 
+                  day: 'numeric', 
+                  month: 'long', 
+                  year: 'numeric' 
+                })}
+              </p>
+            </div>
+          )}
+
+          {tenant.notes && (
+            <div>
+              <label className="text-xs font-medium text-[#6B7280]">Notes</label>
+              <p className="text-sm text-[#111827] mt-1">{tenant.notes}</p>
+            </div>
+          )}
+        </div>
+
+        <div className="sticky bottom-0 bg-white border-t border-[#E5E7EB] px-6 py-4 flex justify-between">
+          <div>
+            {!isView && !isCreate && (
+              <button
+                onClick={() => onDelete(tenant.id)}
+                className="text-[#DC2626] hover:text-[#B91C1C] text-sm font-medium"
+              >
+                Delete Tenant
+              </button>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 border border-[#E5E7EB] rounded-lg text-sm text-[#6B7280] hover:text-[#111827] transition-colors"
+            >
+              Close
+            </button>
+            {!isView && (
+              <button
+                onClick={handleSave}
+                disabled={loading}
+                className="px-4 py-2 bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
+              >
+                {loading ? 'Saving...' : 'Save Changes'}
+              </button>
+            )}
+            {isView && tenant.status === 'ACTIVE' && (
+              <button
+                onClick={() => onSuspend(tenant.id)}
+                className="px-4 py-2 bg-[#EA580C] hover:bg-[#C2410C] text-white text-sm font-medium rounded-lg transition-colors"
+              >
+                Suspend
+              </button>
+            )}
+            {isView && tenant.status === 'SUSPENDED' && (
+              <button
+                onClick={() => onActivate(tenant.id)}
+                className="px-4 py-2 bg-[#16A34A] hover:bg-[#15803D] text-white text-sm font-medium rounded-lg transition-colors"
+              >
+                Activate
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function TenantsPage() {
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | TenantStatus>('ALL');
   const [planFilter, setPlanFilter] = useState<'ALL' | PlanTier>('ALL');
@@ -761,29 +954,43 @@ export default function TenantsPage() {
   const [quickDeleteTarget, setQuickDeleteTarget] = useState<Tenant | null>(null);
 
   useEffect(() => {
-    let active = true;
-
-    async function load() {
-      setLoading(true);
-      try {
-        const res = await fetch('/api/tenants');
-        if (!res.ok) throw new Error('failed');
-        const data = await res.json();
-        if (!active) return;
-        setTenants(Array.isArray(data.tenants) ? data.tenants : Array.isArray(data) ? data : []);
-      } catch {
-        if (!active) return;
-        setTenants([]);
-      } finally {
-        if (active) setLoading(false);
-      }
-    }
-
-    load();
-    return () => {
-      active = false;
-    };
+    loadTenants();
   }, []);
+
+  const loadTenants = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await superAdminApi.getTenants();
+      // Transform API response to match our Tenant type
+      const mappedTenants = (data.tenants || []).map((t: any) => ({
+        id: t.id,
+        name: t.name,
+        slug: t.slug,
+        status: t.status === 'active' ? 'ACTIVE' : 
+                t.status === 'suspended' ? 'SUSPENDED' : 
+                t.status === 'deleted' ? 'CANCELLED' : 'TRIAL',
+        plan: t.plan?.code === 'pro' ? 'PROFESSIONAL' :
+              t.plan?.code === 'enterprise' ? 'ENTERPRISE' : 'STARTER',
+        staffCount: t._count?.admins || 0,
+        adminEmail: t.admins?.[0]?.user?.email || '',
+        mrr: t.subscription?.plan?.priceMonthly || 0,
+        createdAt: t.createdAt,
+        trialEndsAt: t.subscription?.trialEndsAt || null,
+        country: t.settings?.country || 'Kenya',
+        lastActive: t.updatedAt ? new Date(t.updatedAt).toLocaleDateString() : '—',
+        contactName: t.settings?.contactName || '',
+        notes: t.settings?.notes || '',
+      }));
+      setTenants(mappedTenants);
+    } catch (err) {
+      console.error('Failed to load tenants:', err);
+      setError('Failed to load tenants. Please try again.');
+      setTenants([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filtered = useMemo(() => {
     return tenants.filter((t) => {
@@ -813,68 +1020,67 @@ export default function TenantsPage() {
 
   async function handleSave(data: Tenant) {
     try {
-      const method = data.id && tenants.some((t) => t.id === data.id) ? 'PATCH' : 'POST';
-      const url = method === 'POST' ? '/api/tenants' : `/api/tenants/${data.id}`;
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+      const result = await superAdminApi.updateTenant(data.id, {
+        name: data.name,
+        slug: data.slug,
+        planId: data.plan === 'STARTER' ? 'plan_starter' : 
+                data.plan === 'PROFESSIONAL' ? 'plan_professional' : 'plan_enterprise',
+        settings: {
+          adminEmail: data.adminEmail,
+          contactName: data.contactName,
+          notes: data.notes,
+        }
       });
-      if (res.ok) {
-        const payload = await res.json();
-        const updated = payload.tenant ?? payload;
-        setTenants((prev) =>
-          prev.find((t) => t.id === updated.id)
-            ? prev.map((t) => (t.id === updated.id ? updated : t))
-            : [updated, ...prev]
-        );
-        setSelectedTenant(updated);
-        if (drawerMode === 'create') setDrawerMode('view');
-        return;
-      }
-    } catch {}
-
-    setTenants((prev) =>
-      prev.find((t) => t.id === data.id)
-        ? prev.map((t) => (t.id === data.id ? data : t))
-        : [data, ...prev]
-    );
-    setSelectedTenant(data);
-    if (drawerMode === 'create') setDrawerMode('view');
+      
+      const updated = {
+        ...data,
+        ...result,
+      };
+      
+      setTenants((prev) =>
+        prev.map((t) => (t.id === updated.id ? updated : t))
+      );
+      setSelectedTenant(updated);
+    } catch (error) {
+      console.error('Failed to save tenant:', error);
+      alert('Failed to save changes. Please try again.');
+    }
   }
 
   async function handleCreate(t: Tenant) {
     setTenants((prev) => [t, ...prev]);
+    await loadTenants(); // Refresh from API
   }
 
   async function handleDelete(id: string) {
     try {
-      await fetch(`/api/tenants/${id}`, { method: 'DELETE' });
-    } catch {}
-    setTenants((prev) => prev.filter((t) => t.id !== id));
-    closeDrawer();
+      await superAdminApi.deleteTenant(id);
+      setTenants((prev) => prev.filter((t) => t.id !== id));
+      closeDrawer();
+    } catch (error) {
+      console.error('Failed to delete tenant:', error);
+      alert('Failed to delete tenant. Please try again.');
+    }
   }
 
   async function handleSuspend(id: string) {
     try {
-      const res = await fetch(`/api/tenants/${id}/suspend`, { method: 'POST' });
-      if (res.ok) {
-        setTenants((prev) => prev.map((t) => (t.id === id ? { ...t, status: 'SUSPENDED' } : t)));
-        return;
-      }
-    } catch {}
-    setTenants((prev) => prev.map((t) => (t.id === id ? { ...t, status: 'SUSPENDED' } : t)));
+      await superAdminApi.suspendTenant(id);
+      setTenants((prev) => prev.map((t) => (t.id === id ? { ...t, status: 'SUSPENDED' } : t)));
+    } catch (error) {
+      console.error('Failed to suspend tenant:', error);
+      alert('Failed to suspend tenant. Please try again.');
+    }
   }
 
   async function handleActivate(id: string) {
     try {
-      const res = await fetch(`/api/tenants/${id}/activate`, { method: 'POST' });
-      if (res.ok) {
-        setTenants((prev) => prev.map((t) => (t.id === id ? { ...t, status: 'ACTIVE' } : t)));
-        return;
-      }
-    } catch {}
-    setTenants((prev) => prev.map((t) => (t.id === id ? { ...t, status: 'ACTIVE' } : t)));
+      await superAdminApi.activateTenant(id);
+      setTenants((prev) => prev.map((t) => (t.id === id ? { ...t, status: 'ACTIVE' } : t)));
+    } catch (error) {
+      console.error('Failed to activate tenant:', error);
+      alert('Failed to activate tenant. Please try again.');
+    }
   }
 
   return (
@@ -974,6 +1180,8 @@ export default function TenantsPage() {
       {/* Content */}
       {loading ? (
         <PlaceholderState title="Loading tenants..." description="Fetching the latest tenant data from the backend." />
+      ) : error ? (
+        <PlaceholderState title="⚠️ Error loading tenants" description={error} />
       ) : view === 'table' ? (
         <TableView
           filtered={filtered}

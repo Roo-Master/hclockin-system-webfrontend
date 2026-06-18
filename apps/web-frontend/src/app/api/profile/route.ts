@@ -8,7 +8,8 @@ export async function GET() {
     where: { id: currentAdminId },
     select: {
       id: true,
-      name: true,
+      firstName: true,
+      lastName: true,
       email: true,
       bio: true,
       role: true,
@@ -52,7 +53,8 @@ export async function PATCH(req: Request) {
     },
     select: {
       id: true,
-      name: true,
+      firstName: true,
+      lastName: true,
       email: true,
       bio: true,
       role: true,

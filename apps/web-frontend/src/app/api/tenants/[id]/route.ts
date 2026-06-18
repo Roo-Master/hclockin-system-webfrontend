@@ -1,38 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Mock data - In production, this would come from a database
-const MOCK_TENANTS: Record<string, any> = {
-  'tenant-1': {
-    id: 'tenant-1',
-    name: 'Kenyatta National Hospital',
-    slug: 'knh',
-    status: 'ACTIVE',
-    plan: 'PROFESSIONAL',
-    staffCount: 1200,
-    adminEmail: 'admin@knh.go.ke',
-    mrr: 12000,
-    createdAt: '2024-01-15T10:00:00Z',
-    country: 'Kenya',
-    lastActive: '2024-12-15T08:30:00Z',
-    contactName: 'Dr. John Mwangi',
-    notes: 'Main teaching hospital',
-  },
-  'tenant-2': {
-    id: 'tenant-2',
-    name: 'Aga Khan University Hospital',
-    slug: 'akuh',
-    status: 'ACTIVE',
-    plan: 'ENTERPRISE',
-    staffCount: 800,
-    adminEmail: 'admin@akuh.edu',
-    mrr: 24000,
-    createdAt: '2024-02-01T10:00:00Z',
-    country: 'Kenya',
-    lastActive: '2024-12-15T09:15:00Z',
-    contactName: 'Dr. Sarah Ochieng',
-    notes: 'Private teaching hospital',
-  },
-};
+// Backend API base URL - adjust based on your environment
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
 
 export async function GET(
   request: NextRequest,
@@ -40,18 +9,55 @@ export async function GET(
 ) {
   try {
     const { id } = params;
-    const tenant = MOCK_TENANTS[id];
+    const token = request.headers.get('Authorization') || request.cookies.get('accessToken')?.value;
 
-    if (!tenant) {
+    if (!token) {
       return NextResponse.json(
-        { error: 'Tenant not found' },
-        { status: 404 }
+        { error: 'Unauthorized - No token provided' },
+        { status: 401 }
       );
     }
 
+    const response = await fetch(`${API_BASE_URL}/super-admin/tenants/${id}`, {
+      headers: {
+        'Authorization': token.startsWith('Bearer ') ? token : `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      return NextResponse.json(
+        { error: errorData.message || `Tenant API error: ${response.status}` },
+        { status: response.status }
+      );
+    }
+
+    const tenant = await response.json();
     return NextResponse.json(tenant);
   } catch (error) {
-    console.error('Get tenant error:', error);
+    console.error('[Super Admin] Get tenant error:', error);
+    
+    // Return a placeholder response for development
+    if (process.env.NODE_ENV === 'development') {
+      return NextResponse.json({
+        id: params.id,
+        name: 'Loading tenant...',
+        slug: 'loading',
+        status: 'PENDING',
+        plan: 'FREE',
+        staffCount: 0,
+        adminEmail: 'loading@placeholder.com',
+        mrr: 0,
+        createdAt: new Date().toISOString(),
+        country: 'Loading...',
+        lastActive: new Date().toISOString(),
+        contactName: 'Loading...',
+        notes: 'Loading tenant details. Backend API may be unavailable.',
+        _placeholder: true,
+      });
+    }
+
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -66,26 +72,48 @@ export async function PATCH(
   try {
     const { id } = params;
     const body = await request.json();
+    const token = request.headers.get('Authorization') || request.cookies.get('accessToken')?.value;
 
-    if (!MOCK_TENANTS[id]) {
+    if (!token) {
       return NextResponse.json(
-        { error: 'Tenant not found' },
-        { status: 404 }
+        { error: 'Unauthorized - No token provided' },
+        { status: 401 }
       );
     }
 
-    // Update tenant
-    const updatedTenant = {
-      ...MOCK_TENANTS[id],
-      ...body,
-      updatedAt: new Date().toISOString(),
-    };
+    const response = await fetch(`${API_BASE_URL}/super-admin/tenants/${id}`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': token.startsWith('Bearer ') ? token : `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
 
-    MOCK_TENANTS[id] = updatedTenant;
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      return NextResponse.json(
+        { error: errorData.message || `Tenant update error: ${response.status}` },
+        { status: response.status }
+      );
+    }
 
+    const updatedTenant = await response.json();
     return NextResponse.json(updatedTenant);
   } catch (error) {
-    console.error('Update tenant error:', error);
+    console.error('[Super Admin] Update tenant error:', error);
+    
+    // Return success placeholder for development
+    if (process.env.NODE_ENV === 'development') {
+      return NextResponse.json({
+        id: params.id,
+        ...(await request.json()),
+        updatedAt: new Date().toISOString(),
+        _placeholder: true,
+        _message: 'Update would be processed by backend API',
+      });
+    }
+
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -99,19 +127,45 @@ export async function DELETE(
 ) {
   try {
     const { id } = params;
+    const token = request.headers.get('Authorization') || request.cookies.get('accessToken')?.value;
 
-    if (!MOCK_TENANTS[id]) {
+    if (!token) {
       return NextResponse.json(
-        { error: 'Tenant not found' },
-        { status: 404 }
+        { error: 'Unauthorized - No token provided' },
+        { status: 401 }
       );
     }
 
-    delete MOCK_TENANTS[id];
+    const response = await fetch(`${API_BASE_URL}/super-admin/tenants/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': token.startsWith('Bearer ') ? token : `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      return NextResponse.json(
+        { error: errorData.message || `Tenant delete error: ${response.status}` },
+        { status: response.status }
+      );
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Delete tenant error:', error);
+    console.error('[Super Admin] Delete tenant error:', error);
+    
+    // Return success placeholder for development
+    if (process.env.NODE_ENV === 'development') {
+      return NextResponse.json({ 
+        success: true, 
+        _placeholder: true,
+        _message: 'Delete would be processed by backend API',
+        deletedId: params.id 
+      });
+    }
+
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

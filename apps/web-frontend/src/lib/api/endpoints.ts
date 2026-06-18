@@ -5,7 +5,6 @@ export const API_ENDPOINTS = {
     logout: '/auth/logout',
     verify: '/auth/verify',
     refresh: '/auth/refresh',
-    register: '/auth/register',
   },
 
   // Tenants
