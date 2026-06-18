@@ -1,11 +1,11 @@
 'use client';
 
 import { useEffect, useMemo, useState, useCallback } from 'react';
-import { useToast } from '@/contexts';
-import { useAdmins } from '@/hooks/useAdmins';
+import { useToast } from '@/contexts/(super-admin)';
+import { useAdmins } from '@/hooks/(super-admin)/useAdmins';
 import { Button, Card, Input, Select, Avatar, StatusBadge } from '@/components/common';
-import { Admin, AdminRole, AdminStatus } from '@/types/admin';
-import { Tenant } from '@/types/tenant';
+import { Admin, AdminRole, AdminStatus } from '@/types/(super-admin)/admin';
+import { Tenant } from '@/types/(super-admin)tenant';
 
 // ─── Components ───────────────────────────────────────────────────────────
 
