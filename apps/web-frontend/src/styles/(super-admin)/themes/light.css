@@ -1,0 +1,153 @@
+/* ─── Light Theme Overrides ───────────────────────────────────────────────── */
+
+:root {
+  /* Semantic colors - light mode */
+  --color-info-bg: #DBEAFE;
+  --color-info: #2563EB;
+  --color-info-light: #EFF6FF;
+  --color-info-dark: #1E40AF;
+
+  --color-success-bg: #DCFCE7;
+  --color-success: #16A34A;
+  --color-success-light: #F0FDF4;
+  --color-success-dark: #15803D;
+
+  --color-warning-bg: #FFEDD5;
+  --color-warning: #EA580C;
+  --color-warning-light: #FFF7ED;
+  --color-warning-dark: #C2410C;
+
+  --color-danger-bg: #FEE2E2;
+  --color-danger: #DC2626;
+  --color-danger-light: #FEF2F2;
+  --color-danger-dark: #B91C1C;
+
+  /* Backgrounds */
+  --bg-page: #F5F6FA;
+  --bg-surface: #FFFFFF;
+  --bg-tertiary: #F9FAFB;
+  --bg-sidebar: #0F1B3D;
+
+  /* Borders */
+  --border-color: #E5E7EB;
+
+  /* Text */
+  --text-primary: #111827;
+  --text-secondary: #6B7280;
+  --text-tertiary: #9CA3AF;
+  --text-disabled: #D1D5DB;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+
+  /* Sidebar specific */
+  --sidebar-text: #94A3B8;
+  --sidebar-text-hover: #FFFFFF;
+  --sidebar-bg-hover: rgba(255, 255, 255, 0.05);
+  --sidebar-border: rgba(255, 255, 255, 0.1);
+}
+
+/* Light mode specific component styles */
+.card {
+  @apply bg-surface border-border shadow-sm;
+}
+
+.input {
+  @apply bg-surface border-border text-text-primary placeholder-text-tertiary;
+}
+
+.input:focus {
+  @apply border-info ring-2 ring-info/50;
+}
+
+.select {
+  @apply bg-surface border-border text-text-primary;
+}
+
+.select:focus {
+  @apply border-info ring-2 ring-info/50;
+}
+
+.table {
+  @apply bg-surface border-border;
+}
+
+.table thead {
+  @apply bg-page;
+}
+
+.table tbody tr {
+  @apply border-border hover:bg-page/50;
+}
+
+.modal {
+  @apply bg-surface border-border;
+}
+
+.dropdown {
+  @apply bg-surface border-border shadow-lg;
+}
+
+.dropdown-item {
+  @apply hover:bg-page;
+}
+
+.sidebar {
+  @apply bg-sidebar;
+}
+
+.sidebar-item {
+  @apply text-sidebar-text hover:text-sidebar-text-hover hover:bg-sidebar-bg-hover;
+}
+
+.sidebar-item-active {
+  @apply bg-info text-white;
+}
+
+.notification {
+  @apply bg-surface border-border;
+}
+
+.tooltip {
+  @apply bg-surface text-text-primary border-border shadow-lg;
+}
+
+.badge {
+  @apply border-border;
+}
+
+/* Status dot animations */
+.status-dot-ping {
+  @apply opacity-60;
+}
+
+/* Skeleton loading */
+.skeleton {
+  @apply bg-page;
+}
+
+.skeleton-text {
+  @apply bg-page;
+}
+
+.skeleton-circle {
+  @apply bg-page;
+}
+
+.skeleton-card {
+  @apply bg-page;
+}
+
+/* Glass effects */
+.glass {
+  @apply bg-surface/80 backdrop-blur-sm border-border/50;
+}
+
+.glass-dark {
+  @apply bg-black/50 backdrop-blur-sm border-white/10;
+}

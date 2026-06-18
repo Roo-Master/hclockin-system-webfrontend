@@ -1,0 +1,197 @@
+/* ─── Design System CSS Variables ────────────────────────────────────────── */
+
+:root {
+  /* ── Semantic Colors ── */
+  --color-info-bg: #DBEAFE;
+  --color-info: #2563EB;
+  --color-info-light: #EFF6FF;
+  --color-info-dark: #1E40AF;
+
+  --color-success-bg: #DCFCE7;
+  --color-success: #16A34A;
+  --color-success-light: #F0FDF4;
+  --color-success-dark: #15803D;
+
+  --color-warning-bg: #FFEDD5;
+  --color-warning: #EA580C;
+  --color-warning-light: #FFF7ED;
+  --color-warning-dark: #C2410C;
+
+  --color-danger-bg: #FEE2E2;
+  --color-danger: #DC2626;
+  --color-danger-light: #FEF2F2;
+  --color-danger-dark: #B91C1C;
+
+  /* ── Neutrals ── */
+  --color-page: #F5F6FA;
+  --color-surface: #FFFFFF;
+  --color-sidebar: #0F1B3D;
+  --color-border: #E5E7EB;
+
+  --color-text-primary: #111827;
+  --color-text-secondary: #6B7280;
+  --color-text-tertiary: #9CA3AF;
+  --color-text-disabled: #D1D5DB;
+
+  /* ── Spacing ── */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+
+  /* ── Typography ── */
+  --font-display-size: 24px;
+  --font-display-weight: 600;
+  --font-display-line-height: 1.2;
+
+  --font-heading-size: 17px;
+  --font-heading-weight: 600;
+  --font-heading-line-height: 1.3;
+
+  --font-stat-size: 30px;
+  --font-stat-weight: 700;
+  --font-stat-line-height: 1.1;
+
+  --font-body-size: 14px;
+  --font-body-weight: 400;
+  --font-body-line-height: 1.5;
+
+  --font-label-size: 13px;
+  --font-label-weight: 400;
+  --font-label-line-height: 1.4;
+
+  --font-delta-size: 12px;
+  --font-delta-weight: 500;
+  --font-delta-line-height: 1.4;
+
+  /* ── Border Radius ── */
+  --radius-card: 12px;
+  --radius-badge: 8px;
+  --radius-pill: 9999px;
+  --radius-button: 8px;
+  --radius-input: 8px;
+
+  /* ── Shadows ── */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+/* ─── Dark Mode Variables ────────────────────────────────────────────────── */
+
+.dark {
+  --color-page: #111827;
+  --color-surface: #1F2937;
+  --color-border: #374151;
+
+  --color-text-primary: #F9FAFB;
+  --color-text-secondary: #D1D5DB;
+  --color-text-tertiary: #9CA3AF;
+  --color-text-disabled: #6B7280;
+
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.4), 0 1px 2px -1px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -4px rgba(0, 0, 0, 0.4);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.4);
+  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+/* ─── Typography Classes ──────────────────────────────────────────────────── */
+
+.text-display {
+  font-size: var(--font-display-size);
+  font-weight: var(--font-display-weight);
+  line-height: var(--font-display-line-height);
+}
+
+.text-heading {
+  font-size: var(--font-heading-size);
+  font-weight: var(--font-heading-weight);
+  line-height: var(--font-heading-line-height);
+}
+
+.text-stat {
+  font-size: var(--font-stat-size);
+  font-weight: var(--font-stat-weight);
+  line-height: var(--font-stat-line-height);
+}
+
+.text-body {
+  font-size: var(--font-body-size);
+  font-weight: var(--font-body-weight);
+  line-height: var(--font-body-line-height);
+}
+
+.text-label {
+  font-size: var(--font-label-size);
+  font-weight: var(--font-label-weight);
+  line-height: var(--font-label-line-height);
+}
+
+.text-delta {
+  font-size: var(--font-delta-size);
+  font-weight: var(--font-delta-weight);
+  line-height: var(--font-delta-line-height);
+}
+
+/* ─── Semantic Color Classes ────────────────────────────────────────────── */
+
+.bg-info-bg { background-color: var(--color-info-bg); }
+.bg-info { background-color: var(--color-info); }
+.text-info { color: var(--color-info); }
+.border-info { border-color: var(--color-info); }
+
+.bg-success-bg { background-color: var(--color-success-bg); }
+.bg-success { background-color: var(--color-success); }
+.text-success { color: var(--color-success); }
+.border-success { border-color: var(--color-success); }
+
+.bg-warning-bg { background-color: var(--color-warning-bg); }
+.bg-warning { background-color: var(--color-warning); }
+.text-warning { color: var(--color-warning); }
+.border-warning { border-color: var(--color-warning); }
+
+.bg-danger-bg { background-color: var(--color-danger-bg); }
+.bg-danger { background-color: var(--color-danger); }
+.text-danger { color: var(--color-danger); }
+.border-danger { border-color: var(--color-danger); }
+
+/* ─── Neutral Color Classes ──────────────────────────────────────────────── */
+
+.bg-page { background-color: var(--color-page); }
+.bg-surface { background-color: var(--color-surface); }
+.bg-sidebar { background-color: var(--color-sidebar); }
+.border-border { border-color: var(--color-border); }
+
+.text-text-primary { color: var(--color-text-primary); }
+.text-text-secondary { color: var(--color-text-secondary); }
+.text-text-tertiary { color: var(--color-text-tertiary); }
+
+/* ─── Shadow Classes ──────────────────────────────────────────────────────── */
+
+.shadow-sm { box-shadow: var(--shadow-sm); }
+.shadow { box-shadow: var(--shadow); }
+.shadow-md { box-shadow: var(--shadow-md); }
+.shadow-lg { box-shadow: var(--shadow-lg); }
+.shadow-xl { box-shadow: var(--shadow-xl); }
+.shadow-2xl { box-shadow: var(--shadow-2xl); }
+
+/* ─── Border Radius Classes ──────────────────────────────────────────────── */
+
+.rounded-card { border-radius: var(--radius-card); }
+.rounded-badge { border-radius: var(--radius-badge); }
+.rounded-pill { border-radius: var(--radius-pill); }
+.rounded-button { border-radius: var(--radius-button); }
+.rounded-input { border-radius: var(--radius-input); }

@@ -1,0 +1,197 @@
+/* ─── Table Component Styles ──────────────────────────────────────────────── */
+
+.table-container {
+  @apply rounded-lg border border-border overflow-hidden;
+}
+
+.table {
+  @apply w-full text-sm;
+}
+
+.table thead {
+  @apply border-b border-border bg-page;
+}
+
+.table thead th {
+  @apply px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider;
+}
+
+.table tbody {
+  @apply divide-y divide-border;
+}
+
+.table tbody tr {
+  @apply hover:bg-page/50 transition-colors;
+}
+
+.table tbody td {
+  @apply px-4 py-3 text-text-primary;
+}
+
+/* ─── Table Variants ──────────────────────────────────────────────────────── */
+
+.table-striped tbody tr:nth-child(even) {
+  @apply bg-page/30;
+}
+
+.table-striped tbody tr:nth-child(even):hover {
+  @apply bg-page/50;
+}
+
+.table-bordered {
+  @apply border-2;
+}
+
+.table-bordered thead th,
+.table-bordered tbody td {
+  @apply border border-border;
+}
+
+.table-compact thead th,
+.table-compact tbody td {
+  @apply px-3 py-2;
+}
+
+.table-compact thead th {
+  @apply text-[10px];
+}
+
+.table-compact tbody td {
+  @apply text-xs;
+}
+
+.table-hover tbody tr {
+  @apply cursor-pointer hover:bg-page/50;
+}
+
+.table-hover tbody tr:hover {
+  @apply bg-page/50;
+}
+
+/* ─── Table States ───────────────────────────────────────────────────────── */
+
+.table-loading {
+  @apply animate-pulse;
+}
+
+.table-loading thead th {
+  @apply bg-page;
+}
+
+.table-loading tbody td {
+  @apply bg-page;
+}
+
+.table-empty {
+  @apply p-12 text-center text-text-secondary;
+}
+
+.table-error {
+  @apply p-12 text-center text-danger bg-danger-bg/10 border border-danger/30 rounded-lg;
+}
+
+/* ─── Table Responsive ────────────────────────────────────────────────────── */
+
+.table-responsive {
+  @apply overflow-x-auto;
+}
+
+.table-responsive .table {
+  @apply min-w-full;
+}
+
+/* ─── Table Actions ──────────────────────────────────────────────────────── */
+
+.table-actions {
+  @apply flex items-center gap-2;
+}
+
+.table-actions .btn {
+  @apply p-1.5 rounded-lg transition-colors;
+}
+
+.table-actions .btn-edit {
+  @apply hover:bg-info-bg hover:text-info;
+}
+
+.table-actions .btn-delete {
+  @apply hover:bg-danger-bg hover:text-danger;
+}
+
+.table-actions .btn-view {
+  @apply hover:bg-info-bg hover:text-info;
+}
+
+/* ─── Table Selection ────────────────────────────────────────────────────── */
+
+.table-selectable thead th:first-child,
+.table-selectable tbody td:first-child {
+  @apply w-8 text-center;
+}
+
+.table-selectable input[type="checkbox"] {
+  @apply rounded border-border text-info focus:ring-info;
+}
+
+/* ─── Dark Mode Table Styles ─────────────────────────────────────────────── */
+
+.dark .table-container {
+  @apply border-border;
+}
+
+.dark .table thead {
+  @apply bg-tertiary border-border;
+}
+
+.dark .table thead th {
+  @apply text-text-secondary;
+}
+
+.dark .table tbody {
+  @apply divide-border;
+}
+
+.dark .table tbody tr {
+  @apply hover:bg-tertiary/50;
+}
+
+.dark .table tbody td {
+  @apply text-text-primary;
+}
+
+.dark .table-striped tbody tr:nth-child(even) {
+  @apply bg-tertiary/20;
+}
+
+.dark .table-striped tbody tr:nth-child(even):hover {
+  @apply bg-tertiary/40;
+}
+
+.dark .table-bordered {
+  @apply border-2;
+}
+
+.dark .table-bordered thead th,
+.dark .table-bordered tbody td {
+  @apply border-border;
+}
+
+.dark .table-hover tbody tr {
+  @apply hover:bg-tertiary/50;
+}
+
+.dark .table-actions .btn-edit {
+  @apply hover:bg-info-bg/20 hover:text-info;
+}
+
+.dark .table-actions .btn-delete {
+  @apply hover:bg-danger-bg/20 hover:text-danger;
+}
+
+.dark .table-actions .btn-view {
+  @apply hover:bg-info-bg/20 hover:text-info;
+}
+
+.dark .table-error {
+  @apply bg-danger-bg/20 border-danger/30;
+}
