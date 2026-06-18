@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useToast } from '@/contexts/(super-admin)';
-
+import { useToast } from '@/contexts/(super-admin)/ToastContext';
 interface ImpersonationSession {
   isActive: boolean;
   tenantId: string | null;
