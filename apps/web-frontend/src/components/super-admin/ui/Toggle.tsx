@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/(super-admin)/utils';
 
 export interface ToggleProps {
   enabled: boolean;

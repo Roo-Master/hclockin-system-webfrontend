@@ -1,25 +1,16 @@
-import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
 import './globals.css';
-import { Providers } from './providers';
-
-const inter = Inter({ subsets: ['latin'] });
+import type { ReactNode } from 'react';
+import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Super Admin Dashboard',
-  description: 'Chronos super Admin platform',
+  title: 'Hospital Chronos',
+  description: 'Hospital workforce management and attendance platform',
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
-        <Providers>{children}</Providers>
-      </body>
+      <body className="bg-gray-50">{children}</body>
     </html>
   );
 }

@@ -1,8 +1,8 @@
 'use client';
 
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/(super-admin)/utils';
 import { Toggle } from '@/components/ui';
-import { Tenant, TenantOverride } from '@/types/feature-flags';
+import { Tenant, TenantOverride } from '@/types/(super-admin)/feature-flags';
 
 interface TenantOverrideGridProps {
   tenants: Tenant[];

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Avatar, StatusBadge } from '@/components/common';
 import { Button } from '@/components/common';
-import { Admin, AdminStatus } from '@/types/admin';
+import { Admin, AdminStatus } from '@/types/(super-admin)/admin';
 
 interface AdminRowProps {
   admin: Admin;

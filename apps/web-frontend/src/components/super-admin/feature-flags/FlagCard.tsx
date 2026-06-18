@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import { Card, StatusBadge, Button } from '@/components/common';
 import { Toggle } from '@/components/ui';
-import { cn } from '@/lib/utils';
-import { FeatureFlag, Tenant } from '@/types/feature-flags';
+import { cn } from '@/lib/(super-admin)/utils';
+import { FeatureFlag, Tenant } from '@/types/(super-admin)/feature-flags';
 
 interface FlagCardProps {
   flag: FeatureFlag;

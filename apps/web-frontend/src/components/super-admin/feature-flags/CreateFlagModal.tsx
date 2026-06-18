@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Button, Input, Select } from '@/components/common';
-import { FlagCategory, RolloutStrategy } from '@/types/feature-flags';
+import { FlagCategory, RolloutStrategy } from '@/types/(super-admin)/feature-flags';
 
 interface CreateFlagModalProps {
   isOpen: boolean;

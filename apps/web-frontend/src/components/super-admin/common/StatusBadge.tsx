@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/(super-admin)/utils';
 
 export type StatusType = 
   | 'active' | 'inactive' | 'pending'

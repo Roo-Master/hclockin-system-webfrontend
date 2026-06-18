@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/common';
-import { FeatureFlag } from '@/types/feature-flags';
+import { FeatureFlag } from '@/types/(super-admin)/feature-flags';
 
 interface ConfirmModalProps {
   flag: FeatureFlag;

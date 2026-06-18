@@ -1,5 +1,5 @@
-import { cn } from '@/lib/utils';
-import { getInitials } from '@/lib/utils';
+import { cn } from '@/lib/(super-admin)/utils';
+import { getInitials } from '@/lib/(super-admin)/utils';
 
 export interface AvatarProps {
   name: string;

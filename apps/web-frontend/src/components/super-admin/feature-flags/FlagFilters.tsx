@@ -2,7 +2,7 @@
 
 import { Input, Select } from '@/components/common';
 import { Button } from '@/components/common';
-import { FlagCategory } from '@/types/feature-flags';
+import { FlagCategory } from '@/types/(super-admin)/feature-flags';
 
 interface FlagFiltersProps {
   search: string;

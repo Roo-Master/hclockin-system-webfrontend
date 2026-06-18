@@ -1,7 +1,7 @@
 'use client';
 
-import { cn } from '@/lib/utils';
-import { FlagCategory } from '@/types/feature-flags';
+import { cn } from '@/lib/(super-admin)/utils';
+import { FlagCategory } from '@/types/(super-admin)/feature-flags';
 
 interface CategoryTabsProps {
   flags: any[];
