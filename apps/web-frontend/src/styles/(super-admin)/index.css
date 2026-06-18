@@ -1,0 +1,121 @@
+/* ─── Styles Entry Point ──────────────────────────────────────────────────── */
+
+/* Design System */
+@import './design-system.css';
+
+/* Theme */
+@import './themes/light.css';
+@import './themes/dark.css';
+
+/* Components */
+@import './components/card.css';
+@import './components/table.css';
+@import './components/form.css';
+
+/* ─── Custom Properties ──────────────────────────────────────────────────── */
+
+:root {
+  /* Additional custom properties */
+  --header-height: 64px;
+  --sidebar-width: 240px;
+  --sidebar-collapsed-width: 64px;
+
+  --z-dropdown: 1000;
+  --z-sticky: 1020;
+  --z-fixed: 1030;
+  --z-modal-backdrop: 1040;
+  --z-modal: 1050;
+  --z-popover: 1060;
+  --z-tooltip: 1070;
+  --z-toast: 1080;
+}
+
+/* ─── Print Styles ────────────────────────────────────────────────────────── */
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  body {
+    @apply bg-white text-black;
+  }
+
+  .card {
+    @apply shadow-none border border-gray-200;
+  }
+}
+
+/* ─── Focus Styles ───────────────────────────────────────────────────────── */
+
+:focus-visible {
+  @apply outline-none ring-2 ring-info/50 ring-offset-2 ring-offset-surface;
+}
+
+.dark :focus-visible {
+  @apply ring-offset-tertiary;
+}
+
+/* ─── Transitions ────────────────────────────────────────────────────────── */
+
+* {
+  @apply transition-colors duration-200;
+}
+
+/* ─── Loading Shimmer ────────────────────────────────────────────────────── */
+
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--bg-surface) 0%,
+    var(--bg-tertiary) 50%,
+    var(--bg-surface) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* ─── Toast Animations ───────────────────────────────────────────────────── */
+
+.toast-enter {
+  animation: toastIn 0.3s ease-out;
+}
+
+.toast-exit {
+  animation: toastOut 0.3s ease-in;
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes toastOut {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+}

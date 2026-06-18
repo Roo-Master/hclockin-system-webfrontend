@@ -17,6 +17,7 @@ async function main() {
       subdomain: 'st-teresa',
       licenseKey: 'CHRONOS-L4-STTERESA-99281-X',
       isActive: true,
+      publicKey: "seed-public-key",
     },
   });
 
@@ -154,6 +155,7 @@ async function main() {
       serialCode: 'ZK-ADMS-ICUMAIN-01',
       ipAddress: '192.168.10.45',
       isActive: true,
+      publicKey: "seed-public-key",
     },
   });
 

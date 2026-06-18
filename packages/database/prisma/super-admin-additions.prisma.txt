@@ -1,0 +1,95 @@
+// =============================================================================
+// SUPER ADMIN PRISMA ADDITIONS
+// Copy these models into your schema.prisma
+// =============================================================================
+
+model Tenant {
+  id             String         @id @default(cuid())
+  name           String
+  slug           String         @unique
+  status         TenantStatus   @default(TRIAL)
+  plan           PlanTier       @default(STARTER)
+  billingCycle   BillingCycle   @default(MONTHLY)
+  adminEmail     String
+  trialEndsAt    DateTime?
+  suspendedAt    DateTime?
+  suspendReason  String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  admins         TenantAdmin[]
+  featureFlags   TenantFeatureFlag[]
+  subscription   Subscription?
+
+  @@map("tenants")
+}
+
+model TenantAdmin {
+  id         String   @id @default(cuid())
+  tenantId   String
+  email      String   @unique
+  name       String
+  createdAt  DateTime @default(now())
+
+  tenant     Tenant   @relation(fields: [tenantId], references: [id])
+
+  @@map("tenant_admins")
+}
+
+model Subscription {
+  id             String       @id @default(cuid())
+  tenantId       String       @unique
+  plan           PlanTier
+  billingCycle   BillingCycle
+  status         String       @default("ACTIVE")
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  cancelledAt    DateTime?
+  createdAt      DateTime     @default(now())
+
+  tenant         Tenant       @relation(fields: [tenantId], references: [id])
+
+  @@map("subscriptions")
+}
+
+model TenantFeatureFlag {
+  id        String  @id @default(cuid())
+  tenantId  String
+  flag      String
+  enabled   Boolean @default(false)
+
+  tenant    Tenant  @relation(fields: [tenantId], references: [id])
+
+  @@unique([tenantId, flag])
+  @@map("tenant_feature_flags")
+}
+
+model ImpersonationLog {
+  id             String    @id @default(cuid())
+  superAdminId   String
+  tenantId       String
+  tenantName     String
+  reason         String
+  startedAt      DateTime  @default(now())
+  endedAt        DateTime?
+
+  @@map("impersonation_logs")
+}
+
+enum TenantStatus {
+  TRIAL
+  ACTIVE
+  SUSPENDED
+  CANCELLED
+}
+
+enum PlanTier {
+  STARTER
+  PROFESSIONAL
+  ENTERPRISE
+}
+
+enum BillingCycle {
+  MONTHLY
+  ANNUAL
+}

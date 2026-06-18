@@ -1,0 +1,197 @@
+/* ─── Card Component Styles ───────────────────────────────────────────────── */
+
+.card {
+  @apply rounded-card border border-border bg-surface shadow-sm;
+  @apply flex flex-col;
+}
+
+.card-header {
+  @apply flex items-start justify-between gap-4 p-6 pb-0;
+}
+
+.card-title {
+  @apply text-heading font-heading text-text-primary;
+}
+
+.card-subtitle {
+  @apply text-body text-text-secondary mt-1;
+}
+
+.card-body {
+  @apply flex-1 p-6;
+}
+
+.card-footer {
+  @apply border-t border-border p-4 bg-page/50 rounded-b-card;
+}
+
+.card-hover {
+  @apply hover:shadow-md hover:border-info/30 transition-all cursor-pointer;
+}
+
+.card-interactive {
+  @apply hover:shadow-md hover:border-info/30 hover:bg-page/50 transition-all cursor-pointer;
+}
+
+.card-loading {
+  @apply animate-pulse;
+}
+
+.card-loading .card-title {
+  @apply bg-page rounded h-4 w-1/4;
+}
+
+.card-loading .card-body {
+  @apply space-y-4;
+}
+
+.card-loading .card-body > * {
+  @apply bg-page rounded;
+}
+
+.card-empty {
+  @apply p-12 text-center;
+}
+
+.card-empty-icon {
+  @apply text-4xl mb-4;
+}
+
+.card-empty-message {
+  @apply text-text-secondary;
+}
+
+/* ─── Card Variants ───────────────────────────────────────────────────────── */
+
+.card-primary {
+  @apply border-info/30 bg-info-bg/10;
+}
+
+.card-success {
+  @apply border-success/30 bg-success-bg/10;
+}
+
+.card-warning {
+  @apply border-warning/30 bg-warning-bg/10;
+}
+
+.card-danger {
+  @apply border-danger/30 bg-danger-bg/10;
+}
+
+.card-dark {
+  @apply border-border bg-sidebar text-white;
+}
+
+.card-dark .card-title {
+  @apply text-white;
+}
+
+.card-dark .card-subtitle {
+  @apply text-gray-400;
+}
+
+.card-dark .card-footer {
+  @apply border-white/10 bg-white/5;
+}
+
+/* ─── Card Grid ───────────────────────────────────────────────────────────── */
+
+.card-grid {
+  @apply grid gap-6;
+}
+
+.card-grid-2 {
+  @apply grid-cols-1 sm:grid-cols-2;
+}
+
+.card-grid-3 {
+  @apply grid-cols-1 sm:grid-cols-2 lg:grid-cols-3;
+}
+
+.card-grid-4 {
+  @apply grid-cols-1 sm:grid-cols-2 lg:grid-cols-4;
+}
+
+.card-grid-5 {
+  @apply grid-cols-1 sm:grid-cols-2 lg:grid-cols-5;
+}
+
+/* ─── Card Sizes ──────────────────────────────────────────────────────────── */
+
+.card-sm {
+  @apply p-4;
+}
+
+.card-sm .card-header {
+  @apply p-4 pb-0;
+}
+
+.card-sm .card-body {
+  @apply p-4;
+}
+
+.card-sm .card-footer {
+  @apply p-3;
+}
+
+.card-lg {
+  @apply p-8;
+}
+
+.card-lg .card-header {
+  @apply p-8 pb-0;
+}
+
+.card-lg .card-body {
+  @apply p-8;
+}
+
+.card-lg .card-footer {
+  @apply p-6;
+}
+
+/* ─── Responsive Card Adjustments ────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+  .card-header {
+    @apply flex-col items-start gap-2;
+  }
+
+  .card-grid-2,
+  .card-grid-3,
+  .card-grid-4,
+  .card-grid-5 {
+    @apply grid-cols-1;
+  }
+}
+
+/* ─── Dark Mode Card Styles ──────────────────────────────────────────────── */
+
+.dark .card {
+  @apply bg-surface border-border;
+}
+
+.dark .card-footer {
+  @apply bg-tertiary/50;
+}
+
+.dark .card-primary {
+  @apply border-info/30 bg-info-bg/10;
+}
+
+.dark .card-success {
+  @apply border-success/30 bg-success-bg/10;
+}
+
+.dark .card-warning {
+  @apply border-warning/30 bg-warning-bg/10;
+}
+
+.dark .card-danger {
+  @apply border-danger/30 bg-danger-bg/10;
+}
+
+.dark .card-dark {
+  @apply bg-sidebar/80;
+}

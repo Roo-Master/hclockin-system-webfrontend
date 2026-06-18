@@ -10,12 +10,20 @@ import './globals.css';
 export const metadata: Metadata = {
   title: 'Chronos — Hospital Workforce Management',
   description: 'Hospital staff clock-in and attendance management platform',
+import './globals.css';
+import type { ReactNode } from 'react';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Hospital Chronos',
+  description: 'Hospital workforce management and attendance platform',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body className="font-sans antialiased text-slate-900 bg-slate-50">{children}</body>
+      <body className="bg-gray-50">{children}</body>
     </html>
   );
 }

@@ -1,3 +1,5 @@
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
 import {
   Controller,
   Get,
@@ -8,14 +10,21 @@ import {
   Query,
   Req,
   UseGuards,
-  ParseUUIDPipe,
+  ParseUUIDPipe
 } from '@nestjs/common';
 import { AttendanceService } from './attendance.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { PrismaService } from '../database/prisma.service'; // adjust path as needed
-import { UserRole } from '../employee/users/enum/user-role.enum'; // adjust path as needed
+export enum UserRole {
+  EMPLOYEE = 'EMPLOYEE',
+  SUPERVISOR = 'SUPERVISOR',
+  MANAGER = 'MANAGER',
+  HR_MANAGER = 'HR_MANAGER',
+  HOSPITAL_ADMIN = 'HOSPITAL_ADMIN',
+  SUPER_ADMIN = 'SUPER_ADMIN',
+} // adjust path as needed
 import { AttendanceLog , Prisma } from '@chronos/database';
 class IngestLogDto {
   userId: string;
@@ -154,6 +163,47 @@ export class AttendanceController {
       dto.userId,
     );
   }
+
+  // ===== GENERAL USER ENDPOINTS =====
+
+@Get('my-summaries')
+async getMySummaries(
+  @Query('startDate') startDate: string,
+  @Query('endDate') endDate: string,
+  @Query('limit') limit: number,
+  @Req() req: any,
+) {
+  return this.attendanceService.getSummaries({
+    tenantId: req.user.tenantId,
+    userId: req.user.id,
+    startDate: startDate ? new Date(startDate) : undefined,
+    endDate: endDate ? new Date(endDate) : undefined,
+    limit: limit || 30,
+  });
+}
+
+@Get('my-logs')
+async getMyLogs(
+  @Query('page') page: number,
+  @Query('limit') limit: number,
+  @Req() req: any,
+) {
+  return this.attendanceService.getRawLogs(req.user.tenantId, {
+    userId: req.user.id,
+    page: page || 1,
+    limit: limit || 50,
+  });
+}
+
+@Post('clock-in')
+async clockIn(@Req() req: any) {
+  return this.attendanceService.clockIn(req.user.id, req.user.tenantId);
+}
+
+@Post('clock-out')
+async clockOut(@Req() req: any) {
+  return this.attendanceService.clockOut(req.user.id, req.user.tenantId);
+}
 
   // ===== RAW LOGS =====
 
