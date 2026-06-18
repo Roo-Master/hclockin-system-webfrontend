@@ -1,11 +1,11 @@
 // src/attendance/repositories/attendance.repository.ts
-import { DatabaseService } from '../../database/database.service';
+import { PrismaService } from '../../database/prisma.service';
 import { AttendanceLog } from '@chronos/database';
 
 export class AttendanceRepository {
   private lastSyncTimestamp: Date | null = null;
 
-  constructor(private db: DatabaseService) {}
+  constructor(private db: PrismaService) {}
 
   async findMany(params: {
     where?: any;
