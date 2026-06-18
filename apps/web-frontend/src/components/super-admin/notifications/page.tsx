@@ -2,8 +2,8 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
-import { AppNotification, NotificationType } from '@/lib/super-admin/types';
-import { formatRelativeTime } from '@/lib/super-admin/format';
+import { AppNotification, NotificationType } from '@/lib/(super-admin)/super-admin/types';
+import { formatRelativeTime } from '@/lib/(super-admin)/super-admin/format';
 
 type Filter = 'all' | 'unread';
 

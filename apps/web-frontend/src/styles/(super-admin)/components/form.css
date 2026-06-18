@@ -1,0 +1,179 @@
+/* ─── Form Component Styles ───────────────────────────────────────────────── */
+
+.form-group {
+  @apply flex flex-col gap-1.5;
+}
+
+.form-label {
+  @apply text-sm font-medium text-text-primary;
+}
+
+.form-label-required::after {
+  content: '*';
+  @apply ml-1 text-danger;
+}
+
+.form-input {
+  @apply w-full rounded-lg border bg-surface px-3 py-2.5 text-sm text-text-primary transition-colors;
+  @apply placeholder:text-text-tertiary;
+  @apply focus:outline-none focus:ring-2 focus:ring-info/50 focus:border-info;
+  @apply disabled:opacity-40 disabled:cursor-not-allowed;
+}
+
+.form-input-error {
+  @apply border-danger focus:ring-danger/50;
+}
+
+.form-select {
+  @apply w-full rounded-lg border bg-surface px-3 py-2.5 text-sm text-text-primary transition-colors;
+  @apply appearance-none;
+  @apply focus:outline-none focus:ring-2 focus:ring-info/50 focus:border-info;
+  @apply disabled:opacity-40 disabled:cursor-not-allowed;
+}
+
+.form-select-error {
+  @apply border-danger focus:ring-danger/50;
+}
+
+.form-textarea {
+  @apply w-full rounded-lg border bg-surface px-3 py-2.5 text-sm text-text-primary transition-colors;
+  @apply placeholder:text-text-tertiary;
+  @apply focus:outline-none focus:ring-2 focus:ring-info/50 focus:border-info;
+  @apply disabled:opacity-40 disabled:cursor-not-allowed;
+  @apply resize-y min-h-[100px];
+}
+
+.form-textarea-error {
+  @apply border-danger focus:ring-danger/50;
+}
+
+.form-hint {
+  @apply text-sm text-text-tertiary;
+}
+
+.form-error {
+  @apply text-sm text-danger;
+}
+
+/* ─── Form Layout ──────────────────────────────────────────────────────────── */
+
+.form-row {
+  @apply flex flex-col sm:flex-row gap-4;
+}
+
+.form-row > * {
+  @apply flex-1;
+}
+
+.form-inline {
+  @apply flex items-center gap-4;
+}
+
+.form-inline .form-group {
+  @apply flex-1;
+}
+
+/* ─── Form Checkbox & Radio ───────────────────────────────────────────────── */
+
+.form-check {
+  @apply flex items-center gap-2;
+}
+
+.form-check-input {
+  @apply h-4 w-4 rounded border-border text-info focus:ring-info;
+}
+
+.form-check-input[type="radio"] {
+  @apply rounded-full;
+}
+
+.form-check-label {
+  @apply text-sm text-text-primary cursor-pointer;
+}
+
+.form-check-label-disabled {
+  @apply opacity-40 cursor-not-allowed;
+}
+
+/* ─── Form Toggle ─────────────────────────────────────────────────────────── */
+
+.form-toggle {
+  @apply relative inline-flex items-center;
+}
+
+.form-toggle-input {
+  @apply sr-only;
+}
+
+.form-toggle-track {
+  @apply relative h-5 w-9 rounded-full bg-border transition-colors cursor-pointer;
+  @apply focus:outline-none focus:ring-2 focus:ring-info/50;
+}
+
+.form-toggle-track-checked {
+  @apply bg-info;
+}
+
+.form-toggle-thumb {
+  @apply absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow transform transition-transform;
+}
+
+.form-toggle-thumb-checked {
+  @apply translate-x-4;
+}
+
+/* ─── Form Validation States ──────────────────────────────────────────────── */
+
+.form-success .form-input,
+.form-success .form-select,
+.form-success .form-textarea {
+  @apply border-success focus:ring-success/50;
+}
+
+.form-success .form-hint {
+  @apply text-success;
+}
+
+.form-error .form-input,
+.form-error .form-select,
+.form-error .form-textarea {
+  @apply border-danger focus:ring-danger/50;
+}
+
+.form-error .form-error {
+  @apply block;
+}
+
+/* ─── Dark Mode Form Styles ───────────────────────────────────────────────── */
+
+.dark .form-label {
+  @apply text-text-primary;
+}
+
+.dark .form-input,
+.dark .form-select,
+.dark .form-textarea {
+  @apply bg-tertiary border-border text-text-primary placeholder-text-tertiary;
+}
+
+.dark .form-input:focus,
+.dark .form-select:focus,
+.dark .form-textarea:focus {
+  @apply border-info ring-info/50;
+}
+
+.dark .form-check-input {
+  @apply border-border bg-tertiary;
+}
+
+.dark .form-check-input:checked {
+  @apply bg-info border-info;
+}
+
+.dark .form-toggle-track {
+  @apply bg-border;
+}
+
+.dark .form-toggle-track-checked {
+  @apply bg-info;
+}

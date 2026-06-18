@@ -1,0 +1,294 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-[#E5E7EB];
+  }
+
+  html {
+    @apply scroll-smooth;
+  }
+
+  body {
+    @apply bg-[#F5F6FA] text-[#111827] antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    @apply w-2 h-2;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-[#F5F6FA];
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-[#E5E7EB] rounded-full hover:bg-[#9CA3AF] transition-colors;
+  }
+
+  /* Focus styles */
+  :focus-visible {
+    @apply outline-none ring-2 ring-[#2563EB]/50 ring-offset-2 ring-offset-white;
+  }
+
+  /* Selection */
+  ::selection {
+    @apply bg-[#DBEAFE] text-[#2563EB];
+  }
+}
+
+@layer components {
+  /* Container */
+  .container-custom {
+    @apply max-w-7xl mx-auto px-4 sm:px-6;
+  }
+
+  /* Card variants */
+  .card-hover {
+    @apply hover:shadow-md hover:border-[#2563EB]/30 transition-all cursor-pointer;
+  }
+
+  .card-interactive {
+    @apply hover:shadow-md hover:border-[#2563EB]/30 hover:bg-[#F5F6FA]/50 transition-all cursor-pointer;
+  }
+
+  /* Status dots */
+  .status-dot {
+    @apply relative flex h-2.5 w-2.5 shrink-0;
+  }
+
+  .status-dot-ping {
+    @apply absolute inline-flex h-full w-full rounded-full opacity-60 animate-ping;
+  }
+
+  .status-dot-static {
+    @apply relative inline-flex rounded-full h-2.5 w-2.5;
+  }
+
+  /* Badge variants */
+  .badge {
+    @apply inline-flex items-center gap-1.5 rounded-full font-medium border px-2.5 py-1 text-xs;
+  }
+
+  .badge-info {
+    @apply bg-[#DBEAFE] text-[#2563EB] border-[#2563EB]/30;
+  }
+
+  .badge-success {
+    @apply bg-[#DCFCE7] text-[#16A34A] border-[#16A34A]/30;
+  }
+
+  .badge-warning {
+    @apply bg-[#FFEDD5] text-[#EA580C] border-[#EA580C]/30;
+  }
+
+  .badge-danger {
+    @apply bg-[#FEE2E2] text-[#DC2626] border-[#DC2626]/30;
+  }
+
+  .badge-neutral {
+    @apply bg-[#F5F6FA] text-[#6B7280] border-[#E5E7EB];
+  }
+
+  /* Loading skeletons */
+  .skeleton {
+    @apply animate-pulse bg-[#F5F6FA] rounded;
+  }
+
+  .skeleton-text {
+    @apply h-4 bg-[#F5F6FA] rounded;
+  }
+
+  .skeleton-circle {
+    @apply rounded-full bg-[#F5F6FA];
+  }
+
+  .skeleton-card {
+    @apply bg-[#F5F6FA] rounded-card p-6 space-y-4;
+  }
+
+  /* Transitions */
+  .transition-base {
+    @apply transition-all duration-200 ease-in-out;
+  }
+
+  .transition-smooth {
+    @apply transition-all duration-300 ease-out;
+  }
+}
+
+@layer utilities {
+  /* Animation utilities */
+  .animate-slide-in {
+    animation: slideIn 0.3s ease-out;
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.3s ease-out;
+  }
+
+  .animate-pulse-slow {
+    animation: pulseSlow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  /* Scroll utilities */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    @apply w-1.5 h-1.5;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    @apply bg-[#E5E7EB] rounded-full hover:bg-[#9CA3AF] transition-colors;
+  }
+
+  /* Glass effect */
+  .glass {
+    @apply bg-white/80 backdrop-blur-sm border border-[#E5E7EB]/50;
+  }
+
+  .glass-dark {
+    @apply bg-black/50 backdrop-blur-sm border border-white/10;
+  }
+
+  /* Gradient text */
+  .text-gradient {
+    @apply bg-gradient-to-r from-[#2563EB] to-[#16A34A] bg-clip-text text-transparent;
+  }
+
+  .text-gradient-warm {
+    @apply bg-gradient-to-r from-[#EA580C] to-[#DC2626] bg-clip-text text-transparent;
+  }
+
+  /* Blur utilities */
+  .blur-sm {
+    backdrop-filter: blur(4px);
+  }
+
+  .blur-md {
+    backdrop-filter: blur(8px);
+  }
+
+  .blur-lg {
+    backdrop-filter: blur(16px);
+  }
+}
+
+/* ─── Keyframes ────────────────────────────────────────────────────────────── */
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pulseSlow {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+/* ─── Dark Mode Overrides ────────────────────────────────────────────────── */
+
+.dark {
+  @apply bg-[#111827] text-[#F9FAFB];
+}
+
+.dark ::-webkit-scrollbar-track {
+  @apply bg-[#1F2937];
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  @apply bg-[#374151] hover:bg-[#4B5563];
+}
+
+.dark .glass {
+  @apply bg-[#1F2937]/80 backdrop-blur-sm border-[#374151]/50;
+}
+
+.dark .glass-dark {
+  @apply bg-black/70 backdrop-blur-sm border-white/5;
+}
+
+/* ─── Print Styles ────────────────────────────────────────────────────────── */
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  body {
+    @apply bg-white text-black;
+  }
+
+  .card {
+    @apply shadow-none border border-gray-200;
+  }
+}

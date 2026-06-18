@@ -1,54 +1,32 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  content: ['./src/**/*.{js,ts,jsx,tsx,mdx}'],
+  content: [
+    './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/components/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/app/**/*.{js,ts,jsx,tsx,mdx}',
+  ],
   theme: {
     extend: {
-      fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-      },
       colors: {
-        // Semantic palette — Section 3.1 of design doc
-        info: {
-          bg: '#DBEAFE',
-          DEFAULT: '#2563EB',
-        },
-        success: {
-          bg: '#DCFCE7',
-          DEFAULT: '#16A34A',
-        },
-        warning: {
-          bg: '#FFEDD5',
-          DEFAULT: '#EA580C',
-        },
-        danger: {
-          bg: '#FEE2E2',
-          DEFAULT: '#DC2626',
-        },
-        // Neutral palette — Section 3.2
-        page: '#F5F6FA',
-        surface: '#FFFFFF',
-        sidebar: '#0F1B3D',
-        border: '#E5E7EB',
-        primary: '#111827',
-        secondary: '#6B7280',
-        tertiary: '#9CA3AF',
-      },
-      fontSize: {
-        // Type scale — Section 4.1
-        display: ['24px', { lineHeight: '1.2', fontWeight: '600' }],
-        heading: ['17px', { lineHeight: '1.2', fontWeight: '600' }],
-        stat: ['30px', { lineHeight: '1.1', fontWeight: '700' }],
-        body: ['14px', { lineHeight: '1.5' }],
-        label: ['13px', { lineHeight: '1.4' }],
-        delta: ['12px', { lineHeight: '1.4', fontWeight: '500' }],
-      },
-      borderRadius: {
-        card: '12px',
-        badge: '8px',
-        pill: '999px',
+        // Semantic colors
+        'info-bg': '#DBEAFE',
+        'info': '#2563EB',
+        'success-bg': '#DCFCE7',
+        'success': '#16A34A',
+        'warning-bg': '#FFEDD5',
+        'warning': '#EA580C',
+        'danger-bg': '#FEE2E2',
+        'danger': '#DC2626',
+        // Neutrals
+        'page': '#F5F6FA',
+        'surface': '#FFFFFF',
+        'sidebar': '#0F1B3D',
+        'border': '#E5E7EB',
+        'text-primary': '#111827',
+        'text-secondary': '#6B7280',
+        'text-tertiary': '#9CA3AF',
       },
       spacing: {
-        // 4px base scale — Section 2.3
         1: '4px',
         2: '8px',
         3: '12px',
@@ -56,6 +34,30 @@ module.exports = {
         6: '24px',
         8: '32px',
         12: '48px',
+      },
+      fontSize: {
+        display: '24px',
+        heading: '17px',
+        stat: '30px',
+        body: '14px',
+        label: '13px',
+        delta: '12px',
+      },
+      fontWeight: {
+        display: '600',
+        heading: '600',
+        stat: '700',
+        body: '400',
+        label: '400',
+        delta: '500',
+      },
+      borderRadius: {
+        card: '12px',
+        badge: '8px',
+        pill: '9999px',
+      },
+      fontFamily: {
+        sans: ['Inter', 'system-ui', 'sans-serif'],
       },
     },
   },

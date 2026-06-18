@@ -2,40 +2,58 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { superAdminApi, Tenant } from '@/lib/api/super-admin';
 
 type TenantStatus = 'ACTIVE' | 'TRIAL' | 'SUSPENDED' | 'CANCELLED';
 type PlanTier = 'STARTER' | 'PROFESSIONAL' | 'ENTERPRISE';
 
-type Tenant = {
-  id: string;
-  name: string;
-  slug: string;
-  status: TenantStatus;
-  plan: PlanTier;
-  staffCount: number;
-  adminEmail: string;
-  mrr: number;
-  createdAt: string;
-  trialEndsAt?: string | null;
-  country: string;
-  lastActive: string;
-  contactName?: string | null;
-  notes?: string | null;
-};
-
 type DrawerMode = 'view' | 'edit' | 'create' | null;
 
-const STATUS_COLORS: Record<TenantStatus, string> = {
-  ACTIVE: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
-  TRIAL: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
-  SUSPENDED: 'bg-rose-500/15 text-rose-400 border-rose-500/30',
-  CANCELLED: 'bg-gray-500/15 text-gray-500 border-gray-600/30',
+// ─── Semantic Color Mapping ──────────────────────────────────────────────
+
+const STATUS_COLORS: Record<TenantStatus, { bg: string; text: string; border: string; dot: string }> = {
+  ACTIVE: { 
+    bg: 'bg-[#DCFCE7]', 
+    text: 'text-[#16A34A]', 
+    border: 'border-[#16A34A]',
+    dot: 'bg-[#16A34A]'
+  },
+  TRIAL: { 
+    bg: 'bg-[#FFEDD5]', 
+    text: 'text-[#EA580C]', 
+    border: 'border-[#EA580C]',
+    dot: 'bg-[#EA580C]'
+  },
+  SUSPENDED: { 
+    bg: 'bg-[#FEE2E2]', 
+    text: 'text-[#DC2626]', 
+    border: 'border-[#DC2626]',
+    dot: 'bg-[#DC2626]'
+  },
+  CANCELLED: { 
+    bg: 'bg-[#F5F6FA]', 
+    text: 'text-[#6B7280]', 
+    border: 'border-[#6B7280]',
+    dot: 'bg-[#9CA3AF]'
+  },
 };
 
-const PLAN_COLORS: Record<PlanTier, string> = {
-  STARTER: 'text-gray-400 bg-gray-800',
-  PROFESSIONAL: 'text-blue-300 bg-blue-600/20',
-  ENTERPRISE: 'text-violet-300 bg-violet-600/20',
+const PLAN_COLORS: Record<PlanTier, { bg: string; text: string; border: string }> = {
+  STARTER: { 
+    bg: 'bg-[#F5F6FA]', 
+    text: 'text-[#6B7280]', 
+    border: 'border-[#E5E7EB]' 
+  },
+  PROFESSIONAL: { 
+    bg: 'bg-[#DBEAFE]', 
+    text: 'text-[#2563EB]', 
+    border: 'border-[#2563EB]' 
+  },
+  ENTERPRISE: { 
+    bg: 'bg-[#FFEDD5]', 
+    text: 'text-[#EA580C]', 
+    border: 'border-[#EA580C]' 
+  },
 };
 
 const PLAN_PRICE: Record<PlanTier, string> = {
@@ -68,15 +86,15 @@ function cap(s: string) {
 function inputCls(disabled: boolean) {
   return `w-full rounded-lg px-3 py-2.5 text-sm transition-colors focus:outline-none ${
     disabled
-      ? 'bg-transparent text-gray-300 border-0 cursor-default'
-      : 'bg-gray-800 border border-gray-700 text-gray-200 placeholder-gray-600 focus:border-blue-500'
+      ? 'bg-transparent text-[#111827] border-0 cursor-default'
+      : 'bg-white border border-[#E5E7EB] text-[#111827] placeholder-[#9CA3AF] focus:border-[#2563EB] focus:ring-2 focus:ring-[#DBEAFE]'
   }`;
 }
 
 function FormField({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-[11px] font-mono uppercase tracking-wider text-gray-500">{label}</label>
+      <label className="text-[12px] font-medium text-[#6B7280]">{label}</label>
       {children}
     </div>
   );
@@ -86,7 +104,8 @@ function Toggle({ enabled, onToggle }: { enabled: boolean; onToggle: () => void 
   return (
     <button
       onClick={onToggle}
-      className={`relative w-10 h-5 rounded-full transition-colors ${enabled ? 'bg-blue-600' : 'bg-gray-700'}`}
+      className={`relative w-10 h-5 rounded-full transition-colors ${enabled ? 'bg-[#2563EB]' : 'bg-[#E5E7EB]'}`}
+      aria-label={enabled ? 'Disable' : 'Enable'}
     >
       <span
         className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${
@@ -99,9 +118,9 @@ function Toggle({ enabled, onToggle }: { enabled: boolean; onToggle: () => void 
 
 function PlaceholderState({ title, description }: { title: string; description: string }) {
   return (
-    <div className="rounded-xl border border-gray-800 bg-gray-900 px-4 py-16 text-center">
-      <div className="text-white font-medium mb-1">{title}</div>
-      <div className="text-gray-500 text-sm">{description}</div>
+    <div className="rounded-xl border border-[#E5E7EB] bg-white px-4 py-16 text-center shadow-sm">
+      <div className="text-[#111827] font-medium mb-1">{title}</div>
+      <div className="text-[#6B7280] text-sm">{description}</div>
     </div>
   );
 }
@@ -117,42 +136,42 @@ function ConfirmDeleteModal({
 }) {
   const [typed, setTyped] = useState('');
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-      <div className="w-full max-w-sm rounded-2xl border border-red-500/30 bg-gray-950 shadow-2xl p-6 flex flex-col gap-5">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="w-full max-w-sm rounded-xl border border-[#DC2626]/30 bg-white shadow-xl p-6 flex flex-col gap-5">
         <div className="flex items-start gap-3">
-          <div className="h-9 w-9 rounded-lg bg-red-500/15 border border-red-500/30 flex items-center justify-center text-lg shrink-0">
+          <div className="h-9 w-9 rounded-lg bg-[#FEE2E2] border border-[#DC2626]/30 flex items-center justify-center text-lg shrink-0">
             ⚠
           </div>
           <div>
-            <h2 className="text-sm font-bold text-white">Delete tenant?</h2>
-            <p className="text-[11px] text-gray-500 mt-0.5">This action cannot be undone.</p>
+            <h2 className="text-sm font-semibold text-[#111827]">Delete tenant?</h2>
+            <p className="text-[11px] text-[#6B7280] mt-0.5">This action cannot be undone.</p>
           </div>
         </div>
-        <p className="text-xs text-gray-400 leading-relaxed">
-          All data for <span className="text-white font-medium">{tenant.name}</span> will be permanently removed.
+        <p className="text-xs text-[#6B7280] leading-relaxed">
+          All data for <span className="text-[#111827] font-medium">{tenant.name}</span> will be permanently removed.
         </p>
         <div className="flex flex-col gap-1.5">
-          <label className="text-[11px] font-mono text-gray-500 uppercase tracking-wider">
-            Type <span className="text-red-400 font-semibold">{tenant.name}</span> to confirm
+          <label className="text-[12px] font-medium text-[#6B7280]">
+            Type <span className="text-[#DC2626] font-semibold">{tenant.name}</span> to confirm
           </label>
           <input
             value={typed}
             onChange={(e) => setTyped(e.target.value)}
             placeholder={tenant.name}
-            className="bg-gray-900 border border-gray-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder-gray-700 focus:outline-none focus:border-red-500/60 font-mono transition-colors"
+            className="bg-white border border-[#E5E7EB] rounded-lg px-3 py-2.5 text-sm text-[#111827] placeholder-[#9CA3AF] focus:outline-none focus:border-[#DC2626] focus:ring-2 focus:ring-[#FEE2E2] transition-colors"
           />
         </div>
         <div className="flex gap-2">
           <button
             onClick={onCancel}
-            className="flex-1 py-2.5 rounded-lg border border-gray-700 text-gray-400 hover:text-gray-200 text-sm transition-colors"
+            className="flex-1 py-2.5 rounded-lg border border-[#E5E7EB] text-[#6B7280] hover:text-[#111827] text-sm transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={onConfirm}
             disabled={typed !== tenant.name}
-            className="flex-1 py-2.5 rounded-lg bg-red-600 hover:bg-red-500 disabled:opacity-30 disabled:cursor-not-allowed text-white text-sm font-semibold transition-colors"
+            className="flex-1 py-2.5 rounded-lg bg-[#DC2626] hover:bg-[#B91C1C] disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium transition-colors"
           >
             Delete tenant
           </button>
@@ -182,20 +201,21 @@ function RowMenu({
           e.stopPropagation();
           setOpen((v) => !v);
         }}
-        className="px-2.5 py-1 text-xs bg-gray-800 text-gray-400 hover:bg-gray-700 rounded transition-colors"
+        className="px-2.5 py-1 text-xs bg-[#F5F6FA] text-[#6B7280] hover:bg-[#E5E7EB] rounded transition-colors"
+        aria-label="Row actions menu"
       >
         ···
       </button>
       {open && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-8 z-20 w-40 rounded-xl border border-gray-700 bg-gray-950 shadow-xl overflow-hidden">
+          <div className="absolute right-0 top-8 z-20 w-40 rounded-xl border border-[#E5E7EB] bg-white shadow-xl overflow-hidden">
             <button
               onClick={() => {
                 onView();
                 setOpen(false);
               }}
-              className="w-full text-left px-3 py-2.5 text-xs text-gray-300 hover:bg-gray-800 transition-colors font-mono"
+              className="w-full text-left px-3 py-2.5 text-xs text-[#111827] hover:bg-[#F5F6FA] transition-colors font-medium"
             >
               View details
             </button>
@@ -204,17 +224,17 @@ function RowMenu({
                 onEdit();
                 setOpen(false);
               }}
-              className="w-full text-left px-3 py-2.5 text-xs text-gray-300 hover:bg-gray-800 transition-colors font-mono"
+              className="w-full text-left px-3 py-2.5 text-xs text-[#111827] hover:bg-[#F5F6FA] transition-colors font-medium"
             >
               Edit
             </button>
-            <div className="border-t border-gray-800" />
+            <div className="border-t border-[#E5E7EB]" />
             <button
               onClick={() => {
                 onSuspend();
                 setOpen(false);
               }}
-              className="w-full text-left px-3 py-2.5 text-xs text-amber-400 hover:bg-gray-800 transition-colors font-mono"
+              className="w-full text-left px-3 py-2.5 text-xs text-[#EA580C] hover:bg-[#F5F6FA] transition-colors font-medium"
             >
               Suspend
             </button>
@@ -223,7 +243,7 @@ function RowMenu({
                 onDelete();
                 setOpen(false);
               }}
-              className="w-full text-left px-3 py-2.5 text-xs text-red-400 hover:bg-gray-800 transition-colors font-mono"
+              className="w-full text-left px-3 py-2.5 text-xs text-[#DC2626] hover:bg-[#F5F6FA] transition-colors font-medium"
             >
               Delete
             </button>
@@ -243,6 +263,7 @@ function CreateTenantModal({
 }) {
   const [step, setStep] = useState(1);
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     name: '',
     subdomain: '',
@@ -304,70 +325,79 @@ function CreateTenantModal({
 
   function fieldClass(name: keyof typeof errors) {
     const hasError = Boolean(errors[name]);
-    return `${inputCls(false)} ${hasError ? 'border-red-500 focus:border-red-500' : ''}`;
+    return `${inputCls(false)} ${hasError ? 'border-[#DC2626] focus:border-[#DC2626] focus:ring-[#FEE2E2]' : ''}`;
   }
 
   function showError(name: keyof typeof errors) {
-    return submitted && errors[name] ? <div className="text-xs text-red-400 mt-1">{errors[name]}</div> : null;
+    return submitted && errors[name] ? <div className="text-xs text-[#DC2626] mt-1">{errors[name]}</div> : null;
   }
 
   async function handleCreate() {
     setSubmitted(true);
     if (!step1Valid || !step2Valid) return;
 
-    const trialDays = parseInt(form.trial);
-    const trialEndsAt = isNaN(trialDays)
-      ? undefined
-      : new Date(Date.now() + trialDays * 86400000).toISOString();
+    setLoading(true);
+    try {
+      const trialDays = parseInt(form.trial);
+      const trialEndsAt = isNaN(trialDays)
+        ? undefined
+        : new Date(Date.now() + trialDays * 86400000).toISOString();
 
-    const payload = {
-      name: form.name.trim(),
-      subdomain: form.subdomain.trim().toLowerCase(),
-      slug: form.slug.trim().toLowerCase(),
-      licenseKey: form.licenseKey.trim(),
-      billingCycle: form.billingCycle,
-      country: form.country,
-      adminEmail: form.adminEmail.trim(),
-      contactName: form.contactName.trim(),
-      plan: form.plan,
-      status: trialEndsAt ? 'TRIAL' : 'ACTIVE',
-      trialEndsAt: trialEndsAt ?? null,
-    };
+      const payload = {
+        name: form.name.trim(),
+        slug: form.slug.trim().toLowerCase(),
+        planId: form.plan === 'STARTER' ? 'plan_starter' : 
+                form.plan === 'PROFESSIONAL' ? 'plan_professional' : 'plan_enterprise',
+        settings: {
+          subdomain: form.subdomain.trim().toLowerCase(),
+          country: form.country,
+          adminEmail: form.adminEmail.trim(),
+          contactName: form.contactName.trim(),
+          billingCycle: form.billingCycle,
+          licenseKey: form.licenseKey.trim(),
+          trialEndsAt: trialEndsAt ?? null,
+        }
+      };
 
-    const res = await fetch('/api/tenants', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-
-    if (res.ok) {
-      const data = await res.json();
-      onCreate(data.tenant ?? data);
+      const result = await superAdminApi.createTenant(payload);
+      
+      // Map the response to our Tenant type
+      const newTenant: Tenant = {
+        id: result.id,
+        name: result.name,
+        slug: result.slug,
+        status: trialEndsAt ? 'TRIAL' : 'ACTIVE',
+        plan: form.plan,
+        staffCount: 0,
+        adminEmail: form.adminEmail.trim(),
+        mrr: 0,
+        createdAt: new Date().toISOString(),
+        trialEndsAt: trialEndsAt ?? null,
+        country: form.country,
+        lastActive: 'Just now',
+        contactName: form.contactName.trim(),
+        notes: '',
+      };
+      
+      onCreate(newTenant);
       onClose();
-      return;
+    } catch (error) {
+      console.error('Failed to create tenant:', error);
+      alert('Failed to create tenant. Please try again.');
+    } finally {
+      setLoading(false);
     }
-
-    onCreate({
-      ...EMPTY_TENANT,
-      id: `temp-${Date.now()}`,
-      ...payload,
-      staffCount: 0,
-      mrr: 0,
-      lastActive: 'Just now',
-      createdAt: new Date().toISOString(),
-    });
-    onClose();
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-2xl shadow-2xl">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="bg-white border border-[#E5E7EB] rounded-xl w-full max-w-2xl shadow-xl">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#E5E7EB]">
           <div>
-            <h2 className="text-base font-semibold text-white">Onboard New Hospital</h2>
-            <p className="text-xs text-gray-500 mt-0.5">Step {step} of 2</p>
+            <h2 className="text-base font-semibold text-[#111827]">Onboard New Hospital</h2>
+            <p className="text-xs text-[#6B7280] mt-0.5">Step {step} of 2</p>
           </div>
-          <button onClick={onClose} className="text-gray-500 hover:text-white text-lg leading-none">
+          <button onClick={onClose} className="text-[#6B7280] hover:text-[#111827] text-lg leading-none">
             ✕
           </button>
         </div>
@@ -376,7 +406,7 @@ function CreateTenantModal({
           {[1, 2].map((s) => (
             <div
               key={s}
-              className={`h-1 flex-1 rounded-full transition-colors ${s <= step ? 'bg-blue-500' : 'bg-gray-700'}`}
+              className={`h-1 flex-1 rounded-full transition-colors ${s <= step ? 'bg-[#2563EB]' : 'bg-[#E5E7EB]'}`}
             />
           ))}
         </div>
@@ -500,7 +530,7 @@ function CreateTenantModal({
                 <select
                   required
                   value={form.plan}
-                  onChange={(e) => f('plan', e.target.value)}
+                  onChange={(e) => f('plan', e.target.value as PlanTier)}
                   className={fieldClass('plan')}
                 >
                   <option value="STARTER">Starter</option>
@@ -527,10 +557,11 @@ function CreateTenantModal({
           )}
         </div>
 
-        <div className="flex items-center justify-between px-6 py-4 border-t border-gray-800">
+        <div className="flex items-center justify-between px-6 py-4 border-t border-[#E5E7EB]">
           <button
             onClick={step === 1 ? onClose : () => setStep(1)}
-            className="text-sm text-gray-400 hover:text-white transition-colors"
+            className="text-sm text-[#6B7280] hover:text-[#111827] transition-colors"
+            disabled={loading}
           >
             {step === 1 ? 'Cancel' : '← Back'}
           </button>
@@ -540,9 +571,10 @@ function CreateTenantModal({
               if (step === 1 && step1Valid) setStep(2);
               else if (step === 2 && step2Valid) handleCreate();
             }}
-            className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-5 py-2 rounded-lg transition-colors disabled:opacity-50"
+            disabled={loading}
+            className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-sm font-medium px-5 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {step === 1 ? 'Continue →' : 'Create & Send Invite'}
+            {loading ? 'Creating...' : step === 1 ? 'Continue →' : 'Create & Send Invite'}
           </button>
         </div>
       </div>
@@ -566,87 +598,93 @@ function TableView({
   onDelete: (t: Tenant) => void;
 }) {
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+    <div className="bg-white border border-[#E5E7EB] rounded-xl overflow-hidden shadow-sm">
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-gray-800 bg-gray-900/80">
+          <tr className="border-b border-[#E5E7EB] bg-[#F5F6FA]">
             {['Hospital', 'Status', 'Plan', 'Staff', 'MRR', 'Last Active', 'Joined', ''].map((h) => (
               <th
                 key={h}
-                className="px-5 py-3.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
+                className="px-5 py-3.5 text-left text-[12px] font-medium text-[#6B7280] uppercase tracking-wider whitespace-nowrap"
               >
                 {h}
               </th>
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-800/50">
+        <tbody className="divide-y divide-[#E5E7EB]">
           {filtered.length === 0 ? (
             <tr>
-              <td colSpan={8} className="px-5 py-12 text-center text-sm text-gray-600">
+              <td colSpan={8} className="px-5 py-12 text-center text-sm text-[#6B7280]">
                 No tenants match your filters.
               </td>
             </tr>
           ) : (
-            filtered.map((t) => (
-              <tr key={t.id} className="hover:bg-gray-800/30 transition-colors group">
-                <td className="px-5 py-4">
-                  <Link href={`/tenants/${t.id}`} className="flex items-center gap-3 cursor-pointer">
-                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-violet-600 flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
-                      {t.name.charAt(0)}
-                    </div>
-                    <div>
-                      <div className="font-medium text-white group-hover:text-blue-400 transition-colors">{t.name}</div>
-                      <div className="text-xs text-gray-600 mt-0.5">/{t.slug}</div>
-                    </div>
-                  </Link>
-                </td>
-                <td className="px-5 py-4">
-                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${STATUS_COLORS[t.status]}`}>
-                    {t.status === 'ACTIVE' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />}
-                    {cap(t.status)}
-                  </span>
-                  {t.trialEndsAt && (
-                    <div className="text-xs text-amber-500 mt-1">
-                      Ends {new Date(t.trialEndsAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
-                    </div>
-                  )}
-                </td>
-                <td className="px-5 py-4">
-                  <span className={`px-2 py-0.5 rounded text-xs font-semibold ${PLAN_COLORS[t.plan]}`}>{cap(t.plan)}</span>
-                </td>
-                <td className="px-5 py-4 text-gray-300 tabular-nums">{t.staffCount.toLocaleString()}</td>
-                <td className="px-5 py-4 tabular-nums">
-                  {t.mrr > 0 ? <span className="text-white font-medium">${t.mrr.toLocaleString()}</span> : <span className="text-gray-700">—</span>}
-                </td>
-                <td className="px-5 py-4 text-gray-500 text-xs">{t.lastActive}</td>
-                <td className="px-5 py-4 text-gray-600 text-xs">
-                  {new Date(t.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' })}
-                </td>
-                <td className="px-5 py-4" onClick={(e) => e.stopPropagation()}>
-                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Link
-                      href={`/tenants/${t.id}`}
-                      className="px-2.5 py-1 text-xs bg-blue-600/20 text-blue-400 hover:bg-blue-600/40 rounded transition-colors"
-                    >
-                      View
+            filtered.map((t) => {
+              const statusColors = STATUS_COLORS[t.status];
+              const planColors = PLAN_COLORS[t.plan];
+              return (
+                <tr key={t.id} className="hover:bg-[#F5F6FA] transition-colors group">
+                  <td className="px-5 py-4">
+                    <Link href={`/super-admin/tenants/${t.id}`} className="flex items-center gap-3 cursor-pointer">
+                      <div className="w-8 h-8 rounded-lg bg-[#DBEAFE] border border-[#2563EB]/20 flex items-center justify-center text-xs font-bold text-[#2563EB] flex-shrink-0">
+                        {t.name.charAt(0)}
+                      </div>
+                      <div>
+                        <div className="font-medium text-[#111827] group-hover:text-[#2563EB] transition-colors">{t.name}</div>
+                        <div className="text-xs text-[#6B7280] mt-0.5">/{t.slug}</div>
+                      </div>
                     </Link>
-                    <RowMenu
-                      onView={() => {}}
-                      onEdit={() => onEdit(t)}
-                      onSuspend={() => onSuspend(t.id)}
-                      onDelete={() => onDelete(t)}
-                    />
-                  </div>
-                </td>
-              </tr>
-            ))
+                  </td>
+                  <td className="px-5 py-4">
+                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${statusColors.bg} ${statusColors.text} ${statusColors.border}`}>
+                      {t.status === 'ACTIVE' && <span className={`w-1.5 h-1.5 rounded-full ${statusColors.dot} animate-pulse`} />}
+                      {cap(t.status)}
+                    </span>
+                    {t.trialEndsAt && (
+                      <div className="text-xs text-[#EA580C] mt-1">
+                        Ends {new Date(t.trialEndsAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                      </div>
+                    )}
+                  </td>
+                  <td className="px-5 py-4">
+                    <span className={`px-2 py-0.5 rounded text-xs font-semibold ${planColors.bg} ${planColors.text} border ${planColors.border}/30`}>
+                      {cap(t.plan)}
+                    </span>
+                  </td>
+                  <td className="px-5 py-4 text-[#111827] tabular-nums">{t.staffCount.toLocaleString()}</td>
+                  <td className="px-5 py-4 tabular-nums">
+                    {t.mrr > 0 ? <span className="text-[#111827] font-medium">${t.mrr.toLocaleString()}</span> : <span className="text-[#9CA3AF]">—</span>}
+                  </td>
+                  <td className="px-5 py-4 text-[#6B7280] text-xs">{t.lastActive}</td>
+                  <td className="px-5 py-4 text-[#6B7280] text-xs">
+                    {new Date(t.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' })}
+                  </td>
+                  <td className="px-5 py-4" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Link
+                        href={`/super-admin/tenants/${t.id}`}
+                        className="px-2.5 py-1 text-xs bg-[#DBEAFE] text-[#2563EB] hover:bg-[#2563EB] hover:text-white rounded transition-colors"
+                      >
+                        View
+                      </Link>
+                      <RowMenu
+                        onView={() => onView(t)}
+                        onEdit={() => onEdit(t)}
+                        onSuspend={() => onSuspend(t.id)}
+                        onDelete={() => onDelete(t)}
+                      />
+                    </div>
+                  </td>
+                </tr>
+              );
+            })
           )}
         </tbody>
       </table>
-      <div className="px-5 py-3 border-t border-gray-800 flex items-center justify-between">
-        <span className="text-xs text-gray-600">Showing {filtered.length} of {total} tenants</span>
-        <button className="text-xs text-blue-500 hover:text-blue-400 transition-colors">Export CSV →</button>
+      <div className="px-5 py-3 border-t border-[#E5E7EB] bg-[#F5F6FA] flex items-center justify-between">
+        <span className="text-xs text-[#6B7280]">Showing {filtered.length} of {total} tenants</span>
+        <button className="text-xs text-[#2563EB] hover:text-[#1D4ED8] transition-colors font-medium">Export CSV →</button>
       </div>
     </div>
   );
@@ -655,7 +693,7 @@ function TableView({
 function GridView({ filtered }: { filtered: Tenant[] }) {
   if (filtered.length === 0) {
     return (
-      <div className="rounded-xl border border-gray-800 bg-gray-900 px-4 py-16 text-center text-sm text-gray-600">
+      <div className="rounded-xl border border-[#E5E7EB] bg-white px-4 py-16 text-center text-sm text-[#6B7280] shadow-sm">
         No tenants match your filters.
       </div>
     );
@@ -663,39 +701,241 @@ function GridView({ filtered }: { filtered: Tenant[] }) {
 
   return (
     <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-      {filtered.map((t) => (
-        <Link
-          key={t.id}
-          href={`/tenants/${t.id}`}
-          className="bg-gray-900 border border-gray-800 hover:border-gray-700 rounded-xl p-5 cursor-pointer transition-all hover:shadow-lg group"
-        >
-          <div className="flex items-start justify-between mb-4">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-violet-600 flex items-center justify-center text-sm font-bold text-white">
-              {t.name.charAt(0)}
+      {filtered.map((t) => {
+        const statusColors = STATUS_COLORS[t.status];
+        const planColors = PLAN_COLORS[t.plan];
+        return (
+          <Link
+            key={t.id}
+            href={`/super-admin/tenants/${t.id}`}
+            className="bg-white border border-[#E5E7EB] hover:border-[#2563EB] rounded-xl p-5 cursor-pointer transition-all hover:shadow-md group"
+          >
+            <div className="flex items-start justify-between mb-4">
+              <div className="w-10 h-10 rounded-xl bg-[#DBEAFE] border border-[#2563EB]/20 flex items-center justify-center text-sm font-bold text-[#2563EB]">
+                {t.name.charAt(0)}
+              </div>
+              <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium border ${statusColors.bg} ${statusColors.text} ${statusColors.border}`}>
+                {t.status === 'ACTIVE' && <span className={`w-1.5 h-1.5 rounded-full ${statusColors.dot} animate-pulse`} />}
+                {cap(t.status)}
+              </span>
             </div>
-            <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium border ${STATUS_COLORS[t.status]}`}>
-              {t.status === 'ACTIVE' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />}
-              {cap(t.status)}
-            </span>
-          </div>
-          <div className="font-semibold text-white group-hover:text-blue-400 transition-colors text-sm leading-snug">{t.name}</div>
-          <div className="text-xs text-gray-600 mt-0.5 mb-4">/{t.slug}</div>
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            <div className="bg-gray-800/60 rounded-lg px-2.5 py-2">
-              <div className="text-gray-500">Staff</div>
-              <div className="font-semibold text-white mt-0.5">{t.staffCount.toLocaleString()}</div>
+            <div className="font-semibold text-[#111827] group-hover:text-[#2563EB] transition-colors text-sm leading-snug">{t.name}</div>
+            <div className="text-xs text-[#6B7280] mt-0.5 mb-4">/{t.slug}</div>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="bg-[#F5F6FA] rounded-lg px-2.5 py-2">
+                <div className="text-[#6B7280]">Staff</div>
+                <div className="font-semibold text-[#111827] mt-0.5">{t.staffCount.toLocaleString()}</div>
+              </div>
+              <div className="bg-[#F5F6FA] rounded-lg px-2.5 py-2">
+                <div className="text-[#6B7280]">MRR</div>
+                <div className="font-semibold text-[#111827] mt-0.5">{t.mrr > 0 ? `$${t.mrr.toLocaleString()}` : 'Trial'}</div>
+              </div>
             </div>
-            <div className="bg-gray-800/60 rounded-lg px-2.5 py-2">
-              <div className="text-gray-500">MRR</div>
-              <div className="font-semibold text-white mt-0.5">{t.mrr > 0 ? `$${t.mrr.toLocaleString()}` : 'Trial'}</div>
+            <div className="mt-3 flex items-center justify-between">
+              <span className={`px-2 py-0.5 rounded text-xs font-semibold ${planColors.bg} ${planColors.text} border ${planColors.border}/30`}>
+                {cap(t.plan)}
+              </span>
+              <span className="text-xs text-[#6B7280]">{t.lastActive}</span>
+            </div>
+          </Link>
+        );
+      })}
+    </div>
+  );
+}
+
+// Tenant Drawer Component (simplified version)
+function TenantDrawer({ 
+  tenant, 
+  mode, 
+  onClose, 
+  onSave, 
+  onDelete, 
+  onSuspend, 
+  onActivate 
+}: { 
+  tenant: Tenant; 
+  mode: DrawerMode; 
+  onClose: () => void; 
+  onSave: (t: Tenant) => void; 
+  onDelete: (id: string) => void; 
+  onSuspend: (id: string) => void; 
+  onActivate: (id: string) => void; 
+}) {
+  const [editData, setEditData] = useState(tenant);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setEditData(tenant);
+  }, [tenant]);
+
+  const isView = mode === 'view';
+  const isEdit = mode === 'edit';
+  const isCreate = mode === 'create';
+
+  const handleSave = async () => {
+    setLoading(true);
+    try {
+      await onSave(editData);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex justify-end bg-black/30 backdrop-blur-sm">
+      <div className="w-full max-w-2xl bg-white h-full shadow-xl overflow-y-auto">
+        <div className="sticky top-0 bg-white border-b border-[#E5E7EB] px-6 py-4 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-[#111827]">
+            {isCreate ? 'New Tenant' : isView ? 'Tenant Details' : 'Edit Tenant'}
+          </h2>
+          <button onClick={onClose} className="text-[#6B7280] hover:text-[#111827] text-xl">
+            ✕
+          </button>
+        </div>
+
+        <div className="p-6 space-y-6">
+          {/* Basic Info */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs font-medium text-[#6B7280]">Name</label>
+              {isView ? (
+                <p className="text-sm text-[#111827] mt-1">{tenant.name}</p>
+              ) : (
+                <input
+                  value={editData.name}
+                  onChange={(e) => setEditData({ ...editData, name: e.target.value })}
+                  className="w-full border border-[#E5E7EB] rounded-lg px-3 py-2 text-sm mt-1"
+                />
+              )}
+            </div>
+            <div>
+              <label className="text-xs font-medium text-[#6B7280]">Slug</label>
+              {isView ? (
+                <p className="text-sm text-[#111827] mt-1">/{tenant.slug}</p>
+              ) : (
+                <input
+                  value={editData.slug}
+                  onChange={(e) => setEditData({ ...editData, slug: e.target.value })}
+                  className="w-full border border-[#E5E7EB] rounded-lg px-3 py-2 text-sm mt-1"
+                />
+              )}
             </div>
           </div>
-          <div className="mt-3 flex items-center justify-between">
-            <span className={`px-2 py-0.5 rounded text-xs font-semibold ${PLAN_COLORS[t.plan]}`}>{cap(t.plan)}</span>
-            <span className="text-xs text-gray-600">{t.lastActive}</span>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs font-medium text-[#6B7280]">Status</label>
+              <div className="mt-1">
+                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${STATUS_COLORS[tenant.status].bg} ${STATUS_COLORS[tenant.status].text} ${STATUS_COLORS[tenant.status].border}`}>
+                  {cap(tenant.status)}
+                </span>
+              </div>
+            </div>
+            <div>
+              <label className="text-xs font-medium text-[#6B7280]">Plan</label>
+              {isView ? (
+                <p className="text-sm text-[#111827] mt-1">{cap(tenant.plan)}</p>
+              ) : (
+                <select
+                  value={editData.plan}
+                  onChange={(e) => setEditData({ ...editData, plan: e.target.value as PlanTier })}
+                  className="w-full border border-[#E5E7EB] rounded-lg px-3 py-2 text-sm mt-1"
+                >
+                  <option value="STARTER">Starter</option>
+                  <option value="PROFESSIONAL">Professional</option>
+                  <option value="ENTERPRISE">Enterprise</option>
+                </select>
+              )}
+            </div>
           </div>
-        </Link>
-      ))}
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs font-medium text-[#6B7280]">Admin Email</label>
+              {isView ? (
+                <p className="text-sm text-[#111827] mt-1">{tenant.adminEmail}</p>
+              ) : (
+                <input
+                  value={editData.adminEmail}
+                  onChange={(e) => setEditData({ ...editData, adminEmail: e.target.value })}
+                  className="w-full border border-[#E5E7EB] rounded-lg px-3 py-2 text-sm mt-1"
+                />
+              )}
+            </div>
+            <div>
+              <label className="text-xs font-medium text-[#6B7280]">Staff Count</label>
+              <p className="text-sm text-[#111827] mt-1">{tenant.staffCount.toLocaleString()}</p>
+            </div>
+          </div>
+
+          {tenant.trialEndsAt && (
+            <div>
+              <label className="text-xs font-medium text-[#6B7280]">Trial Ends</label>
+              <p className="text-sm text-[#EA580C] mt-1">
+                {new Date(tenant.trialEndsAt).toLocaleDateString('en-GB', { 
+                  day: 'numeric', 
+                  month: 'long', 
+                  year: 'numeric' 
+                })}
+              </p>
+            </div>
+          )}
+
+          {tenant.notes && (
+            <div>
+              <label className="text-xs font-medium text-[#6B7280]">Notes</label>
+              <p className="text-sm text-[#111827] mt-1">{tenant.notes}</p>
+            </div>
+          )}
+        </div>
+
+        <div className="sticky bottom-0 bg-white border-t border-[#E5E7EB] px-6 py-4 flex justify-between">
+          <div>
+            {!isView && !isCreate && (
+              <button
+                onClick={() => onDelete(tenant.id)}
+                className="text-[#DC2626] hover:text-[#B91C1C] text-sm font-medium"
+              >
+                Delete Tenant
+              </button>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 border border-[#E5E7EB] rounded-lg text-sm text-[#6B7280] hover:text-[#111827] transition-colors"
+            >
+              Close
+            </button>
+            {!isView && (
+              <button
+                onClick={handleSave}
+                disabled={loading}
+                className="px-4 py-2 bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
+              >
+                {loading ? 'Saving...' : 'Save Changes'}
+              </button>
+            )}
+            {isView && tenant.status === 'ACTIVE' && (
+              <button
+                onClick={() => onSuspend(tenant.id)}
+                className="px-4 py-2 bg-[#EA580C] hover:bg-[#C2410C] text-white text-sm font-medium rounded-lg transition-colors"
+              >
+                Suspend
+              </button>
+            )}
+            {isView && tenant.status === 'SUSPENDED' && (
+              <button
+                onClick={() => onActivate(tenant.id)}
+                className="px-4 py-2 bg-[#16A34A] hover:bg-[#15803D] text-white text-sm font-medium rounded-lg transition-colors"
+              >
+                Activate
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -703,6 +943,7 @@ function GridView({ filtered }: { filtered: Tenant[] }) {
 export default function TenantsPage() {
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | TenantStatus>('ALL');
   const [planFilter, setPlanFilter] = useState<'ALL' | PlanTier>('ALL');
@@ -713,29 +954,43 @@ export default function TenantsPage() {
   const [quickDeleteTarget, setQuickDeleteTarget] = useState<Tenant | null>(null);
 
   useEffect(() => {
-    let active = true;
-
-    async function load() {
-      setLoading(true);
-      try {
-        const res = await fetch('/api/tenants');
-        if (!res.ok) throw new Error('failed');
-        const data = await res.json();
-        if (!active) return;
-        setTenants(Array.isArray(data.tenants) ? data.tenants : Array.isArray(data) ? data : []);
-      } catch {
-        if (!active) return;
-        setTenants([]);
-      } finally {
-        if (active) setLoading(false);
-      }
-    }
-
-    load();
-    return () => {
-      active = false;
-    };
+    loadTenants();
   }, []);
+
+  const loadTenants = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await superAdminApi.getTenants();
+      // Transform API response to match our Tenant type
+      const mappedTenants = (data.tenants || []).map((t: any) => ({
+        id: t.id,
+        name: t.name,
+        slug: t.slug,
+        status: t.status === 'active' ? 'ACTIVE' : 
+                t.status === 'suspended' ? 'SUSPENDED' : 
+                t.status === 'deleted' ? 'CANCELLED' : 'TRIAL',
+        plan: t.plan?.code === 'pro' ? 'PROFESSIONAL' :
+              t.plan?.code === 'enterprise' ? 'ENTERPRISE' : 'STARTER',
+        staffCount: t._count?.admins || 0,
+        adminEmail: t.admins?.[0]?.user?.email || '',
+        mrr: t.subscription?.plan?.priceMonthly || 0,
+        createdAt: t.createdAt,
+        trialEndsAt: t.subscription?.trialEndsAt || null,
+        country: t.settings?.country || 'Kenya',
+        lastActive: t.updatedAt ? new Date(t.updatedAt).toLocaleDateString() : '—',
+        contactName: t.settings?.contactName || '',
+        notes: t.settings?.notes || '',
+      }));
+      setTenants(mappedTenants);
+    } catch (err) {
+      console.error('Failed to load tenants:', err);
+      setError('Failed to load tenants. Please try again.');
+      setTenants([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filtered = useMemo(() => {
     return tenants.filter((t) => {
@@ -765,68 +1020,67 @@ export default function TenantsPage() {
 
   async function handleSave(data: Tenant) {
     try {
-      const method = data.id && tenants.some((t) => t.id === data.id) ? 'PATCH' : 'POST';
-      const url = method === 'POST' ? '/api/tenants' : `/api/tenants/${data.id}`;
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+      const result = await superAdminApi.updateTenant(data.id, {
+        name: data.name,
+        slug: data.slug,
+        planId: data.plan === 'STARTER' ? 'plan_starter' : 
+                data.plan === 'PROFESSIONAL' ? 'plan_professional' : 'plan_enterprise',
+        settings: {
+          adminEmail: data.adminEmail,
+          contactName: data.contactName,
+          notes: data.notes,
+        }
       });
-      if (res.ok) {
-        const payload = await res.json();
-        const updated = payload.tenant ?? payload;
-        setTenants((prev) =>
-          prev.find((t) => t.id === updated.id)
-            ? prev.map((t) => (t.id === updated.id ? updated : t))
-            : [updated, ...prev]
-        );
-        setSelectedTenant(updated);
-        if (drawerMode === 'create') setDrawerMode('view');
-        return;
-      }
-    } catch {}
-
-    setTenants((prev) =>
-      prev.find((t) => t.id === data.id)
-        ? prev.map((t) => (t.id === data.id ? data : t))
-        : [data, ...prev]
-    );
-    setSelectedTenant(data);
-    if (drawerMode === 'create') setDrawerMode('view');
+      
+      const updated = {
+        ...data,
+        ...result,
+      };
+      
+      setTenants((prev) =>
+        prev.map((t) => (t.id === updated.id ? updated : t))
+      );
+      setSelectedTenant(updated);
+    } catch (error) {
+      console.error('Failed to save tenant:', error);
+      alert('Failed to save changes. Please try again.');
+    }
   }
 
   async function handleCreate(t: Tenant) {
     setTenants((prev) => [t, ...prev]);
+    await loadTenants(); // Refresh from API
   }
 
   async function handleDelete(id: string) {
     try {
-      await fetch(`/api/tenants/${id}`, { method: 'DELETE' });
-    } catch {}
-    setTenants((prev) => prev.filter((t) => t.id !== id));
-    closeDrawer();
+      await superAdminApi.deleteTenant(id);
+      setTenants((prev) => prev.filter((t) => t.id !== id));
+      closeDrawer();
+    } catch (error) {
+      console.error('Failed to delete tenant:', error);
+      alert('Failed to delete tenant. Please try again.');
+    }
   }
 
   async function handleSuspend(id: string) {
     try {
-      const res = await fetch(`/api/tenants/${id}/suspend`, { method: 'POST' });
-      if (res.ok) {
-        setTenants((prev) => prev.map((t) => (t.id === id ? { ...t, status: 'SUSPENDED' } : t)));
-        return;
-      }
-    } catch {}
-    setTenants((prev) => prev.map((t) => (t.id === id ? { ...t, status: 'SUSPENDED' } : t)));
+      await superAdminApi.suspendTenant(id);
+      setTenants((prev) => prev.map((t) => (t.id === id ? { ...t, status: 'SUSPENDED' } : t)));
+    } catch (error) {
+      console.error('Failed to suspend tenant:', error);
+      alert('Failed to suspend tenant. Please try again.');
+    }
   }
 
   async function handleActivate(id: string) {
     try {
-      const res = await fetch(`/api/tenants/${id}/activate`, { method: 'POST' });
-      if (res.ok) {
-        setTenants((prev) => prev.map((t) => (t.id === id ? { ...t, status: 'ACTIVE' } : t)));
-        return;
-      }
-    } catch {}
-    setTenants((prev) => prev.map((t) => (t.id === id ? { ...t, status: 'ACTIVE' } : t)));
+      await superAdminApi.activateTenant(id);
+      setTenants((prev) => prev.map((t) => (t.id === id ? { ...t, status: 'ACTIVE' } : t)));
+    } catch (error) {
+      console.error('Failed to activate tenant:', error);
+      alert('Failed to activate tenant. Please try again.');
+    }
   }
 
   return (
@@ -843,45 +1097,48 @@ export default function TenantsPage() {
         />
       )}
 
+      {/* Page Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">Tenants</h1>
-          <p className="text-gray-500 text-sm mt-1">Manage all hospital accounts on the Chronos platform</p>
+          <h1 className="text-2xl font-semibold text-[#111827] tracking-tight">Tenants</h1>
+          <p className="text-[#6B7280] text-sm mt-1">Manage all hospital accounts on the Chronos platform</p>
         </div>
         <button
           onClick={() => setShowCreate(true)}
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2.5 rounded-lg transition-colors shadow-lg shadow-blue-500/20"
+          className="flex items-center gap-2 bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-sm font-medium px-4 py-2.5 rounded-lg transition-colors shadow-sm"
         >
           <span className="text-base leading-none">+</span> Onboard Hospital
         </button>
       </div>
 
+      {/* KPI Stats Row */}
       <div className="grid grid-cols-4 gap-4">
         {[
-          { label: 'Total', value: tenants.length, color: 'text-white' },
-          { label: 'Active', value: tenants.filter((t) => t.status === 'ACTIVE').length, color: 'text-emerald-400' },
-          { label: 'Trial', value: tenants.filter((t) => t.status === 'TRIAL').length, color: 'text-amber-400' },
-          { label: 'MRR', value: `$${totalMrr.toLocaleString()}`, color: 'text-blue-400' },
+          { label: 'Total', value: tenants.length, color: 'text-[#111827]' },
+          { label: 'Active', value: tenants.filter((t) => t.status === 'ACTIVE').length, color: 'text-[#16A34A]' },
+          { label: 'Trial', value: tenants.filter((t) => t.status === 'TRIAL').length, color: 'text-[#EA580C]' },
+          { label: 'MRR', value: `$${totalMrr.toLocaleString()}`, color: 'text-[#2563EB]' },
         ].map((s) => (
-          <div key={s.label} className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-            <div className="text-xs text-gray-500">{s.label}</div>
+          <div key={s.label} className="bg-white border border-[#E5E7EB] rounded-xl p-4 shadow-sm">
+            <div className="text-[12px] font-medium text-[#6B7280]">{s.label}</div>
             <div className={`text-2xl font-bold tabular-nums ${s.color}`}>{s.value}</div>
           </div>
         ))}
       </div>
 
+      {/* Filters */}
       <div className="flex flex-col lg:flex-row gap-3 lg:items-center lg:justify-between">
         <div className="flex flex-1 gap-3 flex-wrap">
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search tenants..."
-            className="w-full lg:w-80 bg-gray-900 border border-gray-800 rounded-lg px-4 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-blue-500"
+            className="w-full lg:w-80 bg-white border border-[#E5E7EB] rounded-lg px-4 py-2.5 text-sm text-[#111827] placeholder-[#9CA3AF] focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#DBEAFE] transition-colors"
           />
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as 'ALL' | TenantStatus)}
-            className="bg-gray-900 border border-gray-800 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500"
+            className="bg-white border border-[#E5E7EB] rounded-lg px-4 py-2.5 text-sm text-[#111827] focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#DBEAFE] transition-colors appearance-none"
           >
             <option value="ALL">All Statuses</option>
             <option value="ACTIVE">Active</option>
@@ -892,7 +1149,7 @@ export default function TenantsPage() {
           <select
             value={planFilter}
             onChange={(e) => setPlanFilter(e.target.value as 'ALL' | PlanTier)}
-            className="bg-gray-900 border border-gray-800 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500"
+            className="bg-white border border-[#E5E7EB] rounded-lg px-4 py-2.5 text-sm text-[#111827] focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#DBEAFE] transition-colors appearance-none"
           >
             <option value="ALL">All Plans</option>
             <option value="STARTER">Starter</option>
@@ -900,24 +1157,31 @@ export default function TenantsPage() {
             <option value="ENTERPRISE">Enterprise</option>
           </select>
         </div>
-        <div className="flex rounded-lg border border-gray-800 overflow-hidden">
+        <div className="flex rounded-lg border border-[#E5E7EB] overflow-hidden shadow-sm">
           <button
             onClick={() => setView('table')}
-            className={`px-4 py-2.5 text-sm transition-colors ${view === 'table' ? 'bg-blue-600 text-white' : 'bg-gray-900 text-gray-400'}`}
+            className={`px-4 py-2.5 text-sm font-medium transition-colors ${
+              view === 'table' ? 'bg-[#2563EB] text-white' : 'bg-white text-[#6B7280] hover:text-[#111827]'
+            }`}
           >
             Table
           </button>
           <button
             onClick={() => setView('grid')}
-            className={`px-4 py-2.5 text-sm transition-colors ${view === 'grid' ? 'bg-blue-600 text-white' : 'bg-gray-900 text-gray-400'}`}
+            className={`px-4 py-2.5 text-sm font-medium transition-colors ${
+              view === 'grid' ? 'bg-[#2563EB] text-white' : 'bg-white text-[#6B7280] hover:text-[#111827]'
+            }`}
           >
             Grid
           </button>
         </div>
       </div>
 
+      {/* Content */}
       {loading ? (
         <PlaceholderState title="Loading tenants..." description="Fetching the latest tenant data from the backend." />
+      ) : error ? (
+        <PlaceholderState title="⚠️ Error loading tenants" description={error} />
       ) : view === 'table' ? (
         <TableView
           filtered={filtered}
