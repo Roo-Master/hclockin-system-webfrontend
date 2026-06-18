@@ -1,0 +1,415 @@
+/* ============================================
+   CityCare Hospital Admin Dashboard - Design System
+   This file applies the design system to your existing dashboard
+   without changing any content
+   ============================================ */
+
+:root {
+  /* Semantic colors - from documentation */
+  --color-info-bg: #DBEAFE;
+  --color-info: #2563EB;
+  --color-success-bg: #DCFCE7;
+  --color-success: #16A34A;
+  --color-warning-bg: #FFEDD5;
+  --color-warning: #EA580C;
+  --color-danger-bg: #FEE2E2;
+  --color-danger: #DC2626;
+
+  /* Neutrals - from documentation */
+  --color-bg-page: #F5F6FA;
+  --color-bg-surface: #FFFFFF;
+  --color-bg-sidebar: #0F1B3D;
+  --color-border: #E5E7EB;
+  --color-text-primary: #111827;
+  --color-text-secondary: #6B7280;
+  --color-text-tertiary: #9CA3AF;
+
+  /* Spacing - from documentation */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+
+  /* Radius - from documentation */
+  --radius-card: 12px;
+  --radius-badge: 8px;
+  --radius-pill: 999px;
+
+  /* Typography - from documentation */
+  --text-display: 24px;
+  --text-heading: 17px;
+  --text-stat: 30px;
+  --text-body: 14px;
+  --text-label: 13px;
+  --text-delta: 13px;
+}
+
+/* ============================================
+   Apply to existing dashboard content
+   ============================================ */
+
+/* Page background - matches documentation */
+.bg-page {
+  background-color: var(--color-bg-page) !important;
+}
+
+/* Cards - match documentation */
+.rounded-card,
+.bg-white.rounded-lg.shadow {
+  background-color: var(--color-bg-surface) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-card) !important;
+  padding: var(--space-6) !important;
+}
+
+/* Card hover state */
+.rounded-card:hover,
+.bg-white.rounded-lg.shadow:hover {
+  border-color: var(--color-info) !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Headings - match documentation */
+.text-2xl.font-bold,
+h1.text-2xl {
+  font-size: var(--text-display) !important;
+  font-weight: 600 !important;
+  color: var(--color-text-primary) !important;
+}
+
+.text-lg.font-semibold,
+h2.text-lg,
+h3.text-lg {
+  font-size: var(--text-heading) !important;
+  font-weight: 600 !important;
+  color: var(--color-text-primary) !important;
+}
+
+/* Stat values - match documentation */
+.text-2xl.font-bold.text-gray-800,
+.text-2xl.font-bold {
+  font-size: var(--text-stat) !important;
+  font-weight: 700 !important;
+  color: var(--color-text-primary) !important;
+}
+
+/* Body text - match documentation */
+.text-sm,
+p.text-sm,
+td.text-sm {
+  font-size: var(--text-body) !important;
+  font-weight: 400 !important;
+  line-height: 1.5 !important;
+}
+
+/* Labels - match documentation */
+.text-xs,
+.text-gray-500,
+.text-gray-400,
+label.text-sm {
+  font-size: var(--text-label) !important;
+  font-weight: 400 !important;
+  color: var(--color-text-secondary) !important;
+}
+
+/* ============================================
+   Semantic Colors - Apply to your existing classes
+   ============================================ */
+
+/* Blue / Info - Total Employees, Total Overtime */
+.bg-blue-50 {
+  background-color: var(--color-info-bg) !important;
+}
+.text-blue-600,
+.text-blue-500 {
+  color: var(--color-info) !important;
+}
+.border-blue-500 {
+  border-color: var(--color-info) !important;
+}
+.hover\\:bg-blue-600:hover {
+  background-color: var(--color-info) !important;
+}
+.bg-blue-500 {
+  background-color: var(--color-info) !important;
+}
+
+/* Green / Success - Present Today */
+.bg-green-50 {
+  background-color: var(--color-success-bg) !important;
+}
+.text-green-600,
+.text-green-500 {
+  color: var(--color-success) !important;
+}
+.border-green-500 {
+  border-color: var(--color-success) !important;
+}
+.hover\\:bg-green-600:hover {
+  background-color: var(--color-success) !important;
+}
+.bg-green-500 {
+  background-color: var(--color-success) !important;
+}
+
+/* Amber / Warning - On Leave Today */
+.bg-yellow-50 {
+  background-color: var(--color-warning-bg) !important;
+}
+.text-yellow-600,
+.text-yellow-500 {
+  color: var(--color-warning) !important;
+}
+.border-yellow-500 {
+  border-color: var(--color-warning) !important;
+}
+.hover\\:bg-yellow-600:hover {
+  background-color: var(--color-warning) !important;
+}
+.bg-yellow-500 {
+  background-color: var(--color-warning) !important;
+}
+
+/* Red / Danger - Absent Today */
+.bg-red-50 {
+  background-color: var(--color-danger-bg) !important;
+}
+.text-red-600,
+.text-red-500 {
+  color: var(--color-danger) !important;
+}
+.border-red-500 {
+  border-color: var(--color-danger) !important;
+}
+.hover\\:bg-red-600:hover {
+  background-color: var(--color-danger) !important;
+}
+.bg-red-500 {
+  background-color: var(--color-danger) !important;
+}
+
+/* Purple / Indigo - Pending Leave Requests, Payroll Status */
+.bg-purple-50 {
+  background-color: #EDE9FE !important;
+}
+.text-purple-600 {
+  color: #7C3AED !important;
+}
+.border-purple-500 {
+  border-color: #7C3AED !important;
+}
+
+.bg-indigo-50 {
+  background-color: #E0E7FF !important;
+}
+.text-indigo-600 {
+  color: #4F46E5 !important;
+}
+.border-indigo-500 {
+  border-color: #4F46E5 !important;
+}
+
+/* ============================================
+   Sidebar - Match documentation
+   ============================================ */
+
+.bg-white.shadow-md.flex.flex-col.w-64,
+aside.bg-white {
+  background-color: var(--color-bg-sidebar) !important;
+  color: #FFFFFF !important;
+}
+
+/* Sidebar brand */
+.bg-white.shadow-md .p-4.border-b h1,
+aside .p-4.border-b h1 {
+  color: #FFFFFF !important;
+}
+.bg-white.shadow-md .p-4.border-b p,
+aside .p-4.border-b p {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+/* Sidebar nav items */
+.bg-white.shadow-md nav a,
+aside nav a {
+  color: rgba(255, 255, 255, 0.7) !important;
+  border-radius: var(--radius-badge) !important;
+  transition: all 0.2s !important;
+}
+.bg-white.shadow-md nav a:hover,
+aside nav a:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  color: #FFFFFF !important;
+}
+.bg-white.shadow-md nav a.bg-blue-50,
+aside nav a.bg-blue-50 {
+  background-color: rgba(255, 255, 255, 0.15) !important;
+  color: #FFFFFF !important;
+}
+
+/* Sidebar footer */
+.bg-white.shadow-md .p-4.border-t,
+aside .p-4.border-t {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.bg-white.shadow-md .p-4.border-t .bg-blue-500,
+aside .p-4.border-t .bg-blue-500 {
+  background-color: #2563EB !important;
+}
+
+/* ============================================
+   Header - Match documentation
+   ============================================ */
+
+header.bg-white.shadow-sm,
+.bg-white.shadow-sm.px-6.py-4 {
+  background-color: var(--color-bg-surface) !important;
+  border-bottom: 1px solid var(--color-border) !important;
+}
+
+/* ============================================
+   Buttons - Match documentation
+   ============================================ */
+
+/* Primary buttons */
+button.bg-blue-500 {
+  background-color: var(--color-info) !important;
+  border-radius: var(--radius-badge) !important;
+}
+button.bg-blue-500:hover {
+  background-color: #1D4ED8 !important;
+}
+
+/* Success buttons */
+button.bg-green-500 {
+  background-color: var(--color-success) !important;
+}
+button.bg-green-500:hover {
+  background-color: #15803D !important;
+}
+
+/* Warning buttons */
+button.bg-yellow-500 {
+  background-color: var(--color-warning) !important;
+}
+button.bg-yellow-500:hover {
+  background-color: #C2410C !important;
+}
+
+/* Danger buttons */
+button.bg-red-500 {
+  background-color: var(--color-danger) !important;
+}
+button.bg-red-500:hover {
+  background-color: #B91C1C !important;
+}
+
+/* ============================================
+   Tables - Match documentation
+   ============================================ */
+
+table thead.bg-gray-50 {
+  background-color: transparent !important;
+}
+table thead.bg-gray-50 th {
+  color: var(--color-text-secondary) !important;
+  font-size: var(--text-label) !important;
+  font-weight: 400 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  border-bottom: 1px solid var(--color-border) !important;
+}
+
+table tbody td {
+  border-bottom: 1px solid var(--color-border) !important;
+}
+
+/* Status badges - match documentation */
+.bg-green-100.text-green-800 {
+  background-color: var(--color-success-bg) !important;
+  color: var(--color-success) !important;
+}
+.bg-yellow-100.text-yellow-800 {
+  background-color: var(--color-warning-bg) !important;
+  color: var(--color-warning) !important;
+}
+.bg-red-100.text-red-800 {
+  background-color: var(--color-danger-bg) !important;
+  color: var(--color-danger) !important;
+}
+.bg-blue-100.text-blue-800 {
+  background-color: var(--color-info-bg) !important;
+  color: var(--color-info) !important;
+}
+
+/* ============================================
+   Grid - Match documentation
+   ============================================ */
+
+/* 12-column grid with 24px gutters */
+.grid.grid-cols-4.gap-4,
+.grid.grid-cols-3.gap-4 {
+  gap: var(--space-6) !important;
+}
+
+/* ============================================
+   Quick Actions - Match documentation
+   ============================================ */
+
+/* Quick action buttons */
+.grid.grid-cols-4.gap-4 button,
+button.bg-blue-500.text-white.px-4.py-3.rounded-lg {
+  border-radius: var(--radius-badge) !important;
+  padding: var(--space-4) !important;
+}
+
+/* Quick action button hover states */
+.grid.grid-cols-4.gap-4 button:hover {
+  opacity: 0.9 !important;
+  transform: translateY(-1px) !important;
+  transition: all 0.2s !important;
+}
+
+/* ============================================
+   Notification Bell - Match documentation
+   ============================================ */
+
+.relative .bg-red-500.text-white.text-xs {
+  background-color: var(--color-danger) !important;
+  border-radius: var(--radius-pill) !important;
+  font-size: 10px !important;
+  min-width: 20px !important;
+  height: 20px !important;
+}
+
+/* ============================================
+   Tabs - Match documentation
+   ============================================ */
+
+.border-b.border-gray-200 .border-blue-500.text-blue-600 {
+  border-color: var(--color-info) !important;
+  color: var(--color-info) !important;
+}
+
+/* ============================================
+   Scrollbar - Optional enhancement
+   ============================================ */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-bg-page);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: var(--radius-pill);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-tertiary);
+}
