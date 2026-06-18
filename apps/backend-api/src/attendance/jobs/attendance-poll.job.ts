@@ -11,47 +11,44 @@ export class AttendancePollJob {
   @Cron(CronExpression.EVERY_30_MINUTES)
   async pollPendingAttendances() {
     this.logger.debug('Polling pending attendances...');
-    
     try {
       const pendingAttendances = await Promise.resolve([]);
-      
       for (const attendance of pendingAttendances) {
         await this.processPendingAttendance(attendance);
       }
-      
       this.logger.log(`Processed ${pendingAttendances.length} pending attendances`);
     } catch (error) {
-      this.logger.error(`Error polling attendances: ${error.message}`);
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.error(`Error polling attendances: ${err.message}`, err.stack);
     }
   }
 
   @Cron(CronExpression.EVERY_DAY_AT_10PM)
   async markAbsentees() {
     this.logger.debug('Marking absent employees...');
-    
     try {
       const today = new Date();
       const absentCount = await Promise.resolve(0);
       this.logger.log(`Marked ${absentCount} employees as absent for ${today.toDateString()}`);
     } catch (error) {
-      this.logger.error(`Error marking absentees: ${error.message}`);
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.error(`Error marking absentees: ${err.message}`, err.stack);
     }
   }
 
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async resetDailyCounters() {
     this.logger.debug('Resetting daily attendance counters...');
-    
     try {
       await Promise.resolve();
       this.logger.log('Daily counters reset successfully');
     } catch (error) {
-      this.logger.error(`Error resetting counters: ${error.message}`);
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.error(`Error resetting counters: ${err.message}`, err.stack);
     }
   }
 
   private async processPendingAttendance(attendance: any) {
-    // Process pending attendance logic
     this.logger.debug(`Processing attendance for user ${attendance.userId}`);
   }
 }

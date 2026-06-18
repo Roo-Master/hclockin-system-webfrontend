@@ -1,40 +1,32 @@
-import DashboardLayout from '@/components/layout/DashboardLayout';
-import AlertBanner from '@/components/dashboard/AlertBanner';
-import KPIRow from '@/components/dashboard/KPIRow';
-import AttendanceCard from '@/components/dashboard/AttendanceCard';
-import UpcomingShifts from '@/components/dashboard/UpcomingShifts';
-import LeaveRequests from '@/components/dashboard/LeaveRequests';
-import LeaveBalances from '@/components/dashboard/LeaveBalances';
-import CorrectionRequest from '@/components/dashboard/CorrectionRequest';
-import AttendanceCalendar from '@/components/dashboard/AttendanceCalendar';
-import HoursWorked from '@/components/dashboard/HoursWorked';
-import NotificationsPreview from '@/components/dashboard/NotificationsPreview';
-import ProfileCard from '@/components/dashboard/ProfileCard';
+'use client';
+
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function HomePage() {
+  const router = useRouter();
+  
+  useEffect(() => {
+    // Check authentication and role
+    const token = localStorage.getItem('accessToken');
+    const userRole = localStorage.getItem('userRole');
+    
+    if (token && userRole === 'super_admin') {
+      router.push('/super-admin/dashboard');
+    } else if (token) {
+      // Redirect to hospital admin dashboard
+      router.push('/dashboard');
+    } else {
+      router.push('/login');
+    }
+  }, [router]);
+  
   return (
-    <DashboardLayout title="Dashboard">
-      <div className="flex flex-col gap-5">
-        <AlertBanner message="You have a missing clock-out on 11 June. Submit a correction request to avoid a payroll discrepancy." />
-        <KPIRow />
-        <div className="grid grid-cols-[1fr_300px] gap-5">
-          <div className="flex flex-col gap-5">
-            <AttendanceCard />
-            <UpcomingShifts />
-            <div className="grid grid-cols-2 gap-5">
-              <LeaveRequests />
-              <LeaveBalances />
-            </div>
-            <CorrectionRequest />
-          </div>
-          <div className="flex flex-col gap-5">
-            <AttendanceCalendar />
-            <HoursWorked />
-            <NotificationsPreview />
-            <ProfileCard />
-          </div>
-        </div>
+    <main className="flex items-center justify-center min-h-screen">
+      <div className="text-center">
+        <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent"></div>
+        <p className="mt-4 text-gray-600">Loading...</p>
       </div>
-    </DashboardLayout>
+    </main>
   );
 }
