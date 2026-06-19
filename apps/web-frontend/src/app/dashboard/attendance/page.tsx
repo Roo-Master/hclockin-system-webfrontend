@@ -1,4 +1,4 @@
-import DashboardLayout from '@/components/layout/DashboardLayout';
+import DashboardLayout from '@/components/employee-components/layout/DashboardLayout';
 
 const records = [
   { date: 'Sun, 14 Jun', shift: 'Morning · ICU', in: '07:02', out: '–', hours: '–', status: 'On duty', statusStyle: 'bg-info-bg text-info' },

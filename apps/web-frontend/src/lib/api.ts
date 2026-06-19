@@ -79,7 +79,7 @@ export async function apiFetch<T = any>(
     const newToken = await refreshAccessToken();
     if (newToken) return apiFetch(path, options, false);
     const devMode = process.env.NEXT_PUBLIC_DEV_MODE === 'true';
-    const loginPath = process.env.NEXT_PUBLIC_LOGIN_PATH || '/login';
+    const loginPath = process.env.NEXT_PUBLIC_LOGIN_PATH || '/auth/login';
     if (!devMode && typeof window !== 'undefined') window.location.href = loginPath;
     throw new Error('Session expired');
   }

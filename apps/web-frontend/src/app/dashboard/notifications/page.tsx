@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import DashboardLayout from '@/components/layout/DashboardLayout';
+import DashboardLayout from '@/components/employee-components/layout/DashboardLayout';
 
 const initialNotifications = [
   { id: 1, icon: '⚠', iconStyle: 'bg-warning-bg text-warning', text: 'Missing clock-out detected for Thu 11 Jun. Please submit a correction.', time: 'Today · 08:00', read: false },

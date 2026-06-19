@@ -1,6 +1,6 @@
 'use client';
 
-import { Sidebar, Header } from '@/components/layout';
+import { Sidebar, Header } from '@/components/employee-components/layout';
 import { ImpersonationBanner } from '@/components/super-admin/layout/ImpersonationBanner';
 import { ToastProvider } from '@/contexts/(super-admin)/ToastContext';
 

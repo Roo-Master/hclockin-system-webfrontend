@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import DashboardLayout from '@/components/layout/DashboardLayout';
+import DashboardLayout from '@/components/employee-components/layout/DashboardLayout';
 
 export default function ProfilePage() {
   const [editMode, setEditMode] = useState(false);

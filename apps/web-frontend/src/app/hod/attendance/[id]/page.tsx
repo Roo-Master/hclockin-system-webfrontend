@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { HODLayout } from '@/components/layout/HODLayout';
+import { HODLayout } from '@/components/hod-components/layout/HODLayout';
 import { StatusBadge, Spinner, Alert, Button, Modal, Select } from '@/components/ui';
 import { attendanceApi, auditLogApi } from '@/lib/api';
 import type { AttendanceSummary, AttendanceLog } from '@/types';

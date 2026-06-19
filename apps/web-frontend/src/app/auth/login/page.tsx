@@ -73,6 +73,15 @@ const LoginPage: React.FC = () => {
       /* ================= SAVE USER ================= */
       localStorage.setItem("user", JSON.stringify(user));
 
+      /* ================= SET AUTH COOKIE =================
+         Middleware runs on the server/edge and cannot read localStorage,
+         so we also set a cookie carrying the role. This is demo-only:
+         a real backend should issue an httpOnly, Secure, signed JWT
+         instead of a plain client-readable cookie. */
+      document.cookie = `token=${user.role}; path=/; max-age=${
+        60 * 60 * 24
+      }; SameSite=Lax`;
+
       /* ================= ROLE REDIRECT ================= */
       switch (user.role) {
         case "super_admin":

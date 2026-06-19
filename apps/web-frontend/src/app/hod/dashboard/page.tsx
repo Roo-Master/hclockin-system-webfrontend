@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
-import { HODLayout } from '@/components/layout/HODLayout';
+import { HODLayout } from '@/components/hod-components/layout/HODLayout';
 import { StatCard, StatusBadge, Spinner, Alert, EmptyState } from '@/components/ui';
 import { attendanceApi, getCurrentUser, employeeApi } from '@/lib/api';
 import type { DashboardStats, AttendanceSummary, AuthUser } from '@/types';

@@ -1,3 +1,4 @@
+"use client";
 // src/pages/EmployeesPage.tsx
 import React, { useState } from 'react'
 import { Routes, Route, NavLink } from 'react-router-dom'
