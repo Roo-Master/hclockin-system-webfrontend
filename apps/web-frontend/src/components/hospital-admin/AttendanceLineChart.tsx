@@ -1,3 +1,4 @@
+"use client";
 // src/components/AttendanceLineChart.tsx
 import React, { useState } from 'react';
 import {

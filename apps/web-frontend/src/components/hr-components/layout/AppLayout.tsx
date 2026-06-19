@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Outlet, Navigate } from "react-router-dom";
-import Sidebar from "./Sidebar";
+import Sidebar from "./HRSidebar";
 import Header  from "./Header";
 import { useAuth } from "../../../contexts/hr-context/Authcontext";
 
@@ -19,7 +19,7 @@ const AppLayout: React.FC = () => {
     );
   }
 
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (!isAuthenticated) return <Navigate to="/auth/login" replace />;
 
   const sw = collapsed ? SIDEBAR_COLLAPSED : SIDEBAR_FULL;
 

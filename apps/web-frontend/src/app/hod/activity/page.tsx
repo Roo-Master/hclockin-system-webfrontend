@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { HODLayout } from '@/components/layout/HODLayout';
+import { HODLayout } from '@/components/hod-components/layout/HODLayout';
 import { Button, EmptyState, Alert } from '@/components/ui';
 import { auditLogApi, type HODActionLogEntry } from '@/lib/api';
 

@@ -1,4 +1,4 @@
-import DashboardLayout from '@/components/layout/DashboardLayout';
+import DashboardLayout from '@/components/employee-components/layout/DashboardLayout';
 
 const leaveBalances = [
   { type: 'Annual leave', total: 21, used: 12, pending: 5, color: 'bg-success' },

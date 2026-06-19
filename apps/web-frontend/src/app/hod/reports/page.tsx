@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
-import { HODLayout } from '@/components/layout/HODLayout';
+import { HODLayout } from '@/components/hod-components/layout/HODLayout';
 import { Button, Input, Select, Spinner, Alert, Modal, EmptyState } from '@/components/ui';
 import { reportsApi, employeeApi, getCurrentUser } from '@/lib/api';
 import { exportReportToExcel, exportReportToPDF } from '@/lib/export';

@@ -28,7 +28,7 @@ apiClient.interceptors.response.use(
       localStorage.removeItem('accessToken');
       localStorage.removeItem('userRole');
       if (typeof window !== 'undefined') {
-        window.location.href = '/login';
+        window.location.href = '/auth/login';
       }
     }
     return Promise.reject(error);

@@ -17,7 +17,7 @@ export default function HomePage() {
       // Redirect to hospital admin dashboard
       router.push('/dashboard');
     } else {
-      router.push('/login');
+      router.push('/auth/login');
     }
   }, [router]);
   

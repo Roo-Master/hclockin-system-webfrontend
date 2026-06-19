@@ -1,4 +1,4 @@
-import DashboardLayout from '@/components/layout/DashboardLayout';
+import DashboardLayout from '@/components/employee-components/layout/DashboardLayout';
 
 const logs = [
   { date: 'Sun, 14 Jun 2026', time: '07:02', type: 'Clock In', shift: 'Morning · ICU', device: 'Terminal 1 · ICU', status: 'Success', statusStyle: 'bg-success-bg text-success' },
