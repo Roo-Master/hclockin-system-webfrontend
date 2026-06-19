@@ -1,19 +1,27 @@
 "use client";
-import React, { useState } from "react";
-import Sidebar from "../../components/hospital-admin/Sidebar";
-import Header from "../../components/hospital-admin/Header";
 
-export default function HospitalAdminLayout({ children }: { children: React.ReactNode }) {
-  const [collapsed, setCollapsed] = useState(false);
+import { ReactNode, useState } from 'react';
+import Sidebar from '@/components/hospital-admin/layout/Sidebar';
+import Header from '@/components/hospital-admin/layout/Header';
+
+interface HospitalAdminLayoutProps {
+  children: ReactNode;
+}
+
+export default function HospitalAdminLayout({ children }: HospitalAdminLayoutProps) {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   return (
-    <div style={{ display: "flex", height: "100vh", overflow: "hidden", background: "var(--color-bg-page)" }}>
-      <Sidebar collapsed={collapsed} onToggle={() => setCollapsed((c) => !c)} />
-
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-        <Header onMenuToggle={() => setCollapsed((c) => !c)} />
-
-        <main style={{ flex: 1, overflowY: "auto", padding: "24px" }}>
+    <div className="flex h-screen bg-gray-100">
+      <Sidebar 
+        collapsed={sidebarCollapsed}
+        onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+      />
+      <div className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ${
+        sidebarCollapsed ? 'ml-16' : 'ml-64'
+      }`}>
+        <Header onMenuToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
+        <main className="flex-1 overflow-y-auto p-6 bg-gray-50">
           {children}
         </main>
       </div>
