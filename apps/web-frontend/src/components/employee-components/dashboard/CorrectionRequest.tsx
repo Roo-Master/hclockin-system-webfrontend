@@ -10,7 +10,7 @@ export default function CorrectionRequest() {
           Missing clock-out on <strong className="text-primary">Thu 11 Jun</strong> detected. Submit a correction so HR can update your record.
         </p>
         <Link
-          href="/dashboard/correction-request"
+          href="/user-dashboard/correction-request"
           className="flex-shrink-0 text-label font-medium px-3 py-1.5 border border-border rounded-badge bg-surface text-primary hover:bg-page transition-colors"
         >
           Submit

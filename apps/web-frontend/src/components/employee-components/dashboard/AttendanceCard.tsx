@@ -19,7 +19,7 @@ const statusStyles: Record<string, string> = {
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-heading text-primary">Attendance this month</h2>
-          <a href="/dashboard/attendance" className="text-label text-success hover:underline">
+          <a href="/user-dashboard/attendance" className="text-label text-success hover:underline">
             View full history →
           </a>
         </div>

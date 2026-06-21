@@ -9,7 +9,7 @@ const PROTECTED_ROUTES: { prefix: string; role: string }[] = [
   { prefix: "/hospital-admin", role: "hospital_admin" },
   { prefix: "/hr-dashboard", role: "hr" },
   { prefix: "/hod", role: "hod" },
-  { prefix: "/dashboard", role: "staff" },
+  { prefix: "/user-dashboard", role: "staff" },
 ];
 
 export function middleware(request: NextRequest) {
@@ -46,6 +46,6 @@ export const config = {
     "/hospital-admin/:path*",
     "/hr-dashboard/:path*",
     "/hod/:path*",
-    "/dashboard/:path*",
+    "/user-dashboard/:path*",
   ],
 };

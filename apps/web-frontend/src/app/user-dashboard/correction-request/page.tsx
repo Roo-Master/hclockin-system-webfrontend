@@ -2,58 +2,59 @@
 
 import { useState } from 'react';
 import DashboardLayout from '@/components/employee-components/layout/DashboardLayout';
-
-const pastRequests = [
-  {
-    date: 'Thu, 11 Jun 2026',
-    shift: 'Morning · ICU',
-    issue: 'Missing clock-out',
-    submitted: '14 Jun 2026',
-    status: 'Pending',
-    statusStyle: 'bg-warning-bg text-warning',
-  },
-];
+import { submitCorrectionRequest } from '@/app/api/hr-api/generalUserService';
+import { useMyCorrections } from '@/hooks/hr-hooks/useGeneralUser';
 
 export default function CorrectionRequestPage() {
   const [date, setDate] = useState('');
   const [issue, setIssue] = useState('');
   const [notes, setNotes] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  function handleSubmit() {
+  const { data: corData, refetch } = useMyCorrections();
+  const pastRequests: Array<Record<string, unknown>> = corData?.data ?? corData ?? [];
+
+  async function handleSubmit() {
     if (!date || !issue) return;
-    setSubmitted(true);
-    setDate('');
-    setIssue('');
-    setNotes('');
+    setSubmitting(true);
+    try {
+      await submitCorrectionRequest({ date, issueType: issue, notes });
+      setSubmitted(true);
+      setDate('');
+      setIssue('');
+      setNotes('');
+      refetch();
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Unknown error';
+      alert('Failed to submit: ' + message);
+    } finally {
+      setSubmitting(false);
+    }
   }
+
+  const statusStyle = (status: string) => {
+    if (status === 'APPROVED') return 'bg-success-bg text-success';
+    if (status === 'REJECTED') return 'bg-danger-bg text-danger';
+    return 'bg-warning-bg text-warning';
+  };
 
   return (
     <DashboardLayout title="Correction Request">
       <div className="flex flex-col gap-5">
-
-        {/* Alert */}
-        <div className="flex items-center gap-3 bg-warning-bg border border-warning/30 rounded-card px-4 py-3">
-          <span className="text-warning">⚠</span>
-          <p className="text-body text-primary">
-            You have a missing clock-out on <strong>Thu 11 Jun</strong>. Please submit a correction request below.
-          </p>
-        </div>
-
-        {/* Success message */}
         {submitted && (
           <div className="flex items-center gap-3 bg-success-bg border border-success/30 rounded-card px-4 py-3">
             <span className="text-success">✓</span>
-            <p className="text-body text-primary">Correction request submitted successfully. HR will review it shortly.</p>
+            <p className="text-body text-primary">
+              Correction request submitted successfully. HR will review it shortly.
+            </p>
           </div>
         )}
 
-        {/* Form */}
         <div className="bg-surface border border-border rounded-card p-5">
           <h2 className="text-heading text-primary mb-5">Submit a correction</h2>
 
           <div className="flex flex-col gap-4">
-            {/* Date */}
             <div>
               <label className="text-label text-secondary block mb-1.5">Date of issue</label>
               <input
@@ -64,7 +65,6 @@ export default function CorrectionRequestPage() {
               />
             </div>
 
-            {/* Issue type */}
             <div>
               <label className="text-label text-secondary block mb-1.5">Issue type</label>
               <select
@@ -80,7 +80,6 @@ export default function CorrectionRequestPage() {
               </select>
             </div>
 
-            {/* Notes */}
             <div>
               <label className="text-label text-secondary block mb-1.5">Additional notes</label>
               <textarea
@@ -92,44 +91,52 @@ export default function CorrectionRequestPage() {
               />
             </div>
 
-            {/* Submit */}
             <button
               onClick={handleSubmit}
-              className="w-fit px-5 py-2 bg-success text-white text-label font-medium rounded-badge hover:opacity-90 transition-opacity"
+              disabled={submitting}
+              className="w-fit px-5 py-2 bg-success text-white text-label font-medium rounded-badge hover:opacity-90 transition-opacity disabled:opacity-50"
             >
-              Submit request
+              {submitting ? 'Submitting...' : 'Submit request'}
             </button>
           </div>
         </div>
 
-        {/* Past requests */}
         <div className="bg-surface border border-border rounded-card p-5">
           <h2 className="text-heading text-primary mb-4">Past requests</h2>
 
-          <div className="grid grid-cols-[140px_1fr_1fr_120px_90px] gap-3 px-2 pb-2 border-b border-border">
+          <div className="grid grid-cols-[140px_1fr_120px_90px] gap-3 px-2 pb-2 border-b border-border">
             <span className="text-label text-secondary">Date</span>
-            <span className="text-label text-secondary">Shift</span>
             <span className="text-label text-secondary">Issue</span>
             <span className="text-label text-secondary">Submitted</span>
             <span className="text-label text-secondary">Status</span>
           </div>
 
-          {pastRequests.map((req, index) => (
-            <div
-              key={index}
-              className="grid grid-cols-[140px_1fr_1fr_120px_90px] gap-3 px-2 py-3 border-b border-border last:border-0 items-center"
-            >
-              <span className="text-label text-secondary">{req.date}</span>
-              <span className="text-body text-primary">{req.shift}</span>
-              <span className="text-label text-secondary">{req.issue}</span>
-              <span className="text-label text-secondary">{req.submitted}</span>
-              <span className={`text-label font-medium px-2 py-0.5 rounded-pill w-fit ${req.statusStyle}`}>
-                {req.status}
-              </span>
-            </div>
-          ))}
-        </div>
+          {pastRequests.map((req, index) => {
+            const reqDate = req.date as string | undefined;
+            const createdAt = (req.createdAt ?? req.submittedAt) as string | undefined;
+            const status = String(req.status ?? 'PENDING');
 
+            return (
+              <div
+                key={String(req.id ?? index)}
+                className="grid grid-cols-[140px_1fr_120px_90px] gap-3 px-2 py-3 border-b border-border last:border-0 items-center"
+              >
+                <span className="text-label text-secondary">
+                  {reqDate ? new Date(reqDate).toDateString() : '—'}
+                </span>
+                <span className="text-label text-secondary">
+                  {String(req.issueType ?? req.issue ?? '—')}
+                </span>
+                <span className="text-label text-secondary">
+                  {createdAt ? new Date(createdAt).toDateString() : '—'}
+                </span>
+                <span className={`text-label font-medium px-2 py-0.5 rounded-pill w-fit ${statusStyle(status)}`}>
+                  {status}
+                </span>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </DashboardLayout>
   );
