@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx';
-import type { CompiledReport } from '@/types';
+import type { CompiledReport } from '@/types/hod';
 
 function humanizeKey(key: string): string {
   return key.replace(/([A-Z])/g, ' $1').replace(/^./, c => c.toUpperCase()).trim();

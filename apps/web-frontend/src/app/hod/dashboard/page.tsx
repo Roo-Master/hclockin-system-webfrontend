@@ -1,9 +1,9 @@
 'use client';
 import { useEffect } from 'react';
-import { HODLayout } from '@/components/layout/HODLayout';
-import { StatCard, StatusBadge, Spinner, Alert, EmptyState } from '@/components/ui';
-import { getDisplayStatus, useHODDashboard, useHODProfile } from '../../../hod-hooks';
-import type { AttendanceSummary } from '@/types';
+import { HODLayout } from '@/components/hod-components/layout/HODLayout';
+import { StatCard, StatusBadge, Spinner, Alert, EmptyState } from '@/components/ui/hod-ui';
+import { getDisplayStatus, useHODDashboard, useHODProfile } from '../../../hooks/hod-hooks';
+import type { AttendanceSummary } from '@/types/hod';
 
 
 

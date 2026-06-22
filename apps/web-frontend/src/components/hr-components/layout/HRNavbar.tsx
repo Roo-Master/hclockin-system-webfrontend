@@ -5,7 +5,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { clearAuth } from '@/lib/api';
-import type { AuthUser } from '@/types';
+import type { AuthUser } from '@/types/hod';
 
 interface HRNavbarProps {
   title: string;

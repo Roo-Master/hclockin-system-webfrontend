@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { clearAuth } from '@/lib/api';
-import type { AuthUser } from '@/types';
+import type { AuthUser } from '@/types/hod';
 
 // Navigation items for HOD portal
 const NAV_ITEMS = [

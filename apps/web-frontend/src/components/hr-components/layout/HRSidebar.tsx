@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { clearAuth } from '@/lib/api';
-import type { AuthUser } from '@/types';
+import type { AuthUser } from '@/types/hod';
 
 const navigation = [
   { name: 'Dashboard', href: '/hr-dashboard', icon: '📊' },

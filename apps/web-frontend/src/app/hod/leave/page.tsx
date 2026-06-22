@@ -2,8 +2,8 @@
 
 import { HODLayout } from '@/components/layout/HODLayout';
 import { Button, Select, Spinner, Alert, Modal, EmptyState, StatusBadge } from '@/components/ui';
-import type { LeaveStatus } from '@/types';
-import { daysBetween, fmtDateShort, useHODLeave, useHODProfile } from '../../../hod-hooks';
+import type { LeaveStatus } from '@/types/hod';
+import { daysBetween, fmtDateShort, useHODLeave, useHODProfile } from '../../../hooks/hod-hooks';
 
 export default function LeavePage() {
   const { departmentId } = useHODProfile();

@@ -1,6 +1,6 @@
 'use client';
 import { type ReactNode } from 'react';
-import type { AttendanceStatus, LeaveStatus, EmploymentStatus } from '@/types';
+import type { AttendanceStatus, LeaveStatus, EmploymentStatus } from '@/types/hod';
 
 // ── StatusBadge ────────────────────────────────────────────────────────────
 const STATUS_CONFIG: Record<string, { label: string; classes: string; dot: string }> = {

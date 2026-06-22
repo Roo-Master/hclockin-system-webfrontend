@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { auditLogApi, employeeApi, leaveApi } from '@/lib/api';
-import type { Employee, LeaveRequest, LeaveStatus } from '@/types';
+import type { Employee, LeaveRequest, LeaveStatus } from '@/types/hod';
 
 export function useHODLeave(departmentId: string | null) {
   const [leaves, setLeaves] = useState<LeaveRequest[]>([]);

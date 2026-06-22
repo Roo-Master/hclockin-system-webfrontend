@@ -2,7 +2,7 @@
 
 import { HODLayout } from '@/components/layout/HODLayout';
 import { StatusBadge, Spinner, Alert, Button, Input, Select, Modal, EmptyState } from '@/components/ui';
-import { EMPLOYMENT_STATUSES, EMPLOYMENT_TYPES, useHODProfile, useHODStaff } from '../../../hod-hooks';
+import { EMPLOYMENT_STATUSES, EMPLOYMENT_TYPES, useHODProfile, useHODStaff } from '../../../hooks/hod-hooks';
 
 export default function StaffPage() {
   const { departmentId } = useHODProfile();

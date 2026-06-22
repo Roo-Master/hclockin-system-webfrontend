@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { attendanceApi, auditLogApi } from '@/lib/api';
-import type { AttendanceLog, AttendanceSummary } from '@/types';
+import type { AttendanceLog, AttendanceSummary } from '@/types/hod';
 
 export const DISCREPANCY_REASONS = [
   { value: 'DUPLICATE_CLOCK_IN', label: 'Duplicate clock-in detected' },

@@ -3,7 +3,7 @@
 import { HODLayout } from '@/components/layout/HODLayout';
 import { Button, Input, Spinner, Alert, Modal, EmptyState, Select } from '@/components/ui';
 import { exportReportToExcel, exportReportToPDF } from '@/lib/export';
-import { HOD_REPORT_TYPES, useHODProfile, useHODReports } from '../../../hod-hooks';
+import { HOD_REPORT_TYPES, useHODProfile, useHODReports } from '../../../hooks/hod-hooks';
 
 export default function ReportsPage() {
   const { departmentId } = useHODProfile();

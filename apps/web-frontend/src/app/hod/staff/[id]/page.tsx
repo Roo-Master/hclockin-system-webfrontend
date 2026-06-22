@@ -3,7 +3,7 @@
 import { useParams } from 'next/navigation';
 import { HODLayout } from '@/components/hod-components/layout/HODLayout';
 import { StatusBadge, Spinner, Alert, Button } from '@/components/ui';
-import { fmtDateShort, fmtTimeShort, useHODStaffProfile } from '../../../../hod-hooks';
+import { fmtDateShort, fmtTimeShort, useHODStaffProfile } from '../../../../hooks/hod-hooks';
 
 export default function StaffProfilePage() {
   const { id } = useParams<{ id: string }>();

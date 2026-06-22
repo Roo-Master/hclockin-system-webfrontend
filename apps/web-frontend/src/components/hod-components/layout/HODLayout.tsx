@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { getCurrentUser, employeeApi } from '@/lib/api';
 import { Sidebar, TopBar } from '@/components/hod-components/layout/Sidebar';
 import { PulseStrip, Spinner } from '@/components/ui';
-import type { AuthUser } from '@/types';
+import type { AuthUser } from '@/types/hod';
 
 // Auth context hook for child pages to get the current HOD user
 export const UserContext = createContext<AuthUser | null>(null);

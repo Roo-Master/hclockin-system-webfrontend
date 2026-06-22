@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { employeeApi, getCurrentUser } from '@/lib/api';
-import type { AuthUser, Employee } from '@/types';
+import type { AuthUser, Employee } from '@/types/hod';
 
 function mapEmployeeToAuthUser(emp: any): AuthUser {
   return {

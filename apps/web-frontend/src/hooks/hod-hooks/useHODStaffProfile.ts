@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { attendanceApi, employeeApi } from '@/lib/api';
-import type { AttendanceSummary, Employee } from '@/types';
+import type { AttendanceSummary, Employee } from '@/types/hod';
 import { monthStartStr, todayStr } from './utils';
 
 export function useHODStaffProfile(id: string | null) {

@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo, useState } from 'react';
 import { attendanceApi } from '@/lib/api';
-import type { AttendanceSummary, DashboardStats } from '@/types';
+import type { AttendanceSummary, DashboardStats } from '@/types/hod';
 
 const todayStr = () => new Date().toISOString().split('T')[0];
 

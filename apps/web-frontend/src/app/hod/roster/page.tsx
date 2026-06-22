@@ -2,7 +2,7 @@
 
 import { HODLayout } from '@/components/layout/HODLayout';
 import { Button, Modal, Input, Spinner, Alert, EmptyState, Select } from '@/components/ui';
-import { dayLabel, fmtRosterDate, SHIFT_COLORS, useHODProfile, useHODRoster } from '../../../hod-hooks';
+import { dayLabel, fmtRosterDate, SHIFT_COLORS, useHODProfile, useHODRoster } from '../../../hooks/hod-hooks';
 
 export default function RosterPage() {
   const { departmentId } = useHODProfile();

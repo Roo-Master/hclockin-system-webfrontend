@@ -2,7 +2,7 @@
 import type { ChangeEvent } from 'react';
 import { HODLayout } from '@/components/layout/HODLayout';
 import { StatusBadge, Spinner, Alert, EmptyState, Button, Input, Select } from '@/components/ui';
-import { useHODAttendance, useHODProfile } from '../../../hod-hooks';
+import { useHODAttendance, useHODProfile } from '../../../hooks/hod-hooks';
 
 const fmt = (d: string | null) => {
   if (!d) return '—';

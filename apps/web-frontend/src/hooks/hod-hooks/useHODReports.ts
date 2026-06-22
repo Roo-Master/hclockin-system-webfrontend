@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { reportsApi } from '@/lib/api';
-import type { CompiledReport } from '@/types';
+import type { CompiledReport } from '@/types/hod';
 import { monthStartStr, todayStr } from './utils';
 
 export const HOD_REPORT_TYPES = [

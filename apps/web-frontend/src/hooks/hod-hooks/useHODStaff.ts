@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { auditLogApi, employeeApi } from '@/lib/api';
-import type { Employee, EmploymentStatus } from '@/types';
+import type { Employee, EmploymentStatus } from '@/types/hod';
 
 export const EMPLOYMENT_TYPES = ['FULL_TIME', 'PART_TIME', 'CONTRACT', 'LOCUM', 'INTERN'] as const;
 export const EMPLOYMENT_STATUSES: EmploymentStatus[] = ['ACTIVE', 'INACTIVE', 'SUSPENDED', 'TERMINATED'];

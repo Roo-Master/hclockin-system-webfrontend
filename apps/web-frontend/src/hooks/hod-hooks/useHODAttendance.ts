@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { attendanceApi } from '@/lib/api';
-import type { AttendanceSummary } from '@/types';
+import type { AttendanceSummary } from '@/types/hod';
 
 const todayStr = () => new Date().toISOString().split('T')[0];
 const monthStartStr = () => {

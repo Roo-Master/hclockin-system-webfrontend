@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { apiFetch, auditLogApi, employeeApi, rosterApi } from '@/lib/api';
-import type { Employee, ShiftTemplate } from '@/types';
+import type { Employee, ShiftTemplate } from '@/types/hod';
 import { dayLabel, fmtRosterDate, weekDates } from './utils';
 
 export const SHIFT_COLORS: Record<string, string> = {
