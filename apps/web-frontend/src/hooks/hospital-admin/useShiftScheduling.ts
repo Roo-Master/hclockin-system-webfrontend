@@ -1,6 +1,6 @@
 // src/hooks/hospital-admin/useShiftScheduling.ts
 import { useState, useEffect } from 'react'
-import { ShiftTemplate } from '@/data/types'
+import { ShiftTemplate } from '@/types/hospital-admin/types'
 import { getAuthHeaders } from '@/lib/hospital-admin/auth-headers'
 
 export function useShiftTemplates() {

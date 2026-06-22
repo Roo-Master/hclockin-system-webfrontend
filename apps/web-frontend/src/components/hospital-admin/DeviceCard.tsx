@@ -1,6 +1,6 @@
 import React from 'react'
 import { Wifi, WifiOff, RefreshCw } from 'lucide-react'
-import { Device } from '@/data/types'
+import { Device } from '@/types/hospital-admin/types'
 
 interface Props {
   device: Device

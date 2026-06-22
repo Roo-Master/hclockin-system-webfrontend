@@ -1,5 +1,5 @@
 // src/data/index.ts
-export * from './types'
+export * from '../types/hospital-admin/types'
 export * from './kpiData'
 export * from './alertsData'
 export * from './shiftsData'

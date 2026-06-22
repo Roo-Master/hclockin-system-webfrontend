@@ -1,5 +1,5 @@
 import React from 'react'
-import { StaffMember } from '@/data/types'
+import { StaffMember } from '@/types/hospital-admin/types'
 import { AVATAR_COLORS } from '@/data/departmentsData'
 
 interface Props {

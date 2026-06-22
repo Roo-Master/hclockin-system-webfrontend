@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { X, Save } from 'lucide-react'
-import type { ShiftFormValues, ShiftFormErrors } from '@/data/types'
+import type { ShiftFormValues, ShiftFormErrors } from '@/types/hospital-admin/types'
 
 interface ColorOption {
   color: string

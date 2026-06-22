@@ -2,7 +2,7 @@
 
 import React, { useEffect } from 'react'
 import { CheckCircle, Info, AlertTriangle, XCircle, X } from 'lucide-react'
-import type { Toast as ToastType } from '@/data/types'
+import type { Toast as ToastType } from '@/types/hospital-admin/types'
 
 interface Props {
   toasts: ToastType[]

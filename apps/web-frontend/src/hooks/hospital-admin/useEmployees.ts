@@ -1,6 +1,6 @@
 // src/hooks/hospital-admin/useEmployees.ts
 import { useState, useEffect } from 'react'
-import { Employee } from '@/data/types'
+import { Employee } from '@/types/hospital-admin/types'
 import { getAuthHeaders } from '@/lib/hospital-admin/auth-headers'
 
 export function useEmployees(params?: { department?: string; search?: string }) {

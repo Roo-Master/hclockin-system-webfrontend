@@ -1,6 +1,6 @@
 // src/hooks/hospital-admin/useLeave.ts
 import { useState, useEffect } from 'react'
-import { LeaveRecord } from '@/data/types'
+import { LeaveRecord } from '@/types/hospital-admin/types'
 import { getAuthHeaders } from '@/lib/hospital-admin/auth-headers'
 
 interface LeaveFilters {

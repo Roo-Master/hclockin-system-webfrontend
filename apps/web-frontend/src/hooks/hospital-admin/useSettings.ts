@@ -1,6 +1,6 @@
 // src/hooks/hospital-admin/useSettings.ts
 import { useState, useEffect } from 'react'
-import { HospitalSettings } from '@/data/types'
+import { HospitalSettings } from '@/types/hospital-admin/types'
 import { getAuthHeaders } from '@/lib/hospital-admin/auth-headers'
 
 export function useSettings() {

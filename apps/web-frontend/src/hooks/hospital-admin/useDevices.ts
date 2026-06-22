@@ -1,6 +1,6 @@
 // src/hooks/hospital-admin/useDevices.ts
 import { useState, useEffect } from 'react'
-import { Device } from '@/data/types'
+import { Device } from '@/types/hospital-admin/types'
 import { getAuthHeaders } from '@/lib/hospital-admin/auth-headers'
 
 export function useDevices() {

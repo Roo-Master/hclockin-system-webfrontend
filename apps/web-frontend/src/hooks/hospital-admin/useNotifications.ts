@@ -1,6 +1,6 @@
 // src/hooks/hospital-admin/useNotifications.ts
 import { useState, useEffect } from 'react'
-import { AppNotification } from '@/data/types'
+import { AppNotification } from '@/types/hospital-admin/types'
 import { getAuthHeaders } from '@/lib/hospital-admin/auth-headers'
 
 export function useNotifications() {

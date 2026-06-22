@@ -5,7 +5,7 @@ import { Search, Mail, Phone, X } from 'lucide-react'
 import PageHeader from '@/components/hospital-admin/PageHeader'
 import { useEmployees } from '@/hooks/hospital-admin/useEmployees'
 import { useDepartments } from '@/hooks/hospital-admin/useDepartments'
-import type { Employee } from '@/data/types'
+import type { Employee } from '@/types/hospital-admin/types'
 
 const StatusBadge: React.FC<{ status: Employee['status'] }> = ({ status }) => {
   const cfg: Record<Employee['status'], { bg: string; color: string; label: string }> = {

@@ -4,7 +4,7 @@ import {
   StaffMember,
   DeptFormValues,
   DeptFormErrors,
-} from '@/data/types'
+} from '@/types/hospital-admin/types'
 
 interface Props {
   form: DeptFormValues

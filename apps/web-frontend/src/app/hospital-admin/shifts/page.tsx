@@ -15,7 +15,7 @@ import {
   ShiftFormValues,
   ShiftFormErrors,
   Toast,
-} from '@/data/types'
+} from '@/types/hospital-admin/types'
 
 let toastId = 0
 

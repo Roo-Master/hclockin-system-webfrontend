@@ -1,5 +1,5 @@
 // src/data/sidebarData.ts
-import { NavItem, NotificationItem } from './types'
+import { NavItem, NotificationItem } from '../types/hospital-admin/types'
 
 export const navItems: NavItem[] = [
   { iconName: 'LayoutDashboard', label: 'Dashboard',       path: '/'               },

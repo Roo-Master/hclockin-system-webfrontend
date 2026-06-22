@@ -13,7 +13,7 @@ import {
   NotifIcon,
   NotifColor,
   Toast,
-} from '@/data/types'
+} from '@/types/hospital-admin/types'
 
 const ICON_MAP: Record<NotifIcon, React.FC<{ size: number }>> = {
   AlertCircle,

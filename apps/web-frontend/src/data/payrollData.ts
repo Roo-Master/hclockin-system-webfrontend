@@ -1,5 +1,5 @@
 // src/data/payrollData.ts
-import { PayrollRecord } from './types'
+import { PayrollRecord } from '../types/hospital-admin/types'
 
 export const payrollData: PayrollRecord[] = [
   { employeeId: 1,  name: 'Dr. R. Sharma',    initials: 'RS', department: 'Surgery',    role: 'Senior Surgeon',      avatarColor: '#2563EB', basicSalary: 280000, allowances: 35000, overtime: 12000, deductions: 28000,  net: 299000 },

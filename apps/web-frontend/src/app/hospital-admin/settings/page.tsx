@@ -6,7 +6,7 @@ import PageHeader from '@/components/hospital-admin/PageHeader'
 import ToastContainer from '@/components/hospital-admin/Toast'
 import { useSettings, useUpdateSettings } from '@/hooks/hospital-admin/useSettings'
 import { TIMEZONE_OPTIONS } from '@/data/settingsData'
-import { HospitalSettings, Toast } from '@/data/types'
+import { HospitalSettings, Toast } from '@/types/hospital-admin/types'
 
 let toastId = 0
 

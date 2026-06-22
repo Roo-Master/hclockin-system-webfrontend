@@ -1,6 +1,6 @@
 // src/hooks/hospital-admin/useDepartments.ts
 import { useState, useEffect } from 'react'
-import { DepartmentRecord } from '@/data/types'
+import { DepartmentRecord } from '@/types/hospital-admin/types'
 import { getAuthHeaders } from '@/lib/hospital-admin/auth-headers'
 
 export function useDepartments() {

@@ -1,6 +1,6 @@
 // src/hooks/hospital-admin/useReports.ts
 import { useState, useEffect } from 'react'
-import { ReportItem } from '@/data/types'
+import { ReportItem } from '@/types/hospital-admin/types'
 import { getAuthHeaders } from '@/lib/hospital-admin/auth-headers'
 
 interface ReportFilters {

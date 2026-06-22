@@ -1,5 +1,5 @@
 // src/data/kpiData.ts
-import { KPIStat } from './types'
+import { KPIStat } from '../types/hospital-admin/types'
 
 export const kpiData: KPIStat[] = [
   {

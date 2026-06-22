@@ -7,7 +7,7 @@ import DeviceCard from '@/components/hospital-admin/DeviceCard'
 import DeviceRegisterModal from '@/components/hospital-admin/DeviceRegisterModal'
 import ToastContainer from '@/components/hospital-admin/Toast'
 import { useDevices, useSyncDevice } from '@/hooks/hospital-admin/useDevices'
-import { Toast } from '@/data/types'
+import { Toast } from '@/types/hospital-admin/types'
 
 type StatusFilter = 'all' | 'online' | 'offline'
 let toastId = 0

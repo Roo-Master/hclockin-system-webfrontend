@@ -9,7 +9,7 @@ import ToastContainer from '@/components/hospital-admin/Toast'
 import { useDepartments, useCreateDepartment, useUpdateDepartment, useDeleteDepartment } from '@/hooks/hospital-admin/useDepartments'
 import { useEmployees } from '@/hooks/hospital-admin/useEmployees'
 import { ALL_STAFF, AVATAR_COLORS } from '@/data/departmentsData'
-import { DeptFormValues, DeptFormErrors, Toast } from '@/data/types'
+import { DeptFormValues, DeptFormErrors, Toast } from '@/types/hospital-admin/types'
 
 const EMPTY_FORM: DeptFormValues = {
   name: '',

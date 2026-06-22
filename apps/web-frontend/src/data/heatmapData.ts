@@ -1,5 +1,5 @@
 // src/data/heatmapData.ts
-import { HeatmapMatrix, CellStatus } from './types';
+import { HeatmapMatrix, CellStatus } from '../types/hospital-admin/types';
 
 export const heatmapDepartments: string[] = [
   'Nursing', 'Surgery', 'Radiology', 'Emergency',

@@ -1,6 +1,6 @@
 // src/hooks/hospital-admin/usePayroll.ts
 import { useState, useEffect } from 'react'
-import { PayrollRecord } from '@/data/types'
+import { PayrollRecord } from '@/types/hospital-admin/types'
 import { getAuthHeaders } from '@/lib/hospital-admin/auth-headers'
 
 interface PayrollFilters {

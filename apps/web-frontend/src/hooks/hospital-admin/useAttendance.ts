@@ -1,6 +1,6 @@
 // src/hooks/hospital-admin/useAttendance.ts
 import { useState, useEffect } from 'react'
-import { AttendancePoint, HeatmapMatrix, CellStatus } from '@/data/types'
+import { AttendancePoint, HeatmapMatrix, CellStatus } from '@/types/hospital-admin/types'
 import { getAuthHeaders } from '@/lib/hospital-admin/auth-headers'
 
 interface AttendanceFilters {

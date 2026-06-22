@@ -1,5 +1,5 @@
 // src/data/leavePageData.ts
-import { LeaveRecord } from './types'
+import { LeaveRecord } from '../types/hospital-admin/types'
 
 export const leaveRecordsData: LeaveRecord[] = [
   { id: 1,  employeeId: 2,  name: 'Nurse A. Patel',   initials: 'AP', department: 'ICU',       type: 'Sick Leave',   from: 'May 20', to: 'May 27', days: 7,  avatarColor: '#16A34A' },
