@@ -1,6 +1,6 @@
 'use client';
-import DashboardLayout from '@/components/employee-components/layout/DashboardLayout';
-import { useMyAttendance } from '@/hooks/hr-hooks/useGeneralUser';
+import DashboardLayout from '@/components/user-components/layout/DashboardLayout';
+import { useMyAttendance } from '@/hooks/user-hooks/useGeneralUser';
 
 export default function AttendancePage() {
   const { data, loading, error } = useMyAttendance();

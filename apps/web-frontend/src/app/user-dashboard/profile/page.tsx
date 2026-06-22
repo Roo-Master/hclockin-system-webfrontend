@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import DashboardLayout from '@/components/employee-components/layout/DashboardLayout';
-import { useMyProfile } from '@/hooks/hr-hooks/useGeneralUser';
-import { updateMyProfile } from '@/app/api/hr-api/generalUserService';
+import DashboardLayout from '@/components/user-components/layout/DashboardLayout';
+import { useMyProfile } from '@/hooks/user-hooks/useGeneralUser';
+import { updateMyProfile } from '@/app/api/user-api/userService';
 
 interface ProfileForm {
   name: string;

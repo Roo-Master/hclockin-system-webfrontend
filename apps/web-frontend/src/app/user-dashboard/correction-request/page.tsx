@@ -1,9 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import DashboardLayout from '@/components/employee-components/layout/DashboardLayout';
-import { submitCorrectionRequest } from '@/app/api/hr-api/generalUserService';
-import { useMyCorrections } from '@/hooks/hr-hooks/useGeneralUser';
+import DashboardLayout from '@/components/user-components/layout/DashboardLayout';
+import { submitCorrectionRequest } from '@/app/api/user-api/userService';
+import { useMyCorrections } from '@/hooks/user-hooks/useGeneralUser';
 
 export default function CorrectionRequestPage() {
   const [date, setDate] = useState('');

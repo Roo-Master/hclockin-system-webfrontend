@@ -1,8 +1,8 @@
 'use client';
 
-import DashboardLayout from '@/components/employee-components/layout/DashboardLayout';
-import { useMyNotifications } from '@/hooks/hr-hooks/useGeneralUser';
-import { markNotificationRead, markAllNotificationsRead } from '@/app/api/hr-api/generalUserService';
+import DashboardLayout from '@/components/user-components/layout/DashboardLayout';
+import { useMyNotifications } from '@/hooks/user-hooks/useGeneralUser';
+import { markNotificationRead, markAllNotificationsRead } from '@/app/api/user-api/userService';
 
 export default function NotificationsPage() {
   const { data, loading, error, refetch } = useMyNotifications();

@@ -1,6 +1,6 @@
 'use client';
-import DashboardLayout from '@/components/employee-components/layout/DashboardLayout';
-import { useMyShifts } from '@/hooks/hr-hooks/useGeneralUser';
+import DashboardLayout from '@/components/user-components/layout/DashboardLayout';
+import { useMyShifts } from '@/hooks/user-hooks/useGeneralUser';
 
 export default function ShiftsPage() {
   const { data, loading, error } = useMyShifts();

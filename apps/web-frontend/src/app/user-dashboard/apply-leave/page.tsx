@@ -1,9 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import DashboardLayout from '@/components/employee-components/layout/DashboardLayout';
-import { applyForLeave } from '@/app/api/hr-api/generalUserService';
-import { useMyLeaveBalances } from '@/hooks/hr-hooks/useGeneralUser';
+import DashboardLayout from '@/components/user-components/layout/DashboardLayout';
+import { applyForLeave } from '@/app/api/user-api/userService';
+import { useMyLeaveBalances } from '@/hooks/user-hooks/useGeneralUser';
 
 export default function ApplyLeavePage() {
   const [leaveType, setLeaveType] = useState('');
