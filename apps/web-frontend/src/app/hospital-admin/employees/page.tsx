@@ -2,9 +2,9 @@
 
 import React, { useState } from 'react'
 import { Search, Mail, Phone, X } from 'lucide-react'
-import Card from '@/components/hospital-admin/Card'
 import PageHeader from '@/components/hospital-admin/PageHeader'
-import { employeesData, departmentsList } from '@/data'
+import { useEmployees } from '@/hooks/hospital-admin/useEmployees'
+import { useDepartments } from '@/hooks/hospital-admin/useDepartments'
 import type { Employee } from '@/data/types'
 
 const StatusBadge: React.FC<{ status: Employee['status'] }> = ({ status }) => {
@@ -68,9 +68,23 @@ export default function EmployeesPage() {
   const [search, setSearch] = useState('')
   const [selected, setSelected] = useState<Employee | null>(null)
 
-  const deptNames = ['all', ...departmentsList.map(d => d.name)]
+  const { data: employees = [], isLoading: empLoading } = useEmployees()
+  const { data: departments = [], isLoading: deptLoading } = useDepartments()
 
-  const filtered = employeesData.filter(e =>
+  const isLoading = empLoading || deptLoading
+
+  if (isLoading) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+        <PageHeader title="Employees" subtitle="View staff by department" />
+        <div style={{ textAlign: 'center', padding: 40, color: '#9ca3af' }}>Loading employees...</div>
+      </div>
+    )
+  }
+
+  const deptNames = ['all', ...departments.map(d => d.name)]
+
+  const filtered = employees.filter(e =>
     (selectedDept === 'all' || e.department === selectedDept) &&
     (e.name.toLowerCase().includes(search.toLowerCase()) ||
       e.role.toLowerCase().includes(search.toLowerCase()))
@@ -116,11 +130,11 @@ export default function EmployeesPage() {
         </div>
 
         {Object.entries(grouped).map(([dept, emps]) => {
-          const deptInfo = departmentsList.find(d => d.name === dept)
+          const deptInfo = departments.find(d => d.name === dept)
           return (
             <div key={dept} style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, overflow: 'hidden' }}>
-              <div style={{ padding: '14px 24px', background: (deptInfo?.color ?? '#6b7280') + '10', borderBottom: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ width: 10, height: 10, borderRadius: '50%', background: deptInfo?.color ?? '#6b7280' }} />
+              <div style={{ padding: '14px 24px', background: '#dbeafe', borderBottom: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#2563eb' }} />
                 <span style={{ fontSize: 15, fontWeight: 700, color: '#111827' }}>{dept}</span>
                 <span style={{ fontSize: 12, color: '#9ca3af' }}>{emps.length} employees</span>
               </div>

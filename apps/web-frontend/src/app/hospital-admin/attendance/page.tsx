@@ -5,22 +5,40 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import Card from '@/components/hospital-admin/Card'
 import PageHeader from '@/components/hospital-admin/PageHeader'
 import AttendanceHeatmap from '@/components/hospital-admin/AttendanceHeatmap'
-import { lineChartData, employeesData, departmentsList } from '@/data'
-
-const summaryByDept = departmentsList.map(d => {
-  const members = employeesData.filter(e => e.department === d.name)
-  return {
-    dept: d.name,
-    color: d.color,
-    total: members.length,
-    present: members.filter(e => e.status === 'active').length,
-    onLeave: members.filter(e => e.status === 'on-leave').length,
-    absent: members.filter(e => e.status === 'inactive').length,
-  }
-})
+import { useAttendance } from '@/hooks/hospital-admin/useAttendance'
+import { useDepartments } from '@/hooks/hospital-admin/useDepartments'
+import { useEmployees } from '@/hooks/hospital-admin/useEmployees'
+import { lineChartData } from '@/data'
 
 export default function AttendancePage() {
   const [selectedDept, setSelectedDept] = useState('all')
+  
+  const { data: departments = [], isLoading: deptLoading } = useDepartments()
+  const { data: employees = [], isLoading: empLoading } = useEmployees()
+  const { data: attendance = [], isLoading: attLoading } = useAttendance()
+
+  const isLoading = deptLoading || empLoading || attLoading
+
+  if (isLoading) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+        <PageHeader title="Attendance" subtitle="Daily attendance view per department" />
+        <div style={{ textAlign: 'center', padding: 40, color: '#9ca3af' }}>Loading attendance data...</div>
+      </div>
+    )
+  }
+
+  const summaryByDept = departments.map(d => {
+    const members = employees.filter(e => e.department === d.name)
+    return {
+      dept: d.name,
+      color: '#2563eb',
+      total: members.length,
+      present: members.filter(e => e.status === 'active').length,
+      onLeave: members.filter(e => e.status === 'on-leave').length,
+      absent: members.filter(e => e.status === 'inactive').length,
+    }
+  })
 
   const displayed = selectedDept === 'all'
     ? summaryByDept
@@ -36,7 +54,7 @@ export default function AttendancePage() {
       <PageHeader title="Attendance" subtitle="Daily attendance view per department" />
 
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        {['all', ...departmentsList.map(d => d.name)].map(d => (
+        {['all', ...departments.map(d => d.name)].map(d => (
           <button key={d} onClick={() => setSelectedDept(d)}
             style={{
               padding: '6px 14px', borderRadius: 999, fontSize: 12, fontWeight: 500,

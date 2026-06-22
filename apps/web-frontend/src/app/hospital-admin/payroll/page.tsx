@@ -3,22 +3,37 @@
 import React, { useState } from 'react'
 import Card from '@/components/hospital-admin/Card'
 import PageHeader from '@/components/hospital-admin/PageHeader'
-import { payrollData, departmentsList } from '@/data'
+import { usePayroll } from '@/hooks/hospital-admin/usePayroll'
+import { useDepartments } from '@/hooks/hospital-admin/useDepartments'
 
 const fmt = (n: number) => `KSH ${n.toLocaleString()}`
 
 export default function PayrollPage() {
   const [selectedDept, setSelectedDept] = useState('all')
 
+  const { data: payrollData = [], isLoading: payrollLoading } = usePayroll({ month: '2025-05' })
+  const { data: departments = [], isLoading: deptLoading } = useDepartments()
+
+  const isLoading = payrollLoading || deptLoading
+
+  if (isLoading) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+        <PageHeader title="Payroll" subtitle="Monthly payroll overview — May 2025 (KSH)" />
+        <div style={{ textAlign: 'center', padding: 40, color: '#9ca3af' }}>Loading payroll data...</div>
+      </div>
+    )
+  }
+
   const filtered = payrollData.filter(r =>
     selectedDept === 'all' || r.department === selectedDept
   )
 
-  const deptTotals = departmentsList.map(d => {
+  const deptTotals = departments.map(d => {
     const rows = payrollData.filter(r => r.department === d.name)
     return { 
       name: d.name, 
-      color: d.color, 
+      color: '#2563eb', // Use department color if available
       count: rows.length, 
       total: rows.reduce((s, r) => s + r.net, 0) 
     }

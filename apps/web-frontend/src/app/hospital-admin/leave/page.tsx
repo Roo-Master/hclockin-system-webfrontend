@@ -3,7 +3,8 @@
 import React, { useState } from 'react'
 import Card from '@/components/hospital-admin/Card'
 import PageHeader from '@/components/hospital-admin/PageHeader'
-import { leaveRecordsData, departmentsList } from '@/data'
+import { useLeaves } from '@/hooks/hospital-admin/useLeave'
+import { useDepartments } from '@/hooks/hospital-admin/useDepartments'
 
 const typeColors: Record<string, { bg: string; color: string }> = {
   'Sick Leave': { bg: '#fee2e2', color: '#dc2626' },
@@ -16,14 +17,28 @@ const typeColors: Record<string, { bg: string; color: string }> = {
 export default function LeavePage() {
   const [selectedDept, setSelectedDept] = useState('all')
 
-  const filtered = leaveRecordsData.filter(r =>
+  const { data: leaveRecords = [], isLoading: leaveLoading } = useLeaves()
+  const { data: departments = [], isLoading: deptLoading } = useDepartments()
+
+  const isLoading = leaveLoading || deptLoading
+
+  if (isLoading) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+        <PageHeader title="Staff on Leave" subtitle="View employees currently on leave — per department" />
+        <div style={{ textAlign: 'center', padding: 40, color: '#9ca3af' }}>Loading leave data...</div>
+      </div>
+    )
+  }
+
+  const filtered = leaveRecords.filter(r =>
     selectedDept === 'all' || r.department === selectedDept
   )
 
-  const countByDept = departmentsList.map(d => ({
+  const countByDept = departments.map(d => ({
     name: d.name,
-    color: d.color,
-    count: leaveRecordsData.filter(r => r.department === d.name).length,
+    color: '#2563eb', // Use department color if available in your data
+    count: leaveRecords.filter(r => r.department === d.name).length,
   })).filter(d => d.count > 0)
 
   return (
@@ -42,7 +57,7 @@ export default function LeavePage() {
           onClick={() => setSelectedDept('all')}
         >
           <p style={{ fontSize: 12, color: '#9ca3af' }}>All Departments</p>
-          <p style={{ fontSize: 26, fontWeight: 700, color: '#2563eb', marginTop: 4 }}>{leaveRecordsData.length}</p>
+          <p style={{ fontSize: 26, fontWeight: 700, color: '#2563eb', marginTop: 4 }}>{leaveRecords.length}</p>
           <p style={{ fontSize: 12, color: '#9ca3af', marginTop: 2 }}>on leave</p>
         </div>
         {countByDept.map(d => (

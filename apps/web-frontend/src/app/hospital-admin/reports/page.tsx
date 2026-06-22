@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 import { FileText, Download, Search } from 'lucide-react'
 import Card from '@/components/hospital-admin/Card'
 import PageHeader from '@/components/hospital-admin/PageHeader'
-import { reportsData } from '@/data'
+import { useReports, useGenerateReport, useDownloadReport } from '@/hooks/hospital-admin/useReports'
 
 const typeCfg = {
   pdf: { bg: '#fee2e2', color: '#dc2626', label: 'PDF' },
@@ -14,9 +14,55 @@ const typeCfg = {
 
 export default function ReportsPage() {
   const [search, setSearch] = useState('')
-  const [generated, setGenerated] = useState(false)
+  const { data: reports = [], isLoading } = useReports()
+  const generateReport = useGenerateReport()
+  const downloadReport = useDownloadReport()
 
-  const filtered = reportsData.filter(r =>
+  const handleGenerate = async () => {
+    try {
+      const blob = await generateReport.mutateAsync({
+        title: 'Monthly Report',
+        category: 'Attendance',
+        type: 'pdf',
+        filters: { month: '2025-05' }
+      })
+      
+      // Download the blob
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'report.pdf'
+      a.click()
+      window.URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error('Failed to generate report:', error)
+    }
+  }
+
+  const handleDownload = async (id: number, filename: string) => {
+    try {
+      const blob = await downloadReport.mutateAsync(id)
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = filename
+      a.click()
+      window.URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error('Failed to download report:', error)
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+        <PageHeader title="Reports" subtitle="Generate and download hospital operations reports" />
+        <div style={{ textAlign: 'center', padding: 40, color: '#9ca3af' }}>Loading reports...</div>
+      </div>
+    )
+  }
+
+  const filtered = reports.filter(r =>
     r.title.toLowerCase().includes(search.toLowerCase()) ||
     r.category.toLowerCase().includes(search.toLowerCase())
   )
@@ -28,10 +74,8 @@ export default function ReportsPage() {
         subtitle="Generate and download hospital operations reports"
         action={
           <button
-            onClick={() => { 
-              setGenerated(true); 
-              setTimeout(() => setGenerated(false), 2000) 
-            }}
+            onClick={handleGenerate}
+            disabled={generateReport.isPending}
             style={{ 
               display: 'flex', 
               alignItems: 'center', 
@@ -48,7 +92,7 @@ export default function ReportsPage() {
             }}
           >
             <FileText size={15} />
-            {generated ? '✓ Generating…' : 'Generate Report'}
+            {generateReport.isPending ? '✓ Generating…' : 'Generate Report'}
           </button>
         }
       />
@@ -161,6 +205,8 @@ export default function ReportsPage() {
                   {cfg.label}
                 </span>
                 <button
+                  onClick={() => handleDownload(r.id, `${r.title}.${r.type}`)}
+                  disabled={downloadReport.isPending}
                   style={{ 
                     display: 'flex', 
                     alignItems: 'center', 
@@ -176,7 +222,7 @@ export default function ReportsPage() {
                   }}
                   aria-label={`Download ${r.title}`}
                 >
-                  <Download size={13} /> Download
+                  <Download size={13} /> {downloadReport.isPending ? 'Downloading...' : 'Download'}
                 </button>
               </div>
             )

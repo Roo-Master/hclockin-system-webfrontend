@@ -5,14 +5,13 @@ import { Plus, Clock, Edit2, Trash2 } from 'lucide-react'
 import PageHeader from '@/components/hospital-admin/PageHeader'
 import ShiftModal from '@/components/hospital-admin/ShiftModal'
 import ToastContainer from '@/components/hospital-admin/Toast'
+import { useShiftTemplates, useCreateShiftTemplate, useUpdateShiftTemplate, useDeleteShiftTemplate } from '@/hooks/hospital-admin/useShiftScheduling'
 import {
-  initialShifts,
   ALL_SHIFT_DEPTS,
   COLOR_OPTIONS,
   EMPTY_SHIFT_FORM,
 } from '@/data/shiftsData'
 import {
-  ShiftTemplate,
   ShiftFormValues,
   ShiftFormErrors,
   Toast,
@@ -31,7 +30,11 @@ function calcDuration(start: string, end: string): string {
 }
 
 export default function ShiftSchedulingPage() {
-  const [shifts, setShifts] = useState<ShiftTemplate[]>(initialShifts)
+  const { data: shifts = [], isLoading } = useShiftTemplates()
+  const createShift = useCreateShiftTemplate()
+  const updateShift = useUpdateShiftTemplate()
+  const deleteShift = useDeleteShiftTemplate()
+
   const [showModal, setShowModal] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
   const [form, setForm] = useState<ShiftFormValues>(EMPTY_SHIFT_FORM)
@@ -53,7 +56,7 @@ export default function ShiftSchedulingPage() {
     setShowModal(true)
   }
 
-  const openEdit = (shift: ShiftTemplate) => {
+  const openEdit = (shift: any) => {
     setForm({ 
       name: shift.name, 
       start: shift.start, 
@@ -94,24 +97,43 @@ export default function ShiftSchedulingPage() {
     return Object.keys(e).length === 0
   }
 
-  const save = () => {
+  const save = async () => {
     if (!validate()) return
-    if (editingId !== null) {
-      setShifts(p => p.map(s => s.id === editingId ? { ...s, ...form } : s))
-      addToast(`✓ "${form.name}" updated successfully`, 'success')
-    } else {
-      setShifts(p => [...p, { id: Date.now(), ...form }])
-      addToast(`✓ "${form.name}" created successfully`, 'success')
+    
+    try {
+      if (editingId !== null) {
+        await updateShift.mutateAsync({ id: editingId, data: form })
+        addToast(`✓ "${form.name}" updated successfully`, 'success')
+      } else {
+        await createShift.mutateAsync(form as any)
+        addToast(`✓ "${form.name}" created successfully`, 'success')
+      }
+      closeModal()
+    } catch (error) {
+      addToast('Failed to save shift', 'danger')
     }
-    closeModal()
   }
 
   const requestDelete = (id: number) => setConfirmId(id)
   const cancelDelete = () => setConfirmId(null)
-  const confirmDelete = (shift: ShiftTemplate) => {
-    setShifts(p => p.filter(s => s.id !== shift.id))
-    addToast(`"${shift.name}" deleted`, 'danger')
-    setConfirmId(null)
+  
+  const confirmDelete = async (shift: any) => {
+    try {
+      await deleteShift.mutateAsync(shift.id)
+      addToast(`"${shift.name}" deleted`, 'danger')
+      setConfirmId(null)
+    } catch (error) {
+      addToast('Failed to delete shift', 'danger')
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+        <PageHeader title="Shift Scheduling" subtitle="Define and manage all shift templates for the hospital" />
+        <div style={{ textAlign: 'center', padding: 40, color: '#9ca3af' }}>Loading shifts...</div>
+      </div>
+    )
   }
 
   const totalDeptCov = [...new Set(shifts.flatMap(s => s.depts))].length

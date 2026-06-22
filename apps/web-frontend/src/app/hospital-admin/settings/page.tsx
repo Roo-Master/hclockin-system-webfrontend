@@ -1,10 +1,11 @@
 'use client'
 
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 import { Save, Clock, DollarSign, Bell, Shield } from 'lucide-react'
 import PageHeader from '@/components/hospital-admin/PageHeader'
 import ToastContainer from '@/components/hospital-admin/Toast'
-import { defaultSettings, TIMEZONE_OPTIONS } from '@/data/settingsData'
+import { useSettings, useUpdateSettings } from '@/hooks/hospital-admin/useSettings'
+import { TIMEZONE_OPTIONS } from '@/data/settingsData'
 import { HospitalSettings, Toast } from '@/data/types'
 
 let toastId = 0
@@ -114,7 +115,8 @@ const Section: React.FC<{
   btnLabel: string
   btnColor: string
   onSave: () => void
-}> = ({ title, iconBg, iconColor, icon, children, btnLabel, btnColor, onSave }) => (
+  isSaving?: boolean
+}> = ({ title, iconBg, iconColor, icon, children, btnLabel, btnColor, onSave, isSaving }) => (
   <div
     style={{
       background: '#fff',
@@ -150,6 +152,7 @@ const Section: React.FC<{
 
     <button
       onClick={onSave}
+      disabled={isSaving}
       style={{
         display: 'flex',
         alignItems: 'center',
@@ -165,16 +168,26 @@ const Section: React.FC<{
         fontFamily: 'inherit',
         width: 'fit-content',
         marginTop: 16,
+        opacity: isSaving ? 0.6 : 1,
       }}
     >
-      <Save size={14} /> {btnLabel}
+      <Save size={14} /> {isSaving ? 'Saving...' : btnLabel}
     </button>
   </div>
 )
 
 export default function SettingsPage() {
-  const [settings, setSettings] = useState<HospitalSettings>(defaultSettings)
+  const { data: serverSettings, isLoading } = useSettings()
+  const updateSettings = useUpdateSettings()
+  const [settings, setSettings] = useState<HospitalSettings | null>(null)
   const [toasts, setToasts] = useState<Toast[]>([])
+
+  // Initialize local settings when server data loads
+  useEffect(() => {
+    if (serverSettings && !settings) {
+      setSettings(serverSettings)
+    }
+  }, [serverSettings, settings])
 
   const addToast = useCallback((message: string, type: Toast['type'] = 'info') => {
     const id = ++toastId
@@ -185,7 +198,27 @@ export default function SettingsPage() {
 
   const set = <K extends keyof HospitalSettings>(key: K) =>
     (value: HospitalSettings[K]) =>
-      setSettings(p => ({ ...p, [key]: value }))
+      setSettings(p => p ? { ...p, [key]: value } : null)
+
+  const saveSettings = async (section: string) => {
+    if (!settings) return
+    
+    try {
+      await updateSettings.mutateAsync(settings)
+      addToast(`✓ ${section} saved`, 'success')
+    } catch (error) {
+      addToast(`Failed to save ${section}`, 'danger')
+    }
+  }
+
+  if (isLoading || !settings) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+        <PageHeader title="Settings" subtitle="Configure hospital operations and system preferences" />
+        <div style={{ textAlign: 'center', padding: 40, color: '#9ca3af' }}>Loading settings...</div>
+      </div>
+    )
+  }
 
   const otRate = parseFloat(settings.otMultiplier || '1') || 1
 
@@ -201,7 +234,8 @@ export default function SettingsPage() {
             iconBg="#dbeafe" iconColor="#2563eb"
             icon={<Shield size={18} />}
             btnLabel="Save Profile" btnColor="#2563eb"
-            onSave={() => addToast('✓ Hospital profile saved', 'success')}
+            onSave={() => saveSettings('Hospital profile')}
+            isSaving={updateSettings.isPending}
           >
             <Field
               label="Hospital Name"
@@ -237,7 +271,8 @@ export default function SettingsPage() {
             iconBg="#ffedd5" iconColor="#ea580c"
             icon={<Clock size={18} />}
             btnLabel="Save Rules" btnColor="#ea580c"
-            onSave={() => addToast('✓ Attendance rules saved', 'success')}
+            onSave={() => saveSettings('Attendance rules')}
+            isSaving={updateSettings.isPending}
           >
             <Field
               label="Grace Period (Lateness Margin)"
@@ -258,7 +293,8 @@ export default function SettingsPage() {
             iconBg="#dcfce7" iconColor="#16a34a"
             icon={<DollarSign size={18} />}
             btnLabel="Save Policy" btnColor="#16a34a"
-            onSave={() => addToast('✓ Payroll policy saved', 'success')}
+            onSave={() => saveSettings('Payroll policy')}
+            isSaving={updateSettings.isPending}
           >
             <Field
               label="Overtime Rate Multiplier"
@@ -292,7 +328,8 @@ export default function SettingsPage() {
             iconBg="#fee2e2" iconColor="#dc2626"
             icon={<Bell size={18} />}
             btnLabel="Save Preferences" btnColor="#dc2626"
-            onSave={() => addToast('✓ Notification preferences saved', 'success')}
+            onSave={() => saveSettings('Notification preferences')}
+            isSaving={updateSettings.isPending}
           >
             <Toggle id="email-alerts" label="Email Alerts for Absences" value={settings.emailAlerts} onChange={set('emailAlerts')} />
             <Toggle id="sms-alerts" label="SMS Alerts to Managers" value={settings.smsAlerts} onChange={set('smsAlerts')} />

@@ -6,17 +6,10 @@ import PageHeader from '@/components/hospital-admin/PageHeader'
 import DeptModal from '@/components/hospital-admin/DeptModal'
 import AvatarStack from '@/components/hospital-admin/AvatarStack'
 import ToastContainer from '@/components/hospital-admin/Toast'
-import {
-  INITIAL_DEPARTMENTS,
-  ALL_STAFF,
-  AVATAR_COLORS,
-} from '@/data/departmentsData'
-import {
-  DepartmentRecord,
-  DeptFormValues,
-  DeptFormErrors,
-  Toast,
-} from '@/data/types'
+import { useDepartments, useCreateDepartment, useUpdateDepartment, useDeleteDepartment } from '@/hooks/hospital-admin/useDepartments'
+import { useEmployees } from '@/hooks/hospital-admin/useEmployees'
+import { ALL_STAFF, AVATAR_COLORS } from '@/data/departmentsData'
+import { DeptFormValues, DeptFormErrors, Toast } from '@/data/types'
 
 const EMPTY_FORM: DeptFormValues = {
   name: '',
@@ -28,7 +21,12 @@ const EMPTY_FORM: DeptFormValues = {
 let toastId = 0
 
 export default function DepartmentsPage() {
-  const [departments, setDepartments] = useState<DepartmentRecord[]>(INITIAL_DEPARTMENTS)
+  const { data: departments = [], isLoading } = useDepartments()
+  const { data: employees = [] } = useEmployees()
+  const createDepartment = useCreateDepartment()
+  const updateDepartment = useUpdateDepartment()
+  const deleteDepartment = useDeleteDepartment()
+
   const [showModal, setShowModal] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
   const [form, setForm] = useState<DeptFormValues>(EMPTY_FORM)
@@ -49,7 +47,7 @@ export default function DepartmentsPage() {
   )
 
   const staffFor = (deptName: string) =>
-    ALL_STAFF.filter(s => s.dept === deptName)
+    employees.filter(e => e.department === deptName)
 
   const headFor = (headId: string) =>
     ALL_STAFF.find(s => s.id === headId)
@@ -61,7 +59,7 @@ export default function DepartmentsPage() {
     setShowModal(true)
   }
 
-  const openEdit = (dept: DepartmentRecord) => {
+  const openEdit = (dept: any) => {
     setForm({
       name: dept.name,
       headId: dept.headId,
@@ -93,34 +91,46 @@ export default function DepartmentsPage() {
     return Object.keys(e).length === 0
   }
 
-  const save = () => {
+  const save = async () => {
     if (!validate()) return
 
-    if (editingId !== null) {
-      setDepartments(prev =>
-        prev.map(d => d.id === editingId ? { ...d, ...form } : d)
-      )
-      addToast(`✓ "${form.name}" updated`, 'success')
-    } else {
-      setDepartments(prev => [
-        ...prev,
-        { id: Date.now(), ...form },
-      ])
-      addToast(`✓ "${form.name}" department created`, 'success')
+    try {
+      if (editingId !== null) {
+        await updateDepartment.mutateAsync({ id: editingId, data: form })
+        addToast(`✓ "${form.name}" updated`, 'success')
+      } else {
+        await createDepartment.mutateAsync(form as any)
+        addToast(`✓ "${form.name}" department created`, 'success')
+      }
+      closeModal()
+    } catch (error) {
+      addToast('Failed to save department', 'danger')
     }
-    closeModal()
   }
 
   const requestDelete = (id: number) => setConfirmId(id)
   const cancelDelete = () => setConfirmId(null)
 
-  const confirmDelete = (dept: DepartmentRecord) => {
-    setDepartments(prev => prev.filter(d => d.id !== dept.id))
-    addToast(`"${dept.name}" department removed`, 'danger')
-    setConfirmId(null)
+  const confirmDelete = async (dept: any) => {
+    try {
+      await deleteDepartment.mutateAsync(dept.id)
+      addToast(`"${dept.name}" department removed`, 'danger')
+      setConfirmId(null)
+    } catch (error) {
+      addToast('Failed to delete department', 'danger')
+    }
   }
 
-  const totalStaff = ALL_STAFF.length
+  if (isLoading) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+        <PageHeader title="Departments" subtitle="Clinical and operational structure of the hospital" />
+        <div style={{ textAlign: 'center', padding: 40, color: '#9ca3af' }}>Loading departments...</div>
+      </div>
+    )
+  }
+
+  const totalStaff = employees.length
   const headsAssigned = departments.filter(d => d.headId).length
 
   return (

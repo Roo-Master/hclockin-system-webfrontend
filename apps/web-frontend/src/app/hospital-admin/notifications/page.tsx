@@ -8,9 +8,8 @@ import {
 } from 'lucide-react'
 import PageHeader from '@/components/hospital-admin/PageHeader'
 import ToastContainer from '@/components/hospital-admin/Toast'
-import { initialNotifications } from '@/data/notificationsPageData'
+import { useNotifications, useMarkAsRead, useMarkAllAsRead, useDeleteNotification } from '@/hooks/hospital-admin/useNotifications'
 import {
-  AppNotification,
   NotifIcon,
   NotifColor,
   Toast,
@@ -35,7 +34,11 @@ let toastId = 0
 type FilterKey = 'all' | 'unread' | 'read'
 
 export default function NotificationsPage() {
-  const [notifications, setNotifications] = useState<AppNotification[]>(initialNotifications)
+  const { data: notifications = [], isLoading } = useNotifications()
+  const markAsRead = useMarkAsRead()
+  const markAllAsReadMutation = useMarkAllAsRead()
+  const deleteNotification = useDeleteNotification()
+
   const [filter, setFilter] = useState<FilterKey>('all')
   const [toasts, setToasts] = useState<Toast[]>([])
 
@@ -46,20 +49,42 @@ export default function NotificationsPage() {
   
   const removeToast = useCallback((id: number) => setToasts(p => p.filter(t => t.id !== id)), [])
 
-  const markAllRead = () => {
-    setNotifications(p => p.map(n => ({ ...n, read: true })))
-    addToast('All notifications marked as read', 'success')
+  const markAllRead = async () => {
+    try {
+      await markAllAsReadMutation.mutateAsync()
+      addToast('All notifications marked as read', 'success')
+    } catch (error) {
+      addToast('Failed to mark all as read', 'danger')
+    }
   }
 
-  const dismiss = (id: number) => {
-    setNotifications(p => p.filter(n => n.id !== id))
-    addToast('Notification dismissed', 'info')
+  const dismiss = async (id: number) => {
+    try {
+      await deleteNotification.mutateAsync(id)
+      addToast('Notification dismissed', 'info')
+    } catch (error) {
+      addToast('Failed to dismiss notification', 'danger')
+    }
   }
 
-  const markRead = (id: number) =>
-    setNotifications(p => p.map(n => n.id === id ? { ...n, read: true } : n))
+  const markRead = async (id: number) => {
+    try {
+      await markAsRead.mutateAsync(id)
+    } catch (error) {
+      console.error('Failed to mark as read:', error)
+    }
+  }
 
-  const filtered: AppNotification[] = notifications.filter(n => {
+  if (isLoading) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+        <PageHeader title="Notifications" subtitle="System alerts, approvals and status updates" />
+        <div style={{ textAlign: 'center', padding: 40, color: '#9ca3af' }}>Loading notifications...</div>
+      </div>
+    )
+  }
+
+  const filtered = notifications.filter(n => {
     if (filter === 'unread') return !n.read
     if (filter === 'read') return n.read
     return true
@@ -77,6 +102,7 @@ export default function NotificationsPage() {
             unread > 0 ? (
               <button
                 onClick={markAllRead}
+                disabled={markAllAsReadMutation.isPending}
                 style={{ 
                   display: 'flex', 
                   alignItems: 'center', 
@@ -91,7 +117,7 @@ export default function NotificationsPage() {
                   fontFamily: 'inherit' 
                 }}
               >
-                <Bell size={14} /> Mark all read
+                <Bell size={14} /> {markAllAsReadMutation.isPending ? 'Marking...' : 'Mark all read'}
               </button>
             ) : undefined
           }
@@ -210,6 +236,7 @@ export default function NotificationsPage() {
                     <button
                       onClick={e => { e.stopPropagation(); dismiss(notif.id) }}
                       aria-label="Dismiss notification"
+                      disabled={deleteNotification.isPending}
                       style={{
                         background: 'none',
                         border: 'none',

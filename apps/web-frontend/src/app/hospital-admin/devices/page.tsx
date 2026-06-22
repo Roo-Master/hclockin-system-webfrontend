@@ -6,14 +6,16 @@ import PageHeader from '@/components/hospital-admin/PageHeader'
 import DeviceCard from '@/components/hospital-admin/DeviceCard'
 import DeviceRegisterModal from '@/components/hospital-admin/DeviceRegisterModal'
 import ToastContainer from '@/components/hospital-admin/Toast'
-import { devicesData } from '@/data'
-import { Device, Toast } from '@/data/types'
+import { useDevices, useSyncDevice } from '@/hooks/hospital-admin/useDevices'
+import { Toast } from '@/data/types'
 
 type StatusFilter = 'all' | 'online' | 'offline'
 let toastId = 0
 
 export default function DevicesPage() {
-  const [devices, setDevices] = useState<Device[]>(devicesData)
+  const { data: devices = [], isLoading } = useDevices()
+  const syncDevice = useSyncDevice()
+
   const [showReg, setShowReg] = useState(false)
   const [filter, setFilter] = useState<StatusFilter>('all')
   const [search, setSearch] = useState('')
@@ -25,14 +27,26 @@ export default function DevicesPage() {
   }, [])
   const removeToast = useCallback((id: number) => setToasts(p => p.filter(t => t.id !== id)), [])
 
-  const ping = useCallback((id: string) => {
+  const ping = useCallback(async (id: string) => {
     const device = devices.find(d => d.id === id)
     addToast(`Pinging ${device?.name ?? id}…`, 'info')
-    setTimeout(() => {
-      setDevices(prev => prev.map(d => d.id === id ? { ...d, status: 'online', lastSeen: 'Just now' } : d))
+    
+    try {
+      await syncDevice.mutateAsync(id)
       addToast(`✓ ${device?.name ?? id} is back online`, 'success')
-    }, 1500)
-  }, [devices, addToast])
+    } catch (error) {
+      addToast(`Failed to ping ${device?.name ?? id}`, 'danger')
+    }
+  }, [devices, syncDevice, addToast])
+
+  if (isLoading) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+        <PageHeader title="Devices" subtitle="ZKTeco SenseFace 2A biometric terminals" />
+        <div style={{ textAlign: 'center', padding: 40, color: '#9ca3af' }}>Loading devices...</div>
+      </div>
+    )
+  }
 
   const online = devices.filter(d => d.status === 'online').length
   const offline = devices.filter(d => d.status === 'offline').length
@@ -57,6 +71,7 @@ export default function DevicesPage() {
           }
         />
 
+        {/* Stats and filters - rest of your existing code stays the same */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 20 }}>
           {[
             { label: 'Total Devices', value: devices.length, icon: <Monitor size={20} />, bg: '#dbeafe', color: '#2563eb' },
