@@ -126,17 +126,6 @@ export interface LeaveRecord {
   avatarColor: string
 }
 
-// ── Shift ────────────────────────────────────────────────
-export interface ShiftEntry {
-  id:          number
-  name:        string
-  department:  string
-  shiftType:   'Morning' | 'Afternoon' | 'Night'
-  startTime:   string
-  endTime:     string
-  days:        string[]   // e.g. ['Mon','Tue','Wed']
-  createdDate: string
-}
 
 // ── Report ───────────────────────────────────────────────
 export interface ReportItem {
@@ -148,22 +137,6 @@ export interface ReportItem {
   type:     'pdf' | 'xlsx' | 'csv'
 }
 
-// ── Notifications ─────────────────────────────────────────
-export interface NotificationFull {
-  id:       number
-  severity: Severity
-  title:    string
-  body:     string
-  time:     string
-  read:     boolean
-}
-
-// ── Settings ──────────────────────────────────────────────
-export interface SettingToggle {
-  label:       string
-  description: string
-  enabled:     boolean
-}
 
 // ── Payroll ───────────────────────────────────────────────
 export interface PayrollRecord {
@@ -180,7 +153,6 @@ export interface PayrollRecord {
   net:         number   // KSH
 }
 
-// Add to src/data/types.ts  (append at the bottom)
 
 export type DeviceStatus = 'online' | 'offline'
 
@@ -199,7 +171,7 @@ export interface Toast {
   message: string
   type:    'info' | 'success' | 'warning' | 'danger'
 }
-// src/data/types.ts  — append these at the bottom
+
 
 // ── Shift templates ───────────────────────────────────────
 export interface ShiftTemplate {

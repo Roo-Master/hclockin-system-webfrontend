@@ -1,47 +1,49 @@
-// src/components/Header.tsx
-import React, { useState, useRef, useEffect } from 'react';
-import { Bell, ChevronDown, Calendar, Menu } from 'lucide-react';
-import { notificationsData } from '../../data';
+'use client'
+
+import React, { useState, useRef, useEffect } from 'react'
+import { Bell, ChevronDown, Calendar, Menu } from 'lucide-react'
+import { notificationsData } from '@/data'
 
 interface HeaderProps {
-  onMenuToggle: () => void;
+  onMenuToggle: () => void
 }
 
-const Header: React.FC<HeaderProps> = ({ onMenuToggle }) => {
-  const [showNotif, setShowNotif] = useState(false);
-  const notifRef = useRef<HTMLDivElement>(null);
+export default function Header({ onMenuToggle }: HeaderProps) {
+  const [showNotif, setShowNotif] = useState(false)
+  const notifRef = useRef<HTMLDivElement>(null)
 
-  /* Close dropdown when clicking outside */
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
-        setShowNotif(false);
+        setShowNotif(false)
       }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
 
   return (
     <header
       style={{
-        display:        'flex',
-        alignItems:     'flex-start',
+        display: 'flex',
+        alignItems: 'flex-start',
         justifyContent: 'space-between',
-        gap:            'var(--space-4)',
-        flexWrap:       'wrap',
+        gap: 'var(--space-4)',
+        flexWrap: 'wrap',
       }}
     >
-      {/* ── Left ── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
         <button
           onClick={onMenuToggle}
           aria-label="Toggle sidebar"
           style={{
-            color:      'var(--color-text-secondary)',
-            display:    'flex',
+            color: 'var(--color-text-secondary)',
+            display: 'flex',
             alignItems: 'center',
-            padding:    'var(--space-1)',
+            padding: 'var(--space-1)',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
           }}
         >
           <Menu size={20} />
@@ -50,9 +52,9 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle }) => {
         <div>
           <h1
             style={{
-              fontSize:   'var(--text-display)',
+              fontSize: 'var(--text-display)',
               fontWeight: 700,
-              color:      'var(--color-text-primary)',
+              color: 'var(--color-text-primary)',
               lineHeight: 1.2,
             }}
           >
@@ -64,22 +66,22 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle }) => {
         </div>
       </div>
 
-      {/* ── Right ── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
 
-        {/* Date range */}
         <button
           style={{
-            display:      'flex',
-            alignItems:   'center',
-            gap:          'var(--space-2)',
-            padding:      'var(--space-2) var(--space-4)',
-            background:   'var(--color-bg-surface)',
-            border:       '1px solid var(--color-border)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 'var(--space-2)',
+            padding: 'var(--space-2) var(--space-4)',
+            background: 'var(--color-bg-surface)',
+            border: '1px solid var(--color-border)',
             borderRadius: 'var(--radius-badge)',
-            color:        'var(--color-text-primary)',
-            fontSize:     'var(--text-body)',
-            fontWeight:   500,
+            color: 'var(--color-text-primary)',
+            fontSize: 'var(--text-body)',
+            fontWeight: 500,
+            cursor: 'pointer',
+            fontFamily: 'inherit',
           }}
         >
           <Calendar size={15} color="var(--color-text-secondary)" />
@@ -87,40 +89,40 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle }) => {
           <ChevronDown size={13} color="var(--color-text-secondary)" />
         </button>
 
-        {/* Notification bell */}
         <div ref={notifRef} style={{ position: 'relative' }}>
           <button
             onClick={() => setShowNotif((v) => !v)}
             aria-label={`Notifications — ${notificationsData.length} unread`}
             style={{
-              background:     'var(--color-bg-surface)',
-              border:         '1px solid var(--color-border)',
-              borderRadius:   'var(--radius-badge)',
-              width:          38,
-              height:         38,
-              display:        'flex',
-              alignItems:     'center',
+              background: 'var(--color-bg-surface)',
+              border: '1px solid var(--color-border)',
+              borderRadius: 'var(--radius-badge)',
+              width: 38,
+              height: 38,
+              display: 'flex',
+              alignItems: 'center',
               justifyContent: 'center',
-              color:          'var(--color-text-secondary)',
-              position:       'relative',
+              color: 'var(--color-text-secondary)',
+              position: 'relative',
+              cursor: 'pointer',
             }}
           >
             <Bell size={17} />
             <span
               aria-hidden="true"
               style={{
-                position:       'absolute',
-                top:            -4,
-                right:          -4,
-                background:     'var(--color-danger)',
-                color:          'white',
-                fontSize:       10,
-                fontWeight:     700,
-                width:          16,
-                height:         16,
-                borderRadius:   'var(--radius-pill)',
-                display:        'flex',
-                alignItems:     'center',
+                position: 'absolute',
+                top: -4,
+                right: -4,
+                background: 'var(--color-danger)',
+                color: 'white',
+                fontSize: 10,
+                fontWeight: 700,
+                width: 16,
+                height: 16,
+                borderRadius: 'var(--radius-pill)',
+                display: 'flex',
+                alignItems: 'center',
                 justifyContent: 'center',
               }}
             >
@@ -131,25 +133,25 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle }) => {
           {showNotif && (
             <div
               style={{
-                position:     'absolute',
-                top:          'calc(100% + 8px)',
-                right:        0,
-                width:        290,
-                background:   'var(--color-bg-surface)',
-                border:       '1px solid var(--color-border)',
+                position: 'absolute',
+                top: 'calc(100% + 8px)',
+                right: 0,
+                width: 290,
+                background: 'var(--color-bg-surface)',
+                border: '1px solid var(--color-border)',
                 borderRadius: 'var(--radius-card)',
-                boxShadow:    '0 8px 24px rgba(0,0,0,.10)',
-                zIndex:       200,
-                overflow:     'hidden',
+                boxShadow: '0 8px 24px rgba(0,0,0,.10)',
+                zIndex: 200,
+                overflow: 'hidden',
               }}
             >
               <div
                 style={{
-                  padding:      'var(--space-4) var(--space-4) var(--space-2)',
+                  padding: 'var(--space-4) var(--space-4) var(--space-2)',
                   borderBottom: '1px solid var(--color-border)',
-                  fontSize:     'var(--text-label)',
-                  fontWeight:   600,
-                  color:        'var(--color-text-primary)',
+                  fontSize: 'var(--text-label)',
+                  fontWeight: 600,
+                  color: 'var(--color-text-primary)',
                 }}
               >
                 Notifications
@@ -159,22 +161,22 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle }) => {
                 <div
                   key={i}
                   style={{
-                    padding:      'var(--space-3) var(--space-4)',
+                    padding: 'var(--space-3) var(--space-4)',
                     borderBottom: i < notificationsData.length - 1 ? '1px solid var(--color-border)' : 'none',
-                    display:      'flex',
-                    gap:          'var(--space-3)',
-                    alignItems:   'flex-start',
+                    display: 'flex',
+                    gap: 'var(--space-3)',
+                    alignItems: 'flex-start',
                   }}
                 >
                   <span
                     aria-hidden="true"
                     style={{
-                      width:        8,
-                      height:       8,
+                      width: 8,
+                      height: 8,
                       borderRadius: '50%',
-                      background:   n.color,
-                      marginTop:    5,
-                      flexShrink:   0,
+                      background: n.color,
+                      marginTop: 5,
+                      flexShrink: 0,
                     }}
                   />
                   <div>
@@ -191,31 +193,32 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle }) => {
           )}
         </div>
 
-        {/* User avatar */}
         <button
           style={{
-            display:      'flex',
-            alignItems:   'center',
-            gap:          'var(--space-2)',
-            padding:      'var(--space-2) var(--space-3)',
-            background:   'var(--color-bg-surface)',
-            border:       '1px solid var(--color-border)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 'var(--space-2)',
+            padding: 'var(--space-2) var(--space-3)',
+            background: 'var(--color-bg-surface)',
+            border: '1px solid var(--color-border)',
             borderRadius: 'var(--radius-badge)',
+            cursor: 'pointer',
+            fontFamily: 'inherit',
           }}
         >
           <div
             aria-hidden="true"
             style={{
-              width:          30,
-              height:         30,
-              borderRadius:   '50%',
-              background:     'var(--color-info-bg)',
-              color:          'var(--color-info)',
-              display:        'flex',
-              alignItems:     'center',
+              width: 30,
+              height: 30,
+              borderRadius: '50%',
+              background: 'var(--color-info-bg)',
+              color: 'var(--color-info)',
+              display: 'flex',
+              alignItems: 'center',
               justifyContent: 'center',
-              fontSize:       'var(--text-label)',
-              fontWeight:     700,
+              fontSize: 'var(--text-label)',
+              fontWeight: 700,
             }}
           >
             AM
@@ -230,7 +233,5 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle }) => {
         </button>
       </div>
     </header>
-  );
-};
-
-export default Header;
+  )
+}

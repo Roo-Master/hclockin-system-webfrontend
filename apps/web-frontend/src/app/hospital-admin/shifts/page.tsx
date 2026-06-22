@@ -1,21 +1,22 @@
-// src/pages/ShiftSchedulingPage.tsx
+'use client'
+
 import React, { useState, useCallback } from 'react'
 import { Plus, Clock, Edit2, Trash2 } from 'lucide-react'
-import PageHeader     from '../../../components/hospital-admin/PageHeader'
-import ShiftModal     from '../../../components/hospital-admin/ShiftModal'
-import ToastContainer from '../../../components/hospital-admin/Toast'
+import PageHeader from '@/components/hospital-admin/PageHeader'
+import ShiftModal from '@/components/hospital-admin/ShiftModal'
+import ToastContainer from '@/components/hospital-admin/Toast'
 import {
   initialShifts,
   ALL_SHIFT_DEPTS,
   COLOR_OPTIONS,
   EMPTY_SHIFT_FORM,
-} from '../../../data/shiftsData'
+} from '@/data/shiftsData'
 import {
   ShiftTemplate,
   ShiftFormValues,
   ShiftFormErrors,
   Toast,
-} from '../../../data/types'
+} from '@/data/types'
 
 let toastId = 0
 
@@ -29,23 +30,22 @@ function calcDuration(start: string, end: string): string {
   return m > 0 ? `${h}h ${m}m` : `${h}h`
 }
 
-const ShiftSchedulingPage: React.FC = () => {
-  const [shifts,    setShifts]    = useState<ShiftTemplate[]>(initialShifts)
+export default function ShiftSchedulingPage() {
+  const [shifts, setShifts] = useState<ShiftTemplate[]>(initialShifts)
   const [showModal, setShowModal] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
-  const [form,      setForm]      = useState<ShiftFormValues>(EMPTY_SHIFT_FORM)
-  const [errors,    setErrors]    = useState<ShiftFormErrors>({})
-  const [toasts,    setToasts]    = useState<Toast[]>([])
+  const [form, setForm] = useState<ShiftFormValues>(EMPTY_SHIFT_FORM)
+  const [errors, setErrors] = useState<ShiftFormErrors>({})
+  const [toasts, setToasts] = useState<Toast[]>([])
   const [confirmId, setConfirmId] = useState<number | null>(null)
 
-  /* ── Toasts ── */
   const addToast = useCallback((message: string, type: Toast['type'] = 'info') => {
     const id = ++toastId
     setToasts(p => [...p, { id, message, type }])
   }, [])
+  
   const removeToast = useCallback((id: number) => setToasts(p => p.filter(t => t.id !== id)), [])
 
-  /* ── Modal helpers ── */
   const openCreate = () => {
     setForm(EMPTY_SHIFT_FORM)
     setEditingId(null)
@@ -54,19 +54,28 @@ const ShiftSchedulingPage: React.FC = () => {
   }
 
   const openEdit = (shift: ShiftTemplate) => {
-    setForm({ name: shift.name, start: shift.start, end: shift.end, color: shift.color, bg: shift.bg, depts: [...shift.depts] })
+    setForm({ 
+      name: shift.name, 
+      start: shift.start, 
+      end: shift.end, 
+      color: shift.color, 
+      bg: shift.bg, 
+      depts: [...shift.depts] 
+    })
     setEditingId(shift.id)
     setErrors({})
     setShowModal(true)
   }
 
-  const closeModal = () => { setShowModal(false); setEditingId(null); setErrors({}) }
+  const closeModal = () => { 
+    setShowModal(false); 
+    setEditingId(null); 
+    setErrors({}) 
+  }
 
-  /* ── Field setter ── */
   const setField = (key: keyof ShiftFormValues) => (value: string) =>
     setForm(p => ({ ...p, [key]: value }))
 
-  /* ── Dept toggle ── */
   const toggleDept = (dept: string) =>
     setForm(p => ({
       ...p,
@@ -75,18 +84,16 @@ const ShiftSchedulingPage: React.FC = () => {
         : [...p.depts, dept],
     }))
 
-  /* ── Validation ── */
   const validate = (): boolean => {
     const e: ShiftFormErrors = {}
-    if (!form.name.trim())      e.name  = 'Shift name is required.'
-    if (!form.start)            e.start = 'Start time is required.'
-    if (!form.end)              e.end   = 'End time is required.'
-    if (form.depts.length === 0)e.depts = 'Select at least one department.'
+    if (!form.name.trim()) e.name = 'Shift name is required.'
+    if (!form.start) e.start = 'Start time is required.'
+    if (!form.end) e.end = 'End time is required.'
+    if (form.depts.length === 0) e.depts = 'Select at least one department.'
     setErrors(e)
     return Object.keys(e).length === 0
   }
 
-  /* ── Save ── */
   const save = () => {
     if (!validate()) return
     if (editingId !== null) {
@@ -99,16 +106,14 @@ const ShiftSchedulingPage: React.FC = () => {
     closeModal()
   }
 
-  /* ── Delete with confirm ── */
   const requestDelete = (id: number) => setConfirmId(id)
-  const cancelDelete  = ()           => setConfirmId(null)
+  const cancelDelete = () => setConfirmId(null)
   const confirmDelete = (shift: ShiftTemplate) => {
     setShifts(p => p.filter(s => s.id !== shift.id))
     addToast(`"${shift.name}" deleted`, 'danger')
     setConfirmId(null)
   }
 
-  /* ── Summary stats ── */
   const totalDeptCov = [...new Set(shifts.flatMap(s => s.depts))].length
   const longestShift = shifts.reduce<{ name: string; mins: number }>(
     (acc, s) => {
@@ -131,19 +136,31 @@ const ShiftSchedulingPage: React.FC = () => {
             <button
               onClick={openCreate}
               aria-label="Create new shift"
-              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: '#2563eb', border: 'none', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+              style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 6, 
+                padding: '9px 16px', 
+                background: '#2563eb', 
+                border: 'none', 
+                borderRadius: 8, 
+                color: '#fff', 
+                fontSize: 13, 
+                fontWeight: 600, 
+                cursor: 'pointer', 
+                fontFamily: 'inherit' 
+              }}
             >
               <Plus size={15} /> Create Shift
             </button>
           }
         />
 
-        {/* ── KPI strip ── */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 20 }}>
           {[
-            { label: 'Total Shift Types',   value: shifts.length,                          bg: '#dbeafe', color: '#2563eb' },
+            { label: 'Total Shift Types', value: shifts.length, bg: '#dbeafe', color: '#2563eb' },
             { label: 'Departments Covered', value: `${totalDeptCov} / ${ALL_SHIFT_DEPTS.length}`, bg: '#dcfce7', color: '#16a34a' },
-            { label: 'Longest Shift',       value: longestShift.name,                      bg: '#ffedd5', color: '#ea580c' },
+            { label: 'Longest Shift', value: longestShift.name, bg: '#ffedd5', color: '#ea580c' },
           ].map(s => (
             <div key={s.label} style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: '18px 20px', display: 'flex', alignItems: 'center', gap: 14 }}>
               <div style={{ width: 44, height: 44, borderRadius: 10, background: s.bg, color: s.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -157,7 +174,6 @@ const ShiftSchedulingPage: React.FC = () => {
           ))}
         </div>
 
-        {/* ── Shift cards ── */}
         <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 24 }}>
           <div style={{ marginBottom: 20 }}>
             <p style={{ fontSize: 17, fontWeight: 600, color: '#111827' }}>Shift Templates</p>
@@ -180,19 +196,18 @@ const ShiftSchedulingPage: React.FC = () => {
                   <div
                     key={shift.id}
                     style={{
-                      border:        `1.5px solid ${shift.bg === '#F3F4F6' ? '#e5e7eb' : shift.bg}`,
-                      borderRadius:  12,
-                      padding:       18,
-                      background:    '#fff',
-                      display:       'flex',
+                      border: `1.5px solid ${shift.bg === '#F3F4F6' ? '#e5e7eb' : shift.bg}`,
+                      borderRadius: 12,
+                      padding: 18,
+                      background: '#fff',
+                      display: 'flex',
                       flexDirection: 'column',
-                      gap:           12,
-                      transition:    'box-shadow .15s',
+                      gap: 12,
+                      transition: 'box-shadow .15s',
                     }}
                     onMouseEnter={e => ((e.currentTarget as HTMLElement).style.boxShadow = '0 4px 16px rgba(0,0,0,.07)')}
                     onMouseLeave={e => ((e.currentTarget as HTMLElement).style.boxShadow = 'none')}
                   >
-                    {/* Card top row */}
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                         <div
@@ -219,7 +234,6 @@ const ShiftSchedulingPage: React.FC = () => {
                         </div>
                       </div>
 
-                      {/* Edit / Delete */}
                       <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
                         <button
                           onClick={() => openEdit(shift)}
@@ -242,7 +256,6 @@ const ShiftSchedulingPage: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Inline delete confirm */}
                     {isConfirming && (
                       <div style={{ background: '#fff5f5', border: '1px solid #fecaca', borderRadius: 8, padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
                         <p style={{ fontSize: 13, color: '#dc2626', fontWeight: 500 }}>
@@ -265,7 +278,6 @@ const ShiftSchedulingPage: React.FC = () => {
                       </div>
                     )}
 
-                    {/* Dept tags */}
                     <div>
                       <p style={{ fontSize: 11, fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>
                         Assigned Departments
@@ -304,5 +316,3 @@ const ShiftSchedulingPage: React.FC = () => {
     </>
   )
 }
-
-export default ShiftSchedulingPage

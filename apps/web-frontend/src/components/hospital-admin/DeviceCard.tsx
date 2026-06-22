@@ -1,34 +1,33 @@
-// src/components/DeviceCard.tsx
 import React from 'react'
 import { Wifi, WifiOff, RefreshCw } from 'lucide-react'
-import { Device } from '../../data/types'
+import { Device } from '@/data/types'
 
 interface Props {
-  device:  Device
-  onPing:  (id: string) => void
+  device: Device
+  onPing: (id: string) => void
 }
 
 const FIELD_ROWS = [
-  { label: 'Serial',    key: 'id'       },
-  { label: 'IP',        key: 'ip'       },
-  { label: 'Firmware',  key: 'firmware' },
+  { label: 'Serial', key: 'id' },
+  { label: 'IP', key: 'ip' },
+  { label: 'Firmware', key: 'firmware' },
   { label: 'Last Seen', key: 'lastSeen' },
 ] as const
 
-const DeviceCard: React.FC<Props> = ({ device, onPing }) => {
+export default function DeviceCard({ device, onPing }: Props) {
   const isOnline = device.status === 'online'
 
   return (
     <div
       style={{
-        border:       `1px solid ${isOnline ? '#e5e7eb' : '#fecaca'}`,
+        border: `1px solid ${isOnline ? '#e5e7eb' : '#fecaca'}`,
         borderRadius: 12,
-        padding:      16,
-        background:   isOnline ? '#ffffff' : '#fff5f5',
-        display:      'flex',
-        flexDirection:'column',
-        gap:          12,
-        transition:   'box-shadow .15s',
+        padding: 16,
+        background: isOnline ? '#ffffff' : '#fff5f5',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 12,
+        transition: 'box-shadow .15s',
       }}
       onMouseEnter={e =>
         ((e.currentTarget as HTMLElement).style.boxShadow = '0 4px 16px rgba(0,0,0,.07)')
@@ -37,29 +36,27 @@ const DeviceCard: React.FC<Props> = ({ device, onPing }) => {
         ((e.currentTarget as HTMLElement).style.boxShadow = 'none')
       }
     >
-      {/* ── Top row ── */}
       <div
         style={{
-          display:        'flex',
-          alignItems:     'flex-start',
+          display: 'flex',
+          alignItems: 'flex-start',
           justifyContent: 'space-between',
-          gap:            12,
+          gap: 12,
         }}
       >
-        {/* Icon + name */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div
             aria-hidden="true"
             style={{
-              width:          36,
-              height:         36,
-              borderRadius:   8,
-              background:     isOnline ? '#dcfce7' : '#fee2e2',
-              color:          isOnline ? '#16a34a' : '#dc2626',
-              display:        'flex',
-              alignItems:     'center',
+              width: 36,
+              height: 36,
+              borderRadius: 8,
+              background: isOnline ? '#dcfce7' : '#fee2e2',
+              color: isOnline ? '#16a34a' : '#dc2626',
+              display: 'flex',
+              alignItems: 'center',
               justifyContent: 'center',
-              flexShrink:     0,
+              flexShrink: 0,
             }}
           >
             {isOnline ? <Wifi size={18} /> : <WifiOff size={18} />}
@@ -74,44 +71,42 @@ const DeviceCard: React.FC<Props> = ({ device, onPing }) => {
           </div>
         </div>
 
-        {/* Status badge */}
         <span
           style={{
-            padding:      '3px 8px',
+            padding: '3px 8px',
             borderRadius: 999,
-            fontSize:     11,
-            fontWeight:   600,
-            whiteSpace:   'nowrap',
-            flexShrink:   0,
-            background:   isOnline ? '#dcfce7' : '#fee2e2',
-            color:        isOnline ? '#16a34a' : '#dc2626',
+            fontSize: 11,
+            fontWeight: 600,
+            whiteSpace: 'nowrap',
+            flexShrink: 0,
+            background: isOnline ? '#dcfce7' : '#fee2e2',
+            color: isOnline ? '#16a34a' : '#dc2626',
           }}
         >
           {isOnline ? 'Online' : 'Offline'}
         </span>
       </div>
 
-      {/* ── Meta grid ── */}
       <div
         style={{
-          display:             'grid',
+          display: 'grid',
           gridTemplateColumns: '1fr 1fr',
-          gap:                 8,
-          background:          '#f9fafb',
-          borderRadius:        8,
-          padding:             '10px 12px',
+          gap: 8,
+          background: '#f9fafb',
+          borderRadius: 8,
+          padding: '10px 12px',
         }}
       >
         {FIELD_ROWS.map(f => (
           <div key={f.label}>
             <p
               style={{
-                fontSize:      10,
-                color:         '#9ca3af',
-                fontWeight:    600,
+                fontSize: 10,
+                color: '#9ca3af',
+                fontWeight: 600,
                 textTransform: 'uppercase',
                 letterSpacing: '0.05em',
-                marginBottom:  2,
+                marginBottom: 2,
               }}
             >
               {f.label}
@@ -123,27 +118,26 @@ const DeviceCard: React.FC<Props> = ({ device, onPing }) => {
         ))}
       </div>
 
-      {/* ── Reconnect button (offline only) ── */}
       {!isOnline && (
         <button
           onClick={() => onPing(device.id)}
           aria-label={`Attempt reconnect for ${device.name}`}
           style={{
-            display:        'flex',
-            alignItems:     'center',
+            display: 'flex',
+            alignItems: 'center',
             justifyContent: 'center',
-            gap:            6,
-            width:          '100%',
-            padding:        '8px 0',
-            border:         '1px solid #dc2626',
-            borderRadius:   8,
-            background:     '#fee2e2',
-            color:          '#dc2626',
-            fontSize:       12,
-            fontWeight:     600,
-            cursor:         'pointer',
-            fontFamily:     'inherit',
-            transition:     'background .15s',
+            gap: 6,
+            width: '100%',
+            padding: '8px 0',
+            border: '1px solid #dc2626',
+            borderRadius: 8,
+            background: '#fee2e2',
+            color: '#dc2626',
+            fontSize: 12,
+            fontWeight: 600,
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            transition: 'background .15s',
           }}
           onMouseEnter={e =>
             ((e.currentTarget as HTMLElement).style.background = '#fecaca')
@@ -159,5 +153,3 @@ const DeviceCard: React.FC<Props> = ({ device, onPing }) => {
     </div>
   )
 }
-
-export default DeviceCard

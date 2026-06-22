@@ -1,21 +1,16 @@
-// src/components/TrendsRow.tsx
-import React from 'react';
-import AttendanceLineChart from './AttendanceLineChart';
-import DepartmentDonut    from './DepartmentDonut';
-import RecentAlerts       from './RecentAlerts';
+'use client'
 
-const TrendsRow: React.FC = () => (
-  <div
-    style={{
-      display:             'grid',
-      gridTemplateColumns: '1fr .7fr .7fr',
-      gap:                 'var(--space-6)',
-    }}
-  >
-    <AttendanceLineChart />
-    <DepartmentDonut />
-    <RecentAlerts />
-  </div>
-);
+import React from 'react'
+import AttendanceLineChart from '@/components/hospital-admin/AttendanceLineChart'
+import DepartmentDonut from '@/components/hospital-admin/DepartmentDonut'
+import RecentAlerts from '@/components/hospital-admin/RecentAlerts'
 
-export default TrendsRow;
+export default function TrendsRow() {
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr .7fr .7fr', gap: 'var(--space-6)' }}>
+      <AttendanceLineChart />
+      <DepartmentDonut />
+      <RecentAlerts />
+    </div>
+  )
+}

@@ -1,24 +1,25 @@
-// src/pages/AttendancePage.tsx
+'use client'
+
 import React, { useState } from 'react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
-import Card               from '../../../components/hospital-admin/Card'
-import PageHeader         from '../../../components/hospital-admin/PageHeader'
-import AttendanceHeatmap  from '../../../components/hospital-admin/AttendanceHeatmap'
-import { lineChartData, employeesData, departmentsList } from '../../../data'
+import Card from '@/components/hospital-admin/Card'
+import PageHeader from '@/components/hospital-admin/PageHeader'
+import AttendanceHeatmap from '@/components/hospital-admin/AttendanceHeatmap'
+import { lineChartData, employeesData, departmentsList } from '@/data'
 
 const summaryByDept = departmentsList.map(d => {
   const members = employeesData.filter(e => e.department === d.name)
   return {
-    dept:    d.name,
-    color:   d.color,
-    total:   members.length,
+    dept: d.name,
+    color: d.color,
+    total: members.length,
     present: members.filter(e => e.status === 'active').length,
     onLeave: members.filter(e => e.status === 'on-leave').length,
-    absent:  members.filter(e => e.status === 'inactive').length,
+    absent: members.filter(e => e.status === 'inactive').length,
   }
 })
 
-const AttendancePage: React.FC = () => {
+export default function AttendancePage() {
   const [selectedDept, setSelectedDept] = useState('all')
 
   const displayed = selectedDept === 'all'
@@ -37,10 +38,12 @@ const AttendancePage: React.FC = () => {
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
         {['all', ...departmentsList.map(d => d.name)].map(d => (
           <button key={d} onClick={() => setSelectedDept(d)}
-            style={{ padding: '6px 14px', borderRadius: 999, fontSize: 12, fontWeight: 500,
+            style={{
+              padding: '6px 14px', borderRadius: 999, fontSize: 12, fontWeight: 500,
               background: selectedDept === d ? '#2563eb' : '#fff',
-              color:      selectedDept === d ? '#fff'    : '#6b7280',
-              border: `1px solid ${selectedDept === d ? '#2563eb' : '#e5e7eb'}` }}>
+              color: selectedDept === d ? '#fff' : '#6b7280',
+              border: `1px solid ${selectedDept === d ? '#2563eb' : '#e5e7eb'}`
+            }}>
             {d === 'all' ? 'All Departments' : d}
           </button>
         ))}
@@ -48,10 +51,10 @@ const AttendancePage: React.FC = () => {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 20 }}>
         {[
-          { label: 'Total Staff', value: totals.total,   color: '#2563eb', bg: '#dbeafe' },
-          { label: 'Present',     value: totals.present, color: '#16a34a', bg: '#dcfce7' },
-          { label: 'On Leave',    value: totals.onLeave, color: '#ea580c', bg: '#ffedd5' },
-          { label: 'Absent',      value: totals.absent,  color: '#dc2626', bg: '#fee2e2' },
+          { label: 'Total Staff', value: totals.total, color: '#2563eb', bg: '#dbeafe' },
+          { label: 'Present', value: totals.present, color: '#16a34a', bg: '#dcfce7' },
+          { label: 'On Leave', value: totals.onLeave, color: '#ea580c', bg: '#ffedd5' },
+          { label: 'Absent', value: totals.absent, color: '#dc2626', bg: '#fee2e2' },
         ].map(k => (
           <div key={k.label} style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: '18px 24px' }}>
             <p style={{ fontSize: 13, color: '#6b7280' }}>{k.label}</p>
@@ -103,7 +106,7 @@ const AttendancePage: React.FC = () => {
             <Tooltip />
             <Line type="monotone" dataKey="Present" stroke="#16a34a" strokeWidth={2} dot={false} />
             <Line type="monotone" dataKey="OnLeave" stroke="#ea580c" strokeWidth={2} dot={false} />
-            <Line type="monotone" dataKey="Absent"  stroke="#dc2626" strokeWidth={2} dot={false} />
+            <Line type="monotone" dataKey="Absent" stroke="#dc2626" strokeWidth={2} dot={false} />
           </LineChart>
         </ResponsiveContainer>
       </Card>
@@ -112,5 +115,3 @@ const AttendancePage: React.FC = () => {
     </div>
   )
 }
-
-export default AttendancePage

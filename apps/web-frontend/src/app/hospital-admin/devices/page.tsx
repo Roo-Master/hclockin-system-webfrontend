@@ -1,22 +1,23 @@
-// src/pages/DevicesPage.tsx
+'use client'
+
 import React, { useState, useCallback } from 'react'
 import { Monitor, Search, Filter, Wifi, WifiOff, Plus } from 'lucide-react'
-import PageHeader          from '../../../components/hospital-admin/PageHeader'
-import DeviceCard          from '../../../components/hospital-admin/DeviceCard'
-import DeviceRegisterModal from '../../../components/hospital-admin/DeviceRegisterModal'
-import ToastContainer      from '../../../components/hospital-admin/Toast'
-import { devicesData }     from '../../../data'
-import { Device, Toast }   from '../../../data/types'
+import PageHeader from '@/components/hospital-admin/PageHeader'
+import DeviceCard from '@/components/hospital-admin/DeviceCard'
+import DeviceRegisterModal from '@/components/hospital-admin/DeviceRegisterModal'
+import ToastContainer from '@/components/hospital-admin/Toast'
+import { devicesData } from '@/data'
+import { Device, Toast } from '@/data/types'
 
 type StatusFilter = 'all' | 'online' | 'offline'
 let toastId = 0
 
-const DevicesPage: React.FC = () => {
+export default function DevicesPage() {
   const [devices, setDevices] = useState<Device[]>(devicesData)
   const [showReg, setShowReg] = useState(false)
-  const [filter, setFilter]   = useState<StatusFilter>('all')
-  const [search, setSearch]   = useState('')
-  const [toasts, setToasts]   = useState<Toast[]>([])
+  const [filter, setFilter] = useState<StatusFilter>('all')
+  const [search, setSearch] = useState('')
+  const [toasts, setToasts] = useState<Toast[]>([])
 
   const addToast = useCallback((message: string, type: Toast['type'] = 'info') => {
     const id = ++toastId
@@ -33,7 +34,7 @@ const DevicesPage: React.FC = () => {
     }, 1500)
   }, [devices, addToast])
 
-  const online  = devices.filter(d => d.status === 'online').length
+  const online = devices.filter(d => d.status === 'online').length
   const offline = devices.filter(d => d.status === 'offline').length
   const latestFirmware = 'v2.4.1'
   const outdated = devices.filter(d => d.firmware !== latestFirmware).length
@@ -58,10 +59,10 @@ const DevicesPage: React.FC = () => {
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 20 }}>
           {[
-            { label: 'Total Devices',    value: devices.length, icon: <Monitor size={20} />, bg: '#dbeafe', color: '#2563eb' },
-            { label: 'Online',           value: online,          icon: <Wifi     size={20} />, bg: '#dcfce7', color: '#16a34a' },
-            { label: 'Offline',          value: offline,         icon: <WifiOff  size={20} />, bg: '#fee2e2', color: '#dc2626' },
-            { label: 'Outdated Firmware',value: outdated,        icon: <Filter   size={20} />, bg: '#ffedd5', color: '#ea580c' },
+            { label: 'Total Devices', value: devices.length, icon: <Monitor size={20} />, bg: '#dbeafe', color: '#2563eb' },
+            { label: 'Online', value: online, icon: <Wifi size={20} />, bg: '#dcfce7', color: '#16a34a' },
+            { label: 'Offline', value: offline, icon: <WifiOff size={20} />, bg: '#fee2e2', color: '#dc2626' },
+            { label: 'Outdated Firmware', value: outdated, icon: <Filter size={20} />, bg: '#ffedd5', color: '#ea580c' },
           ].map(s => (
             <div key={s.label} style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: '18px 20px', display: 'flex', alignItems: 'center', gap: 14 }}>
               <div aria-hidden="true" style={{ width: 44, height: 44, borderRadius: 10, background: s.bg, color: s.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{s.icon}</div>
@@ -89,9 +90,11 @@ const DevicesPage: React.FC = () => {
           <div style={{ display: 'flex', gap: 8 }}>
             {([{ key: 'all' as StatusFilter, label: `All (${devices.length})` }, { key: 'online' as StatusFilter, label: `Online (${online})` }, { key: 'offline' as StatusFilter, label: `Offline (${offline})` }]).map(f => (
               <button key={f.key} onClick={() => setFilter(f.key)}
-                style={{ padding: '6px 14px', borderRadius: 999, fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit',
+                style={{
+                  padding: '6px 14px', borderRadius: 999, fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit',
                   background: filter === f.key ? '#2563eb' : '#fff', color: filter === f.key ? '#fff' : '#6b7280',
-                  border: `1px solid ${filter === f.key ? '#2563eb' : '#e5e7eb'}` }}>
+                  border: `1px solid ${filter === f.key ? '#2563eb' : '#e5e7eb'}`
+                }}>
                 {f.label}
               </button>
             ))}
@@ -118,5 +121,3 @@ const DevicesPage: React.FC = () => {
     </>
   )
 }
-
-export default DevicesPage

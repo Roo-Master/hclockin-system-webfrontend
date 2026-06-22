@@ -1,27 +1,27 @@
-// src/pages/SettingsPage.tsx
+'use client'
+
 import React, { useState, useCallback } from 'react'
 import { Save, Clock, DollarSign, Bell, Shield } from 'lucide-react'
-import PageHeader     from '../../../components/hospital-admin/PageHeader'
-import ToastContainer from '../../../components/hospital-admin/Toast'
-import { defaultSettings, TIMEZONE_OPTIONS } from '../../../data/settingsData'
-import { HospitalSettings, Toast } from '../../../data/types'
+import PageHeader from '@/components/hospital-admin/PageHeader'
+import ToastContainer from '@/components/hospital-admin/Toast'
+import { defaultSettings, TIMEZONE_OPTIONS } from '@/data/settingsData'
+import { HospitalSettings, Toast } from '@/data/types'
 
 let toastId = 0
 
-/* ── Reusable toggle switch ── */
 const Toggle: React.FC<{
-  id:       string
-  label:    string
-  value:    boolean
+  id: string
+  label: string
+  value: boolean
   onChange: (v: boolean) => void
 }> = ({ id, label, value, onChange }) => (
   <div
     style={{
-      display:        'flex',
-      alignItems:     'center',
+      display: 'flex',
+      alignItems: 'center',
       justifyContent: 'space-between',
-      padding:        '12px 0',
-      borderBottom:   '1px solid #f3f4f6',
+      padding: '12px 0',
+      borderBottom: '1px solid #f3f4f6',
     }}
   >
     <label htmlFor={id} style={{ fontSize: 14, color: '#111827', cursor: 'pointer' }}>
@@ -34,45 +34,44 @@ const Toggle: React.FC<{
       aria-label={label}
       onClick={() => onChange(!value)}
       style={{
-        width:      44,
-        height:     24,
+        width: 44,
+        height: 24,
         borderRadius: 12,
-        border:     'none',
-        cursor:     'pointer',
+        border: 'none',
+        cursor: 'pointer',
         background: value ? '#2563eb' : '#e5e7eb',
-        position:   'relative',
+        position: 'relative',
         transition: 'background .2s',
-        padding:    0,
+        padding: 0,
         flexShrink: 0,
       }}
     >
       <div
         style={{
-          width:        18,
-          height:       18,
+          width: 18,
+          height: 18,
           borderRadius: '50%',
-          background:   '#fff',
-          position:     'absolute',
-          top:          3,
-          left:         value ? 23 : 3,
-          transition:   'left .2s',
-          boxShadow:    '0 1px 3px rgba(0,0,0,.2)',
+          background: '#fff',
+          position: 'absolute',
+          top: 3,
+          left: value ? 23 : 3,
+          transition: 'left .2s',
+          boxShadow: '0 1px 3px rgba(0,0,0,.2)',
         }}
       />
     </button>
   </div>
 )
 
-/* ── Reusable text / number field ── */
 const Field: React.FC<{
-  label:    string
-  value:    string
+  label: string
+  value: string
   onChange: (v: string) => void
-  type?:    string
-  min?:     string
-  max?:     string
-  step?:    string
-  suffix?:  string
+  type?: string
+  min?: string
+  max?: string
+  step?: string
+  suffix?: string
 }> = ({ label, value, onChange, type = 'text', min, max, step, suffix }) => (
   <div style={{ marginBottom: 16 }}>
     <label style={{ display: 'block', fontSize: 12, fontWeight: 500, color: '#6b7280', marginBottom: 6 }}>
@@ -87,14 +86,14 @@ const Field: React.FC<{
         max={max}
         step={step}
         style={{
-          flex:         1,
-          padding:      '9px 12px',
-          border:       '1px solid #e5e7eb',
+          flex: 1,
+          padding: '9px 12px',
+          border: '1px solid #e5e7eb',
           borderRadius: 8,
-          fontSize:     14,
-          fontFamily:   'inherit',
-          outline:      'none',
-          background:   '#fff',
+          fontSize: 14,
+          fontFamily: 'inherit',
+          outline: 'none',
+          background: '#fff',
         }}
       />
       {suffix && (
@@ -106,40 +105,39 @@ const Field: React.FC<{
   </div>
 )
 
-/* ── Section card wrapper ── */
 const Section: React.FC<{
-  title:    string
-  iconBg:   string
-  iconColor:string
-  icon:     React.ReactNode
+  title: string
+  iconBg: string
+  iconColor: string
+  icon: React.ReactNode
   children: React.ReactNode
   btnLabel: string
   btnColor: string
-  onSave:   () => void
+  onSave: () => void
 }> = ({ title, iconBg, iconColor, icon, children, btnLabel, btnColor, onSave }) => (
   <div
     style={{
-      background:   '#fff',
-      border:       '1px solid #e5e7eb',
+      background: '#fff',
+      border: '1px solid #e5e7eb',
       borderRadius: 12,
-      padding:      24,
-      display:      'flex',
-      flexDirection:'column',
-      gap:          0,
+      padding: 24,
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 0,
     }}
   >
     <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
       <div
         style={{
-          width:          36,
-          height:         36,
-          borderRadius:   10,
-          background:     iconBg,
-          color:          iconColor,
-          display:        'flex',
-          alignItems:     'center',
+          width: 36,
+          height: 36,
+          borderRadius: 10,
+          background: iconBg,
+          color: iconColor,
+          display: 'flex',
+          alignItems: 'center',
           justifyContent: 'center',
-          flexShrink:     0,
+          flexShrink: 0,
         }}
         aria-hidden="true"
       >
@@ -153,20 +151,20 @@ const Section: React.FC<{
     <button
       onClick={onSave}
       style={{
-        display:      'flex',
-        alignItems:   'center',
-        gap:          6,
-        padding:      '9px 16px',
-        background:   btnColor,
-        border:       'none',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 6,
+        padding: '9px 16px',
+        background: btnColor,
+        border: 'none',
         borderRadius: 8,
-        color:        '#fff',
-        fontSize:     13,
-        fontWeight:   600,
-        cursor:       'pointer',
-        fontFamily:   'inherit',
-        width:        'fit-content',
-        marginTop:    16,
+        color: '#fff',
+        fontSize: 13,
+        fontWeight: 600,
+        cursor: 'pointer',
+        fontFamily: 'inherit',
+        width: 'fit-content',
+        marginTop: 16,
       }}
     >
       <Save size={14} /> {btnLabel}
@@ -174,14 +172,15 @@ const Section: React.FC<{
   </div>
 )
 
-const SettingsPage: React.FC = () => {
+export default function SettingsPage() {
   const [settings, setSettings] = useState<HospitalSettings>(defaultSettings)
-  const [toasts,   setToasts]   = useState<Toast[]>([])
+  const [toasts, setToasts] = useState<Toast[]>([])
 
   const addToast = useCallback((message: string, type: Toast['type'] = 'info') => {
     const id = ++toastId
     setToasts(p => [...p, { id, message, type }])
   }, [])
+  
   const removeToast = useCallback((id: number) => setToasts(p => p.filter(t => t.id !== id)), [])
 
   const set = <K extends keyof HospitalSettings>(key: K) =>
@@ -197,7 +196,6 @@ const SettingsPage: React.FC = () => {
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
 
-          {/* ── Hospital Profile ── */}
           <Section
             title="Hospital Profile"
             iconBg="#dbeafe" iconColor="#2563eb"
@@ -217,14 +215,23 @@ const SettingsPage: React.FC = () => {
               <select
                 value={settings.timezone}
                 onChange={e => set('timezone')(e.target.value)}
-                style={{ width: '100%', padding: '9px 12px', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 14, fontFamily: 'inherit', outline: 'none', background: '#fff', cursor: 'pointer' }}
+                style={{ 
+                  width: '100%', 
+                  padding: '9px 12px', 
+                  border: '1px solid #e5e7eb', 
+                  borderRadius: 8, 
+                  fontSize: 14, 
+                  fontFamily: 'inherit', 
+                  outline: 'none', 
+                  background: '#fff', 
+                  cursor: 'pointer' 
+                }}
               >
                 {TIMEZONE_OPTIONS.map(t => <option key={t}>{t}</option>)}
               </select>
             </div>
           </Section>
 
-          {/* ── Attendance Rules ── */}
           <Section
             title="Attendance Rules"
             iconBg="#ffedd5" iconColor="#ea580c"
@@ -246,7 +253,6 @@ const SettingsPage: React.FC = () => {
             />
           </Section>
 
-          {/* ── Payroll Policy ── */}
           <Section
             title="Payroll Policy"
             iconBg="#dcfce7" iconColor="#16a34a"
@@ -262,13 +268,13 @@ const SettingsPage: React.FC = () => {
             />
             <div
               style={{
-                padding:      '12px 14px',
-                background:   '#f9fafb',
+                padding: '12px 14px',
+                background: '#f9fafb',
                 borderRadius: 8,
                 marginBottom: 4,
-                fontSize:     13,
-                color:        '#6b7280',
-                lineHeight:   1.6,
+                fontSize: 13,
+                color: '#6b7280',
+                lineHeight: 1.6,
               }}
             >
               Example: staff earning{' '}
@@ -281,7 +287,6 @@ const SettingsPage: React.FC = () => {
             </div>
           </Section>
 
-          {/* ── Notification Preferences ── */}
           <Section
             title="Notification Preferences"
             iconBg="#fee2e2" iconColor="#dc2626"
@@ -289,10 +294,10 @@ const SettingsPage: React.FC = () => {
             btnLabel="Save Preferences" btnColor="#dc2626"
             onSave={() => addToast('✓ Notification preferences saved', 'success')}
           >
-            <Toggle id="email-alerts"  label="Email Alerts for Absences"          value={settings.emailAlerts}  onChange={set('emailAlerts')}  />
-            <Toggle id="sms-alerts"    label="SMS Alerts to Managers"              value={settings.smsAlerts}    onChange={set('smsAlerts')}    />
-            <Toggle id="device-alerts" label="Device Offline Notifications"        value={settings.deviceAlerts} onChange={set('deviceAlerts')} />
-            <Toggle id="auto-recon"    label="Automatic Nightly Reconciliation"    value={settings.autoRecon}    onChange={set('autoRecon')}    />
+            <Toggle id="email-alerts" label="Email Alerts for Absences" value={settings.emailAlerts} onChange={set('emailAlerts')} />
+            <Toggle id="sms-alerts" label="SMS Alerts to Managers" value={settings.smsAlerts} onChange={set('smsAlerts')} />
+            <Toggle id="device-alerts" label="Device Offline Notifications" value={settings.deviceAlerts} onChange={set('deviceAlerts')} />
+            <Toggle id="auto-recon" label="Automatic Nightly Reconciliation" value={settings.autoRecon} onChange={set('autoRecon')} />
           </Section>
 
         </div>
@@ -302,5 +307,3 @@ const SettingsPage: React.FC = () => {
     </>
   )
 }
-
-export default SettingsPage

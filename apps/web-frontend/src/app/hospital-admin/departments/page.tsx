@@ -1,44 +1,41 @@
-// src/pages/DepartmentsPage.tsx
+'use client'
+
 import React, { useState, useCallback } from 'react'
-import {
-  Building2, Plus, Edit2,
-  Trash2, Users,
-} from 'lucide-react'
-import PageHeader  from '../../../components/hospital-admin/PageHeader'
-import DeptModal   from '../../../components/hospital-admin/DeptModal'
-import AvatarStack from '../../../components/hospital-admin/AvatarStack'
-import ToastContainer from '../../../components/hospital-admin/Toast'
+import { Building2, Plus, Edit2, Trash2, Users } from 'lucide-react'
+import PageHeader from '@/components/hospital-admin/PageHeader'
+import DeptModal from '@/components/hospital-admin/DeptModal'
+import AvatarStack from '@/components/hospital-admin/AvatarStack'
+import ToastContainer from '@/components/hospital-admin/Toast'
 import {
   INITIAL_DEPARTMENTS,
   ALL_STAFF,
   AVATAR_COLORS,
-} from '../../../data/departmentsData'
+} from '@/data/departmentsData'
 import {
   DepartmentRecord,
   DeptFormValues,
   DeptFormErrors,
   Toast,
-} from '../../../data/types'
+} from '@/data/types'
 
 const EMPTY_FORM: DeptFormValues = {
-  name:     '',
-  headId:   '',
+  name: '',
+  headId: '',
   costCode: '',
-  floor:    '',
+  floor: '',
 }
 
 let toastId = 0
 
-const DepartmentsPage: React.FC = () => {
+export default function DepartmentsPage() {
   const [departments, setDepartments] = useState<DepartmentRecord[]>(INITIAL_DEPARTMENTS)
-  const [showModal,   setShowModal]   = useState(false)
-  const [editingId,   setEditingId]   = useState<number | null>(null)
-  const [form,        setForm]        = useState<DeptFormValues>(EMPTY_FORM)
-  const [errors,      setErrors]      = useState<DeptFormErrors>({})
-  const [toasts,      setToasts]      = useState<Toast[]>([])
-  const [confirmId,   setConfirmId]   = useState<number | null>(null)
+  const [showModal, setShowModal] = useState(false)
+  const [editingId, setEditingId] = useState<number | null>(null)
+  const [form, setForm] = useState<DeptFormValues>(EMPTY_FORM)
+  const [errors, setErrors] = useState<DeptFormErrors>({})
+  const [toasts, setToasts] = useState<Toast[]>([])
+  const [confirmId, setConfirmId] = useState<number | null>(null)
 
-  /* ── Toast helpers ── */
   const addToast = useCallback(
     (message: string, type: Toast['type'] = 'info') => {
       const id = ++toastId
@@ -51,14 +48,12 @@ const DepartmentsPage: React.FC = () => {
     []
   )
 
-  /* ── Derived helpers ── */
   const staffFor = (deptName: string) =>
     ALL_STAFF.filter(s => s.dept === deptName)
 
   const headFor = (headId: string) =>
     ALL_STAFF.find(s => s.id === headId)
 
-  /* ── Modal controls ── */
   const openCreate = () => {
     setForm(EMPTY_FORM)
     setEditingId(null)
@@ -68,10 +63,10 @@ const DepartmentsPage: React.FC = () => {
 
   const openEdit = (dept: DepartmentRecord) => {
     setForm({
-      name:     dept.name,
-      headId:   dept.headId,
+      name: dept.name,
+      headId: dept.headId,
       costCode: dept.costCode,
-      floor:    dept.floor,
+      floor: dept.floor,
     })
     setEditingId(dept.id)
     setErrors({})
@@ -84,23 +79,20 @@ const DepartmentsPage: React.FC = () => {
     setErrors({})
   }
 
-  /* ── Field setter (curried) ── */
   const setField =
     (key: keyof DeptFormValues) =>
     (value: string) =>
       setForm(prev => ({ ...prev, [key]: value }))
 
-  /* ── Validation ── */
   const validate = (): boolean => {
     const e: DeptFormErrors = {}
-    if (!form.name.trim())     e.name     = 'Department name is required.'
-    if (!form.headId)          e.headId   = 'Please assign a department head.'
+    if (!form.name.trim()) e.name = 'Department name is required.'
+    if (!form.headId) e.headId = 'Please assign a department head.'
     if (!form.costCode.trim()) e.costCode = 'Cost code is required.'
     setErrors(e)
     return Object.keys(e).length === 0
   }
 
-  /* ── Save (create or update) ── */
   const save = () => {
     if (!validate()) return
 
@@ -119,9 +111,8 @@ const DepartmentsPage: React.FC = () => {
     closeModal()
   }
 
-  /* ── Delete with inline confirmation ── */
   const requestDelete = (id: number) => setConfirmId(id)
-  const cancelDelete  = ()           => setConfirmId(null)
+  const cancelDelete = () => setConfirmId(null)
 
   const confirmDelete = (dept: DepartmentRecord) => {
     setDepartments(prev => prev.filter(d => d.id !== dept.id))
@@ -129,9 +120,8 @@ const DepartmentsPage: React.FC = () => {
     setConfirmId(null)
   }
 
-  /* ── Stats ── */
-  const totalStaff     = ALL_STAFF.length
-  const headsAssigned  = departments.filter(d => d.headId).length
+  const totalStaff = ALL_STAFF.length
+  const headsAssigned = departments.filter(d => d.headId).length
 
   return (
     <>
@@ -145,18 +135,18 @@ const DepartmentsPage: React.FC = () => {
               onClick={openCreate}
               aria-label="Create new department"
               style={{
-                display:      'flex',
-                alignItems:   'center',
-                gap:          6,
-                padding:      '9px 16px',
-                background:   '#2563eb',
-                border:       'none',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '9px 16px',
+                background: '#2563eb',
+                border: 'none',
                 borderRadius: 8,
-                color:        '#fff',
-                fontSize:     13,
-                fontWeight:   600,
-                cursor:       'pointer',
-                fontFamily:   'inherit',
+                color: '#fff',
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
               }}
             >
               <Plus size={15} />
@@ -165,58 +155,57 @@ const DepartmentsPage: React.FC = () => {
           }
         />
 
-        {/* ── KPI strip ── */}
         <div
           style={{
-            display:             'grid',
+            display: 'grid',
             gridTemplateColumns: 'repeat(3, 1fr)',
-            gap:                 20,
+            gap: 20,
           }}
         >
           {[
             {
               label: 'Total Departments',
               value: departments.length,
-              bg:    '#dbeafe',
+              bg: '#dbeafe',
               color: '#2563eb',
             },
             {
               label: 'Total Staff',
               value: totalStaff,
-              bg:    '#dcfce7',
+              bg: '#dcfce7',
               color: '#16a34a',
             },
             {
               label: 'Dept Heads Assigned',
               value: headsAssigned,
-              bg:    '#ffedd5',
+              bg: '#ffedd5',
               color: '#ea580c',
             },
           ].map(s => (
             <div
               key={s.label}
               style={{
-                background:   '#fff',
-                border:       '1px solid #e5e7eb',
+                background: '#fff',
+                border: '1px solid #e5e7eb',
                 borderRadius: 12,
-                padding:      '18px 20px',
-                display:      'flex',
-                alignItems:   'center',
-                gap:          14,
+                padding: '18px 20px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 14,
               }}
             >
               <div
                 aria-hidden="true"
                 style={{
-                  width:          44,
-                  height:         44,
-                  borderRadius:   10,
-                  background:     s.bg,
-                  color:          s.color,
-                  display:        'flex',
-                  alignItems:     'center',
+                  width: 44,
+                  height: 44,
+                  borderRadius: 10,
+                  background: s.bg,
+                  color: s.color,
+                  display: 'flex',
+                  alignItems: 'center',
                   justifyContent: 'center',
-                  flexShrink:     0,
+                  flexShrink: 0,
                 }}
               >
                 <Building2 size={20} />
@@ -227,9 +216,9 @@ const DepartmentsPage: React.FC = () => {
                 </p>
                 <p
                   style={{
-                    fontSize:   24,
+                    fontSize: 24,
                     fontWeight: 700,
-                    color:      '#111827',
+                    color: '#111827',
                     lineHeight: 1.1,
                   }}
                 >
@@ -240,13 +229,12 @@ const DepartmentsPage: React.FC = () => {
           ))}
         </div>
 
-        {/* ── Department cards ── */}
         <div
           style={{
-            background:   '#fff',
-            border:       '1px solid #e5e7eb',
+            background: '#fff',
+            border: '1px solid #e5e7eb',
             borderRadius: 12,
-            padding:      24,
+            padding: 24,
           }}
         >
           <div style={{ marginBottom: 20 }}>
@@ -260,15 +248,15 @@ const DepartmentsPage: React.FC = () => {
 
           <div
             style={{
-              display:             'grid',
+              display: 'grid',
               gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-              gap:                 16,
+              gap: 16,
             }}
           >
             {departments.map((dept, idx) => {
-              const [abg, ac]    = AVATAR_COLORS[idx % AVATAR_COLORS.length]
-              const staff        = staffFor(dept.name)
-              const head         = headFor(dept.headId)
+              const [abg, ac] = AVATAR_COLORS[idx % AVATAR_COLORS.length]
+              const staff = staffFor(dept.name)
+              const head = headFor(dept.headId)
               const headInitials = head
                 ? head.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
                 : '?'
@@ -278,14 +266,14 @@ const DepartmentsPage: React.FC = () => {
                 <div
                   key={dept.id}
                   style={{
-                    border:       '1px solid #e5e7eb',
+                    border: '1px solid #e5e7eb',
                     borderRadius: 12,
-                    padding:      18,
-                    background:   '#fff',
-                    display:      'flex',
-                    flexDirection:'column',
-                    gap:          14,
-                    transition:   'box-shadow .15s',
+                    padding: 18,
+                    background: '#fff',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 14,
+                    transition: 'box-shadow .15s',
                   }}
                   onMouseEnter={e =>
                     ((e.currentTarget as HTMLElement).style.boxShadow =
@@ -295,37 +283,35 @@ const DepartmentsPage: React.FC = () => {
                     ((e.currentTarget as HTMLElement).style.boxShadow = 'none')
                   }
                 >
-                  {/* ── Card top row ── */}
                   <div
                     style={{
-                      display:        'flex',
-                      alignItems:     'flex-start',
+                      display: 'flex',
+                      alignItems: 'flex-start',
                       justifyContent: 'space-between',
-                      gap:            12,
+                      gap: 12,
                     }}
                   >
-                    {/* Icon + name */}
                     <div
                       style={{
-                        display:    'flex',
+                        display: 'flex',
                         alignItems: 'center',
-                        gap:        12,
+                        gap: 12,
                       }}
                     >
                       <div
                         aria-hidden="true"
                         style={{
-                          width:          42,
-                          height:         42,
-                          borderRadius:   10,
-                          background:     abg,
-                          color:          ac,
-                          display:        'flex',
-                          alignItems:     'center',
+                          width: 42,
+                          height: 42,
+                          borderRadius: 10,
+                          background: abg,
+                          color: ac,
+                          display: 'flex',
+                          alignItems: 'center',
                           justifyContent: 'center',
-                          fontWeight:     700,
-                          fontSize:       16,
-                          flexShrink:     0,
+                          fontWeight: 700,
+                          fontSize: 16,
+                          flexShrink: 0,
                         }}
                       >
                         {dept.name[0].toUpperCase()}
@@ -334,8 +320,8 @@ const DepartmentsPage: React.FC = () => {
                         <p
                           style={{
                             fontWeight: 700,
-                            fontSize:   15,
-                            color:      '#111827',
+                            fontSize: 15,
+                            color: '#111827',
                             lineHeight: 1.2,
                           }}
                         >
@@ -343,8 +329,8 @@ const DepartmentsPage: React.FC = () => {
                         </p>
                         <p
                           style={{
-                            fontSize:  11,
-                            color:     '#9ca3af',
+                            fontSize: 11,
+                            color: '#9ca3af',
                             marginTop: 2,
                           }}
                         >
@@ -354,29 +340,28 @@ const DepartmentsPage: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Edit / Delete */}
                     <div
                       style={{
-                        display:   'flex',
-                        gap:       8,
-                        flexShrink:0,
+                        display: 'flex',
+                        gap: 8,
+                        flexShrink: 0,
                       }}
                     >
                       <button
                         onClick={() => openEdit(dept)}
                         aria-label={`Edit ${dept.name}`}
                         style={{
-                          width:          30,
-                          height:         30,
-                          borderRadius:   '50%',
-                          background:     '#dbeafe',
-                          color:          '#2563eb',
-                          border:         'none',
-                          display:        'flex',
-                          alignItems:     'center',
+                          width: 30,
+                          height: 30,
+                          borderRadius: '50%',
+                          background: '#dbeafe',
+                          color: '#2563eb',
+                          border: 'none',
+                          display: 'flex',
+                          alignItems: 'center',
                           justifyContent: 'center',
-                          cursor:         'pointer',
-                          transition:     'background .15s',
+                          cursor: 'pointer',
+                          transition: 'background .15s',
                         }}
                         onMouseEnter={e =>
                           ((e.currentTarget as HTMLElement).style.background = '#bfdbfe')
@@ -392,17 +377,17 @@ const DepartmentsPage: React.FC = () => {
                         onClick={() => requestDelete(dept.id)}
                         aria-label={`Delete ${dept.name}`}
                         style={{
-                          width:          30,
-                          height:         30,
-                          borderRadius:   '50%',
-                          background:     '#fee2e2',
-                          color:          '#dc2626',
-                          border:         'none',
-                          display:        'flex',
-                          alignItems:     'center',
+                          width: 30,
+                          height: 30,
+                          borderRadius: '50%',
+                          background: '#fee2e2',
+                          color: '#dc2626',
+                          border: 'none',
+                          display: 'flex',
+                          alignItems: 'center',
                           justifyContent: 'center',
-                          cursor:         'pointer',
-                          transition:     'background .15s',
+                          cursor: 'pointer',
+                          transition: 'background .15s',
                         }}
                         onMouseEnter={e =>
                           ((e.currentTarget as HTMLElement).style.background = '#fecaca')
@@ -416,25 +401,24 @@ const DepartmentsPage: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* ── Inline delete confirmation ── */}
                   {isConfirming && (
                     <div
                       style={{
-                        background:   '#fff5f5',
-                        border:       '1px solid #fecaca',
+                        background: '#fff5f5',
+                        border: '1px solid #fecaca',
                         borderRadius: 8,
-                        padding:      '10px 14px',
-                        display:      'flex',
-                        alignItems:   'center',
-                        justifyContent:'space-between',
-                        gap:          8,
+                        padding: '10px 14px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: 8,
                       }}
                     >
                       <p
                         style={{
                           fontSize: 13,
-                          color:    '#dc2626',
-                          fontWeight:500,
+                          color: '#dc2626',
+                          fontWeight: 500,
                         }}
                       >
                         Remove <strong>{dept.name}</strong>?
@@ -443,15 +427,15 @@ const DepartmentsPage: React.FC = () => {
                         <button
                           onClick={() => confirmDelete(dept)}
                           style={{
-                            padding:      '5px 12px',
-                            background:   '#dc2626',
-                            border:       'none',
+                            padding: '5px 12px',
+                            background: '#dc2626',
+                            border: 'none',
                             borderRadius: 6,
-                            color:        '#fff',
-                            fontSize:     12,
-                            fontWeight:   600,
-                            cursor:       'pointer',
-                            fontFamily:   'inherit',
+                            color: '#fff',
+                            fontSize: 12,
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            fontFamily: 'inherit',
                           }}
                         >
                           Yes, remove
@@ -459,14 +443,14 @@ const DepartmentsPage: React.FC = () => {
                         <button
                           onClick={cancelDelete}
                           style={{
-                            padding:      '5px 12px',
-                            background:   '#f5f6fa',
-                            border:       '1px solid #e5e7eb',
+                            padding: '5px 12px',
+                            background: '#f5f6fa',
+                            border: '1px solid #e5e7eb',
                             borderRadius: 6,
-                            color:        '#6b7280',
-                            fontSize:     12,
-                            cursor:       'pointer',
-                            fontFamily:   'inherit',
+                            color: '#6b7280',
+                            fontSize: 12,
+                            cursor: 'pointer',
+                            fontFamily: 'inherit',
                           }}
                         >
                           Cancel
@@ -475,32 +459,30 @@ const DepartmentsPage: React.FC = () => {
                     </div>
                   )}
 
-                  {/* ── Department head row ── */}
                   <div
                     style={{
-                      padding:    '10px 12px',
+                      padding: '10px 12px',
                       background: '#f9fafb',
-                      borderRadius:8,
-                      display:    'flex',
+                      borderRadius: 8,
+                      display: 'flex',
                       alignItems: 'center',
-                      gap:        10,
+                      gap: 10,
                     }}
                   >
-                    {/* Head avatar */}
                     <div
                       aria-hidden="true"
                       style={{
-                        width:          28,
-                        height:         28,
-                        borderRadius:   '50%',
-                        background:     abg,
-                        color:          ac,
-                        display:        'flex',
-                        alignItems:     'center',
+                        width: 28,
+                        height: 28,
+                        borderRadius: '50%',
+                        background: abg,
+                        color: ac,
+                        display: 'flex',
+                        alignItems: 'center',
                         justifyContent: 'center',
-                        fontSize:       10,
-                        fontWeight:     700,
-                        flexShrink:     0,
+                        fontSize: 10,
+                        fontWeight: 700,
+                        flexShrink: 0,
                       }}
                     >
                       {headInitials}
@@ -509,22 +491,22 @@ const DepartmentsPage: React.FC = () => {
                     <div>
                       <p
                         style={{
-                          fontSize:      10,
-                          color:         '#9ca3af',
-                          fontWeight:    600,
+                          fontSize: 10,
+                          color: '#9ca3af',
+                          fontWeight: 600,
                           textTransform: 'uppercase',
                           letterSpacing: '0.06em',
-                          marginBottom:  2,
+                          marginBottom: 2,
                         }}
                       >
                         Department Head
                       </p>
                       <p
                         style={{
-                          fontSize:   13,
+                          fontSize: 13,
                           fontWeight: 600,
-                          color:      head ? '#111827' : '#dc2626',
-                          fontStyle:  head ? 'normal' : 'italic',
+                          color: head ? '#111827' : '#dc2626',
+                          fontStyle: head ? 'normal' : 'italic',
                         }}
                       >
                         {head ? head.name : 'Unassigned'}
@@ -534,10 +516,10 @@ const DepartmentsPage: React.FC = () => {
                     {head && (
                       <span
                         style={{
-                          marginLeft:   'auto',
-                          fontSize:     11,
-                          color:        '#9ca3af',
-                          fontFamily:   'monospace',
+                          marginLeft: 'auto',
+                          fontSize: 11,
+                          color: '#9ca3af',
+                          fontFamily: 'monospace',
                         }}
                       >
                         {head.id}
@@ -545,11 +527,10 @@ const DepartmentsPage: React.FC = () => {
                     )}
                   </div>
 
-                  {/* ── Staff avatars + count ── */}
                   <div
                     style={{
-                      display:        'flex',
-                      alignItems:     'center',
+                      display: 'flex',
+                      alignItems: 'center',
                       justifyContent: 'space-between',
                     }}
                   >
@@ -557,11 +538,11 @@ const DepartmentsPage: React.FC = () => {
 
                     <div
                       style={{
-                        display:    'flex',
+                        display: 'flex',
                         alignItems: 'center',
-                        gap:        5,
-                        fontSize:   12,
-                        color:      '#6b7280',
+                        gap: 5,
+                        fontSize: 12,
+                        color: '#6b7280',
                       }}
                     >
                       <Users size={13} aria-hidden="true" />
@@ -576,7 +557,6 @@ const DepartmentsPage: React.FC = () => {
 
       </div>
 
-      {/* ── Modal ── */}
       {showModal && (
         <DeptModal
           form={form}
@@ -589,10 +569,7 @@ const DepartmentsPage: React.FC = () => {
         />
       )}
 
-      {/* ── Toasts ── */}
       <ToastContainer toasts={toasts} onRemove={removeToast} />
     </>
   )
 }
-
-export default DepartmentsPage
