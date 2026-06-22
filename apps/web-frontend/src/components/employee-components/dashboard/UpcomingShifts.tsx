@@ -30,7 +30,7 @@ const shifts = [
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-heading text-primary">Upcoming shifts</h2>
-          <a href="/dashboard/shifts" className="text-label text-success hover:underline">
+          <a href="/user-dashboard/shifts" className="text-label text-success hover:underline">
             Full schedule →
           </a>
         </div>

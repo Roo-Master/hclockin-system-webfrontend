@@ -12,7 +12,7 @@ const profile = [
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-heading text-primary">My profile</h2>
-          <a href="/dashboard/profile" className="text-label text-success hover:underline">
+          <a href="/user-dashboard/profile" className="text-label text-success hover:underline">
             Edit →
           </a>
         </div>

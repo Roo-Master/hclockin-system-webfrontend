@@ -1,10 +1,10 @@
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const DEV_MODE = process.env.NEXT_PUBLIC_DEV_MODE === 'true';
 
 // DEV-ONLY: while the backend and shared login page are incomplete, this lets every
 // page preview real UI with a fake DEPT_HEAD session — no localStorage, no login,
 // no live API needed for identity. Set NEXT_PUBLIC_DEV_MODE=true in .env.local.
 // NEVER set this to true in production — it skips authentication entirely.
-const DEV_MODE = process.env.NEXT_PUBLIC_DEV_MODE === 'true';
 
 export const MOCK_USER = {
   id: 'dev-user-id',

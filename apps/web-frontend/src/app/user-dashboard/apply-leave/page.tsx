@@ -1,7 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import DashboardLayout from '@/components/employee-components/layout/DashboardLayout';
+import DashboardLayout from '@/components/user-components/layout/DashboardLayout';
+import { applyForLeave } from '@/app/api/user-api/userService';
+import { useMyLeaveBalances } from '@/hooks/user-hooks/useGeneralUser';
 
 export default function ApplyLeavePage() {
   const [leaveType, setLeaveType] = useState('');
@@ -9,21 +11,34 @@ export default function ApplyLeavePage() {
   const [endDate, setEndDate] = useState('');
   const [reason, setReason] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  function handleSubmit() {
+  const { data: balancesData } = useMyLeaveBalances();
+  const balances: Array<Record<string, unknown>> = Array.isArray(balancesData)
+    ? balancesData
+    : (balancesData?.data ?? []);
+
+  async function handleSubmit() {
     if (!leaveType || !startDate || !endDate) return;
-    setSubmitted(true);
-    setLeaveType('');
-    setStartDate('');
-    setEndDate('');
-    setReason('');
+    setSubmitting(true);
+    try {
+      await applyForLeave({ leaveType, startDate, endDate, reason });
+      setSubmitted(true);
+      setLeaveType('');
+      setStartDate('');
+      setEndDate('');
+      setReason('');
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Unknown error';
+      alert('Failed to submit: ' + message);
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
     <DashboardLayout title="Apply for Leave">
       <div className="flex flex-col gap-5">
-
-        {/* Success message */}
         {submitted && (
           <div className="flex items-center gap-3 bg-success-bg border border-success/30 rounded-card px-4 py-3">
             <span className="text-success">✓</span>
@@ -34,13 +49,10 @@ export default function ApplyLeavePage() {
         )}
 
         <div className="grid grid-cols-[1fr_300px] gap-5">
-
-          {/* Form */}
           <div className="bg-surface border border-border rounded-card p-5">
             <h2 className="text-heading text-primary mb-5">New leave request</h2>
 
             <div className="flex flex-col gap-4">
-              {/* Leave type */}
               <div>
                 <label className="text-label text-secondary block mb-1.5">
                   Leave type <span className="text-danger">*</span>
@@ -60,7 +72,6 @@ export default function ApplyLeavePage() {
                 </select>
               </div>
 
-              {/* Date range */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-label text-secondary block mb-1.5">
@@ -86,7 +97,6 @@ export default function ApplyLeavePage() {
                 </div>
               </div>
 
-              {/* Reason */}
               <div>
                 <label className="text-label text-secondary block mb-1.5">Reason</label>
                 <textarea
@@ -98,13 +108,13 @@ export default function ApplyLeavePage() {
                 />
               </div>
 
-              {/* Submit */}
               <div className="flex items-center gap-3 pt-1">
                 <button
                   onClick={handleSubmit}
-                  className="px-5 py-2 bg-success text-white text-label font-medium rounded-badge hover:opacity-90 transition-opacity"
+                  disabled={submitting}
+                  className="px-5 py-2 bg-success text-white text-label font-medium rounded-badge hover:opacity-90 transition-opacity disabled:opacity-50"
                 >
-                  Submit request
+                  {submitting ? 'Submitting...' : 'Submit request'}
                 </button>
                 <button
                   onClick={() => {
@@ -121,30 +131,34 @@ export default function ApplyLeavePage() {
             </div>
           </div>
 
-          {/* Leave balances sidebar */}
           <div className="flex flex-col gap-4">
             <div className="bg-surface border border-border rounded-card p-5">
               <h2 className="text-heading text-primary mb-4">Your balances</h2>
               <div className="flex flex-col gap-4">
-                {[
-                  { type: 'Annual', remaining: 9, total: 21, color: 'bg-success' },
-                  { type: 'Sick', remaining: 8, total: 10, color: 'bg-info' },
-                  { type: 'Compassionate', remaining: 3, total: 3, color: 'bg-warning' },
-                  { type: 'Maternity', remaining: 90, total: 90, color: 'bg-danger' },
-                ].map((b) => (
-                  <div key={b.type}>
-                    <div className="flex justify-between mb-1.5">
-                      <span className="text-label text-secondary">{b.type}</span>
-                      <span className="text-label text-secondary">{b.remaining} / {b.total} days</span>
+                {balances.map((b) => {
+                  const used = (b.usedDays ?? b.used ?? 0) as number;
+                  const pending = (b.pendingDays ?? b.pending ?? 0) as number;
+                  const total = (b.totalDays ?? b.total ?? 0) as number;
+                  const remaining = total - used - pending;
+                  const leaveTypeLabel = String(b.leaveType ?? 'Leave');
+
+                  return (
+                    <div key={String(b.id ?? b.leaveType)}>
+                      <div className="flex justify-between mb-1.5">
+                        <span className="text-label text-secondary">{leaveTypeLabel}</span>
+                        <span className="text-label text-secondary">
+                          {remaining} / {total} days
+                        </span>
+                      </div>
+                      <div className="h-1.5 bg-page rounded-pill overflow-hidden">
+                        <div
+                          className="h-full rounded-pill bg-success"
+                          style={{ width: `${total > 0 ? Math.round((remaining / total) * 100) : 0}%` }}
+                        />
+                      </div>
                     </div>
-                    <div className="h-1.5 bg-page rounded-pill overflow-hidden">
-                      <div
-                        className={`h-full rounded-pill ${b.color}`}
-                        style={{ width: `${Math.round((b.remaining / b.total) * 100)}%` }}
-                      />
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
@@ -162,7 +176,6 @@ export default function ApplyLeavePage() {
               </div>
             </div>
           </div>
-
         </div>
       </div>
     </DashboardLayout>

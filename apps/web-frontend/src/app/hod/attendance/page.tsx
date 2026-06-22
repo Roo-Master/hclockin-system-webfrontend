@@ -1,9 +1,8 @@
 'use client';
-import { useEffect, useState, useCallback } from 'react';
-import { HODLayout } from '@/components/hod-components/layout/HODLayout';
+import type { ChangeEvent } from 'react';
+import { HODLayout } from '@/components/layout/HODLayout';
 import { StatusBadge, Spinner, Alert, EmptyState, Button, Input, Select } from '@/components/ui';
-import { attendanceApi, employeeApi, getCurrentUser } from '@/lib/api';
-import type { AttendanceSummary } from '@/types';
+import { useHODAttendance, useHODProfile } from '../../../hod-hooks';
 
 const fmt = (d: string | null) => {
   if (!d) return '—';
@@ -16,85 +15,48 @@ const monthStartStr = () => {
 };
 
 export default function AttendancePage() {
-  const [summaries, setSummaries] = useState<AttendanceSummary[]>([]);
-  const [deptId, setDeptId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
-
-  const [filters, setFilters] = useState({
-    startDate: monthStartStr(),
-    endDate: todayStr(),
-    status: '',
-    search: '',
-  });
-
-  const load = useCallback(async (depId: string) => {
-    setLoading(true); setError('');
-    try {
-      const params: any = {
-        departmentId: depId,
-        startDate: filters.startDate,
-        endDate: filters.endDate,
-        page,
-        limit: 50,
-      };
-      if (filters.status) params.status = filters.status;
-      const data = await attendanceApi.getSummaries(params);
-      setSummaries(data.data || []);
-      setTotal(data.meta?.total || 0);
-    } catch (e: any) { setError(e.message); }
-    finally { setLoading(false); }
-  }, [filters, page]);
-
-  useEffect(() => {
-    const raw = getCurrentUser();
-    if (!raw) return;
-    employeeApi.getById(raw.id || raw.sub).then((emp: any) => {
-      setDeptId(emp.departmentId);
-      if (emp.departmentId) load(emp.departmentId);
-    });
-  }, []); // eslint-disable-line
-
-  useEffect(() => { if (deptId) load(deptId); }, [deptId, filters, page, load]);
-
-  const displayed = filters.search
-    ? summaries.filter(s =>
-        `${s.user.firstName} ${s.user.lastName}`.toLowerCase().includes(filters.search.toLowerCase()))
-    : summaries;
+  const { departmentId } = useHODProfile();
+  const {
+    displayed,
+    loading,
+    error,
+    total,
+    page,
+    setPage,
+    filters,
+    setFilters,
+    loadAttendance,
+    resetFilters,
+  } = useHODAttendance(departmentId);
 
   const STATUS_OPTIONS = ['', 'PRESENT', 'LATE', 'ABSENT', 'ON_LEAVE', 'HALF_DAY', 'HOLIDAY', 'UNROSTERED'];
 
   return (
     <HODLayout title="Attendance" subtitle="Department attendance records">
-      {error && <Alert type="error" message={error} onRetry={() => deptId && load(deptId)} />}
+      {error && <Alert type="error" message={error} onRetry={() => departmentId && loadAttendance(departmentId)} />}
 
       {/* Filters */}
       <div className="bg-bg-surface rounded-card border border-border p-4 mb-6 shadow-sm">
         <div className="flex flex-wrap gap-3 items-end">
           <div className="flex-1 min-w-36">
             <Input label="From" type="date" value={filters.startDate}
-              onChange={e => setFilters(f => ({ ...f, startDate: e.target.value }))} />
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setFilters((f) => ({ ...f, startDate: e.target.value }))} />
           </div>
           <div className="flex-1 min-w-36">
             <Input label="To" type="date" value={filters.endDate}
-              onChange={e => setFilters(f => ({ ...f, endDate: e.target.value }))} />
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setFilters((f) => ({ ...f, endDate: e.target.value }))} />
           </div>
           <div className="flex-1 min-w-36">
             <Select label="Status" value={filters.status}
-              onChange={e => setFilters(f => ({ ...f, status: e.target.value }))}>
+              onChange={(e: ChangeEvent<HTMLSelectElement>) => setFilters((f) => ({ ...f, status: e.target.value }))}>
               {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s || 'All Statuses'}</option>)}
             </Select>
           </div>
           <div className="flex-1 min-w-48">
             <Input label="Search name" placeholder="Filter by name…" value={filters.search}
-              onChange={e => setFilters(f => ({ ...f, search: e.target.value }))} />
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setFilters((f) => ({ ...f, search: e.target.value }))} />
           </div>
-          <Button variant="secondary" size="md" onClick={() => {
-            setFilters({ startDate: monthStartStr(), endDate: todayStr(), status: '', search: '' });
-            setPage(1);
-          }}>Reset</Button>
+          <Button variant="secondary" size="md" onClick={resetFilters}>Reset</Button>
         </div>
       </div>
 
@@ -130,7 +92,7 @@ export default function AttendancePage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {displayed.map(s => (
+                  {displayed.map((s) => (
                     <tr key={s.id}
                       className="hover:bg-info-bg/40 transition-colors cursor-pointer"
                       onClick={() => window.location.href = `/hod/attendance/${s.id}`}>
@@ -170,8 +132,8 @@ export default function AttendancePage() {
               <div className="flex items-center justify-between px-6 py-3 border-t border-border">
                 <p className="text-sm font-bold text-text-primary">Page {page} of {Math.ceil(total / 50)}</p>
                 <div className="flex gap-2">
-                  <Button variant="secondary" size="sm" disabled={page === 1} onClick={() => setPage(p => p - 1)}>Previous</Button>
-                  <Button variant="secondary" size="sm" disabled={page >= Math.ceil(total / 50)} onClick={() => setPage(p => p + 1)}>Next</Button>
+                  <Button variant="secondary" size="sm" disabled={page === 1} onClick={() => setPage((p: number) => p - 1)}>Previous</Button>
+                  <Button variant="secondary" size="sm" disabled={page >= Math.ceil(total / 50)} onClick={() => setPage((p: number) => p + 1)}>Next</Button>
                 </div>
               </div>
             )}

@@ -1,98 +1,34 @@
 'use client';
-import { useEffect, useState, useCallback } from 'react';
-import { HODLayout } from '@/components/hod-components/layout/HODLayout';
-import { Button, Input, Select, Spinner, Alert, Modal, EmptyState } from '@/components/ui';
-import { reportsApi, employeeApi, getCurrentUser } from '@/lib/api';
+
+import { HODLayout } from '@/components/layout/HODLayout';
+import { Button, Input, Spinner, Alert, Modal, EmptyState, Select } from '@/components/ui';
 import { exportReportToExcel, exportReportToPDF } from '@/lib/export';
-import type { CompiledReport } from '@/types';
-
-const HOD_REPORT_TYPES = [
-  { value: 'MONTHLY_ATTENDANCE', label: 'Monthly Attendance', desc: 'Per-employee daily breakdown with status and hours' },
-  { value: 'LATENESS_AUDIT',     label: 'Lateness Audit',     desc: 'All late arrivals, worst offenders first' },
-  { value: 'ABSENCE_AUDIT',      label: 'Absence Audit',      desc: 'All unexcused absences with top absentees' },
-  { value: 'OVERTIME_AUDIT',     label: 'Overtime Audit',     desc: 'All overtime hours logged, highest first' },
-];
-
-const MAX_DAYS = 93;
-const todayStr = () => new Date().toISOString().split('T')[0];
-const monthStartStr = () => { const d = new Date(); d.setDate(1); return d.toISOString().split('T')[0]; };
+import { HOD_REPORT_TYPES, useHODProfile, useHODReports } from '../../../hod-hooks';
 
 export default function ReportsPage() {
-  const [deptId, setDeptId]       = useState<string | null>(null);
-  const [reports, setReports]     = useState<CompiledReport[]>([]);
-  const [loading, setLoading]     = useState(true);
-  const [error, setError]         = useState('');
-
-  const [form, setForm] = useState({
-    reportType: 'MONTHLY_ATTENDANCE',
-    startDate: monthStartStr(),
-    endDate: todayStr(),
-  });
-  const [generating, setGenerating]   = useState(false);
-  const [genError, setGenError]       = useState('');
-  const [rangeError, setRangeError]   = useState('');
-
-  const [viewing, setViewing] = useState<CompiledReport | null>(null);
-  const [viewLoading, setViewLoading] = useState(false);
-
-  const load = useCallback(async () => {
-    setLoading(true); setError('');
-    try {
-      const data = await reportsApi.list({ page: 1, limit: 25 });
-      setReports(data.data || data.items || []);
-    } catch (e: any) { setError(e.message); }
-    finally { setLoading(false); }
-  }, []);
-
-  useEffect(() => {
-    const raw = getCurrentUser();
-    if (!raw) return;
-    employeeApi.getById(raw.id || raw.sub).then((emp: any) => setDeptId(emp.departmentId));
-    load();
-  }, [load]);
-
-  useEffect(() => {
-    const start = new Date(form.startDate);
-    const end = new Date(form.endDate);
-    const diffDays = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
-    if (end < start) setRangeError('End date must be on or after start date.');
-    else if (diffDays > MAX_DAYS) setRangeError(`Range cannot exceed ${MAX_DAYS} days.`);
-    else setRangeError('');
-  }, [form.startDate, form.endDate]);
-
-  const handleGenerate = async () => {
-    if (rangeError) return;
-    if (!deptId) { setGenError('Could not determine your department.'); return; }
-    setGenerating(true); setGenError('');
-    try {
-      const result = await reportsApi.generate({
-        reportType: form.reportType,
-        startDate: form.startDate,
-        endDate: form.endDate,
-        departmentId: deptId,
-      });
-      setReports(prev => [result, ...prev]);
-      setViewing(result);
-    } catch (e: any) { setGenError(e.message); }
-    finally { setGenerating(false); }
-  };
-
-  const handleView = async (report: CompiledReport) => {
-    if (report.compiledData) { setViewing(report); return; }
-    setViewLoading(true);
-    try {
-      const full = await reportsApi.getById(report.id);
-      setViewing(full);
-    } catch (e: any) { setError(e.message); }
-    finally { setViewLoading(false); }
-  };
+  const { departmentId } = useHODProfile();
+  const {
+    reports,
+    loading,
+    error,
+    loadReports,
+    form,
+    setForm,
+    generating,
+    genError,
+    rangeError,
+    viewing,
+    setViewing,
+    viewLoading,
+    handleGenerate,
+    handleView,
+  } = useHODReports(departmentId);
 
   return (
     <HODLayout title="Reports" subtitle="Generate attendance reports for your department">
-      {error && <Alert type="error" message={error} onRetry={load} />}
+      {error && <Alert type="error" message={error} onRetry={loadReports} />}
 
       <div className="grid lg:grid-cols-3 gap-6">
-        {/* Generator panel */}
         <div className="bg-bg-surface rounded-card border border-border shadow-sm p-6 lg:col-span-1 h-fit">
           <h3 className="text-heading font-semibold text-text-primary mb-4">Generate Report</h3>
 
@@ -119,7 +55,6 @@ export default function ReportsPage() {
           </div>
         </div>
 
-        {/* History */}
         <div className="bg-bg-surface rounded-card border border-border shadow-sm overflow-hidden lg:col-span-2">
           <div className="px-6 py-4 border-b border-border">
             <h3 className="text-heading font-semibold text-text-primary">Report History</h3>
@@ -170,12 +105,10 @@ export default function ReportsPage() {
         </div>
       </div>
 
-      {/* Report Viewer Modal */}
       <Modal open={!!viewing} onClose={() => setViewing(null)}
         title={HOD_REPORT_TYPES.find(t => t.value === viewing?.reportType)?.label ?? 'Report'} size="xl">
         {viewing?.compiledData && (
           <div className="space-y-6">
-            {/* Summary */}
             <div className="flex items-center justify-between">
               <p className="text-sm text-text-secondary font-medium">
                 {viewing.compiledData.rows.length} record{viewing.compiledData.rows.length !== 1 ? 's' : ''}
@@ -209,7 +142,6 @@ export default function ReportsPage() {
                 ))}
             </div>
 
-            {/* Rows table */}
             <div className="border border-border rounded-lg overflow-hidden">
               <div className="overflow-x-auto max-h-96">
                 <table className="w-full text-xs">

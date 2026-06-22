@@ -11,7 +11,7 @@ const weeks = [
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-heading text-primary">Hours worked · June</h2>
-          <a href="/dashboard/attendance" className="text-label text-success hover:underline">
+          <a href="/user-dashboard/attendance" className="text-label text-success hover:underline">
             Details →
           </a>
         </div>

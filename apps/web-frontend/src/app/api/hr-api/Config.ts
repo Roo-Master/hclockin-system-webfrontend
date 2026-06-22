@@ -73,4 +73,29 @@ export const ENDPOINTS = {
 
   // Settings
   SETTINGS: "/settings",
+
+  // General User — Attendance
+  MY_SUMMARIES: "/attendance/my-summaries",
+  MY_LOGS: "/attendance/my-logs",
+
+  // General User — Leave
+  MY_LEAVES: "/leaves/employee/me",
+  MY_LEAVE_BALANCES: "/leaves/balances/me",
+  LEAVE_REQUESTS_POST: "/leave/requests",
+
+  // General User — Notifications
+  MY_NOTIFICATIONS: "/api/notifications",
+  MARK_NOTIFICATION_READ: (id: string) => `/api/notifications/${id}/read`,
+  MARK_ALL_READ: "/api/notifications/mark-all-read",
+
+  // General User — Profile
+  MY_PROFILE: "/auth/me",
+  UPDATE_PROFILE: "/auth/update-profile",
+
+  // General User — Corrections
+  MY_CORRECTIONS: "/attendance/corrections",
+  SUBMIT_CORRECTION: "/attendance/corrections",
+
+  // General User — Shifts
+  MY_SHIFTS: "/shifts/assignments",
 } as const;

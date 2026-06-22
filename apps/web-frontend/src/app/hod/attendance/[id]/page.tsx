@@ -1,79 +1,37 @@
 'use client';
-import { useEffect, useState } from 'react';
+
 import { useParams } from 'next/navigation';
 import { HODLayout } from '@/components/hod-components/layout/HODLayout';
 import { StatusBadge, Spinner, Alert, Button, Modal, Select } from '@/components/ui';
-import { attendanceApi, auditLogApi } from '@/lib/api';
-import type { AttendanceSummary, AttendanceLog } from '@/types';
-
-const fmtTime = (iso: string | null) => {
-  if (!iso) return '—';
-  return new Date(iso).toLocaleTimeString('en-KE', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
-};
-const fmtDate = (iso: string) =>
-  new Date(iso).toLocaleDateString('en-KE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-
-const DISCREPANCY_REASONS = [
-  { value: 'DUPLICATE_CLOCK_IN', label: 'Duplicate clock-in detected' },
-  { value: 'MISSING_CLOCK_OUT',  label: 'Missing clock-out' },
-  { value: 'SUSPICIOUS_GAP',     label: 'Unusual gap between logs' },
-  { value: 'WRONG_DEVICE',       label: 'Clocked in from wrong device/location' },
-  { value: 'OTHER',              label: 'Other (explain in note)' },
-];
+import {
+  DISCREPANCY_REASONS,
+  fmtDateLong,
+  fmtTimeLong,
+  fmtTimeShort,
+  useHODAttendanceDetail,
+} from '../../../../hod-hooks';
 
 export default function AttendanceDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const [summary, setSummary] = useState<AttendanceSummary | null>(null);
-  const [logs, setLogs] = useState<AttendanceLog[]>([]);
-  const [audit, setAudit] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-
-  // Flag discrepancy modal
-  const [flagModal, setFlagModal] = useState(false);
-  const [flagReason, setFlagReason] = useState('DUPLICATE_CLOCK_IN');
-  const [flagNote, setFlagNote] = useState('');
-  const [flagging, setFlagging] = useState(false);
-  const [flagError, setFlagError] = useState('');
-  const [flagSuccess, setFlagSuccess] = useState(false);
-
-  useEffect(() => {
-    if (!id) return;
-    setLoading(true);
-    attendanceApi.getSummaryById(id)
-      .then(async (s: AttendanceSummary) => {
-        setSummary(s);
-        const [logsData, auditData] = await Promise.allSettled([
-          attendanceApi.getRawLogs({
-            userId: s.userId,
-            startDate: s.date,
-            endDate: s.date,
-          }),
-          attendanceApi.getAuditTrail(id),
-        ]);
-        if (logsData.status === 'fulfilled') setLogs(logsData.value.data || logsData.value || []);
-        if (auditData.status === 'fulfilled') setAudit(auditData.value.data || auditData.value || []);
-      })
-      .catch((e: any) => setError(e.message))
-      .finally(() => setLoading(false));
-  }, [id]);
-
-  const handleFlag = async () => {
-    if (!id) return;
-    setFlagging(true); setFlagError('');
-    try {
-      await attendanceApi.flagDiscrepancy(id, { reason: flagReason, note: flagNote || undefined });
-      const reasonLabel = DISCREPANCY_REASONS.find(r => r.value === flagReason)?.label ?? flagReason;
-      auditLogApi.log(
-        'ATTENDANCE_FLAGGED',
-        `Flagged ${summary?.user.firstName} ${summary?.user.lastName}'s attendance for ${summary?.date}: ${reasonLabel}`,
-      );
-      setFlagSuccess(true);
-      setFlagModal(false);
-      setFlagNote('');
-    } catch (e: any) { setFlagError(e.message); }
-    finally { setFlagging(false); }
-  };
+  const {
+    summary,
+    logs,
+    audit,
+    loading,
+    error,
+    flagModal,
+    setFlagModal,
+    flagReason,
+    setFlagReason,
+    flagNote,
+    setFlagNote,
+    flagging,
+    flagError,
+    flagSuccess,
+    setFlagSuccess,
+    handleFlag,
+    metricCards,
+  } = useHODAttendanceDetail(id ?? null);
 
   if (loading) return (
     <HODLayout title="Attendance Detail">
@@ -88,19 +46,10 @@ export default function AttendanceDetailPage() {
     </HODLayout>
   );
 
-  const metricCards = [
-    { label: 'Clock In',       value: fmtTime(summary.firstIn),     mono: true },
-    { label: 'Clock Out',      value: fmtTime(summary.lastOut),      mono: true },
-    { label: 'Total Hours',    value: summary.totalHours != null ? `${summary.totalHours.toFixed(2)}h` : '—', mono: true },
-    { label: 'Late',           value: summary.lateMinutes > 0 ? `${summary.lateMinutes} min` : 'On time', mono: false },
-    { label: 'Overtime',       value: summary.overtimeHours > 0 ? `${summary.overtimeHours.toFixed(2)}h` : '—', mono: true },
-    { label: 'Scheduled',      value: summary.shiftName ?? 'No shift', mono: false },
-  ];
-
   return (
     <HODLayout
       title="Attendance Detail"
-      subtitle={`${summary.user.firstName} ${summary.user.lastName} · ${fmtDate(summary.date)}`}>
+      subtitle={`${summary.user.firstName} ${summary.user.lastName} · ${fmtDateLong(summary.date)}`}>
 
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
         <Button variant="secondary" size="sm" onClick={() => window.history.back()}>
@@ -120,7 +69,6 @@ export default function AttendanceDetailPage() {
         </div>
       )}
 
-      {/* Header card */}
       <div className="bg-bg-surface rounded-card border border-border shadow-sm p-6 mb-6">
         <div className="flex items-start justify-between flex-wrap gap-4">
           <div className="flex items-center gap-4">
@@ -146,19 +94,17 @@ export default function AttendanceDetailPage() {
           <StatusBadge status={summary.status} />
         </div>
 
-        {/* Metrics grid */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mt-6 pt-6 border-t border-border">
           {metricCards.map(m => (
             <div key={m.label}>
               <p className="text-xs font-semibold text-text-secondary uppercase tracking-wide">{m.label}</p>
               <p className={`text-base font-semibold text-text-primary mt-1 ${m.mono ? 'font-mono' : ''}`}>
-                {m.value}
+                {m.type === 'time-in' || m.type === 'time-out' ? fmtTimeLong(m.value as string | null) : m.value}
               </p>
             </div>
           ))}
         </div>
 
-        {/* Shift schedule bar */}
         {summary.scheduledStart && summary.scheduledEnd && (
           <div className="mt-6 pt-4 border-t border-border">
             <p className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-2">
@@ -168,15 +114,15 @@ export default function AttendanceDetailPage() {
               <div className="absolute inset-y-0 left-[8%] right-[8%] bg-info-bg rounded-full" />
               {summary.firstIn && (
                 <div className="absolute inset-y-0 w-1 bg-success rounded-full" style={{ left: '20%' }}
-                  title={`Clock in: ${fmtTime(summary.firstIn)}`} />
+                  title={`Clock in: ${fmtTimeShort(summary.firstIn)}`} />
               )}
               {summary.lastOut && (
                 <div className="absolute inset-y-0 w-1 bg-info rounded-full" style={{ left: '75%' }}
-                  title={`Clock out: ${fmtTime(summary.lastOut)}`} />
+                  title={`Clock out: ${fmtTimeShort(summary.lastOut)}`} />
               )}
               <div className="absolute inset-0 flex items-center justify-between px-4 text-xs text-text-secondary">
-                <span className="font-mono">{new Date(summary.scheduledStart).toLocaleTimeString('en-KE', { hour: '2-digit', minute: '2-digit', hour12: true })}</span>
-                <span className="font-mono">{new Date(summary.scheduledEnd).toLocaleTimeString('en-KE', { hour: '2-digit', minute: '2-digit', hour12: true })}</span>
+                <span className="font-mono">{fmtTimeShort(summary.scheduledStart)}</span>
+                <span className="font-mono">{fmtTimeShort(summary.scheduledEnd)}</span>
               </div>
             </div>
           </div>
@@ -184,7 +130,6 @@ export default function AttendanceDetailPage() {
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6">
-        {/* Raw Clock Logs Timeline */}
         <div className="bg-bg-surface rounded-card border border-border shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-border">
             <h3 className="text-heading font-semibold text-text-primary">Raw Clock Logs</h3>
@@ -212,7 +157,7 @@ export default function AttendanceDetailPage() {
                             {log.direction === 'IN' ? 'Clock In' : 'Clock Out'}
                           </p>
                           <p className="font-mono text-xs text-text-secondary mt-0.5">
-                            {fmtTime(log.timestamp)}
+                            {fmtTimeLong(log.timestamp)}
                           </p>
                         </div>
                         <div className="text-right">
@@ -229,7 +174,6 @@ export default function AttendanceDetailPage() {
           )}
         </div>
 
-        {/* Audit Trail */}
         <div className="bg-bg-surface rounded-card border border-border shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-border">
             <h3 className="text-heading font-semibold text-text-primary">Manual Override History</h3>
@@ -269,13 +213,12 @@ export default function AttendanceDetailPage() {
         </div>
       </div>
 
-      {/* Flag Discrepancy Modal */}
       <Modal open={flagModal} onClose={() => setFlagModal(false)} title="Flag Attendance Discrepancy" size="md">
         <div className="space-y-4">
           {flagError && <Alert type="error" message={flagError} />}
           <p className="text-sm text-text-secondary font-medium">
             This will notify HR to review {summary.user.firstName} {summary.user.lastName}&apos;s
-            attendance record for {fmtDate(summary.date)}.
+            attendance record for {fmtDateLong(summary.date)}.
           </p>
 
           <Select label="What's wrong with this record?" value={flagReason}

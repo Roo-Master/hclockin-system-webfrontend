@@ -16,16 +16,11 @@ export default function Topbar({ title }: TopbarProps) {
     if (stored) {
       try {
         const u = JSON.parse(stored);
-        const full =
-          `${u.firstName ?? ''} ${u.lastName ?? ''}`.trim() ||
-          u.name ||
-          u.email ||
-          'User';
+        const full = `${u.firstName ?? ''} ${u.lastName ?? ''}`.trim() || u.name || u.email || 'User';
         setUserName(full);
+
         if (u.firstName || u.lastName) {
-          setInitials(
-            `${u.firstName?.[0] ?? ''}${u.lastName?.[0] ?? ''}`.toUpperCase() || 'U'
-          );
+          setInitials(`${u.firstName?.[0] ?? ''}${u.lastName?.[0] ?? ''}`.toUpperCase() || 'U');
         } else {
           setInitials(
             full
