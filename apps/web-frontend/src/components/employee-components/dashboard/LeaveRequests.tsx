@@ -25,7 +25,7 @@ const requests = [
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-heading text-primary">Leave requests</h2>
-          <a href="/dashboard/apply-leave" className="text-label text-success hover:underline">
+          <a href="/user-dashboard/apply-leave" className="text-label text-success hover:underline">
             New request →
           </a>
         </div>

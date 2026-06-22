@@ -101,7 +101,7 @@ const LoginPage: React.FC = () => {
           break;
 
         case "staff":
-          router.push("/dashboard");
+          router.push("/user-dashboard");
           break;
 
         default:
