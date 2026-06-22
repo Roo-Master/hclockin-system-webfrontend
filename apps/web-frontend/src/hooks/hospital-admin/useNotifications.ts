@@ -1,134 +1,99 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+// src/hooks/hospital-admin/useNotifications.ts
+import { useState, useEffect } from 'react'
 import { AppNotification } from '@/data/types'
 import { getAuthHeaders } from '@/lib/hospital-admin/auth-headers'
 
-const fetchNotifications = async (): Promise<AppNotification[]> => {
-  const res = await fetch('/api/notifications', {
-    headers: getAuthHeaders(),
-  })
-  
-  if (res.status === 401) throw new Error('Unauthorized')
-  if (res.status === 403) throw new Error('Forbidden')
-  if (!res.ok) throw new Error('Failed to fetch notifications')
-  
-  return res.json()
-}
-
-const fetchUnreadCount = async (): Promise<number> => {
-  const res = await fetch('/api/notifications/unread-count', {
-    headers: getAuthHeaders(),
-  })
-  
-  if (res.status === 401) throw new Error('Unauthorized')
-  if (res.status === 403) throw new Error('Forbidden')
-  if (!res.ok) throw new Error('Failed to fetch unread count')
-  
-  const data = await res.json()
-  return data.count
-}
-
-const markAsRead = async (id: number): Promise<void> => {
-  const res = await fetch(`/api/notifications/${id}/read`, {
-    method: 'POST',
-    headers: getAuthHeaders(),
-  })
-  
-  if (res.status === 401) throw new Error('Unauthorized')
-  if (res.status === 403) throw new Error('Forbidden')
-  if (!res.ok) throw new Error('Failed to mark notification as read')
-}
-
-const markAllAsRead = async (): Promise<void> => {
-  const res = await fetch('/api/notifications/read-all', {
-    method: 'POST',
-    headers: getAuthHeaders(),
-  })
-  
-  if (res.status === 401) throw new Error('Unauthorized')
-  if (res.status === 403) throw new Error('Forbidden')
-  if (!res.ok) throw new Error('Failed to mark all as read')
-}
-
-const deleteNotification = async (id: number): Promise<void> => {
-  const res = await fetch(`/api/notifications/${id}`, {
-    method: 'DELETE',
-    headers: getAuthHeaders(),
-  })
-  
-  if (res.status === 401) throw new Error('Unauthorized')
-  if (res.status === 403) throw new Error('Forbidden')
-  if (!res.ok) throw new Error('Failed to delete notification')
-}
-
-const clearAllNotifications = async (): Promise<void> => {
-  const res = await fetch('/api/notifications/clear-all', {
-    method: 'DELETE',
-    headers: getAuthHeaders(),
-  })
-  
-  if (res.status === 401) throw new Error('Unauthorized')
-  if (res.status === 403) throw new Error('Forbidden')
-  if (!res.ok) throw new Error('Failed to clear notifications')
-}
-
 export function useNotifications() {
-  return useQuery({
-    queryKey: ['notifications'],
-    queryFn: fetchNotifications,
-    staleTime: 30 * 1000,
-    refetchInterval: 60 * 1000,
-  })
-}
+  const [data, setData] = useState<AppNotification[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
 
-export function useUnreadCount() {
-  return useQuery({
-    queryKey: ['notifications', 'unread-count'],
-    queryFn: fetchUnreadCount,
-    staleTime: 30 * 1000,
-    refetchInterval: 60 * 1000,
-  })
+  useEffect(() => {
+    async function fetchNotifications() {
+      try {
+        setIsLoading(true)
+        const res = await fetch('/api/notifications', {
+          headers: getAuthHeaders(),
+        })
+        
+        if (!res.ok) throw new Error('Failed to fetch notifications')
+        
+        const result = await res.json()
+        setData(result)
+        setError(null)
+      } catch (err) {
+        setError(err instanceof Error ? err : new Error('Unknown error'))
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchNotifications()
+    
+    // Refetch every 60 seconds
+    const interval = setInterval(fetchNotifications, 60000)
+    return () => clearInterval(interval)
+  }, [])
+
+  return { data, isLoading, error }
 }
 
 export function useMarkAsRead() {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: markAsRead,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications'] })
-      queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count'] })
-    },
-  })
+  const [isPending, setIsPending] = useState(false)
+
+  const mutateAsync = async (id: number) => {
+    setIsPending(true)
+    try {
+      const res = await fetch(`/api/notifications/${id}/read`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+      })
+      
+      if (!res.ok) throw new Error('Failed to mark as read')
+    } finally {
+      setIsPending(false)
+    }
+  }
+
+  return { mutateAsync, isPending }
 }
 
 export function useMarkAllAsRead() {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: markAllAsRead,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications'] })
-      queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count'] })
-    },
-  })
+  const [isPending, setIsPending] = useState(false)
+
+  const mutateAsync = async () => {
+    setIsPending(true)
+    try {
+      const res = await fetch('/api/notifications/read-all', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+      })
+      
+      if (!res.ok) throw new Error('Failed to mark all as read')
+    } finally {
+      setIsPending(false)
+    }
+  }
+
+  return { mutateAsync, isPending }
 }
 
 export function useDeleteNotification() {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: deleteNotification,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications'] })
-      queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count'] })
-    },
-  })
-}
+  const [isPending, setIsPending] = useState(false)
 
-export function useClearAllNotifications() {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: clearAllNotifications,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications'] })
-      queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count'] })
-    },
-  })
+  const mutateAsync = async (id: number) => {
+    setIsPending(true)
+    try {
+      const res = await fetch(`/api/notifications/${id}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+      })
+      
+      if (!res.ok) throw new Error('Failed to delete notification')
+    } finally {
+      setIsPending(false)
+    }
+  }
+
+  return { mutateAsync, isPending }
 }

@@ -1,78 +1,57 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+// src/hooks/hospital-admin/useSettings.ts
+import { useState, useEffect } from 'react'
 import { HospitalSettings } from '@/data/types'
 import { getAuthHeaders } from '@/lib/hospital-admin/auth-headers'
 
-const fetchSettings = async (): Promise<HospitalSettings> => {
-  const res = await fetch('/api/settings', {
-    headers: getAuthHeaders(),
-  })
-  
-  if (res.status === 401) throw new Error('Unauthorized')
-  if (res.status === 403) throw new Error('Forbidden')
-  if (!res.ok) throw new Error('Failed to fetch settings')
-  
-  return res.json()
-}
-
-const updateSettings = async (data: Partial<HospitalSettings>): Promise<HospitalSettings> => {
-  const res = await fetch('/api/settings', {
-    method: 'PUT',
-    headers: getAuthHeaders(),
-    body: JSON.stringify(data),
-  })
-  
-  if (res.status === 401) throw new Error('Unauthorized')
-  if (res.status === 403) throw new Error('Forbidden')
-  
-  if (!res.ok) {
-    const error = await res.json()
-    throw new Error(error.error || 'Failed to update settings')
-  }
-  
-  return res.json()
-}
-
-const resetSettings = async (): Promise<HospitalSettings> => {
-  const res = await fetch('/api/settings/reset', {
-    method: 'POST',
-    headers: getAuthHeaders(),
-  })
-  
-  if (res.status === 401) throw new Error('Unauthorized')
-  if (res.status === 403) throw new Error('Forbidden')
-  
-  if (!res.ok) {
-    const error = await res.json()
-    throw new Error(error.error || 'Failed to reset settings')
-  }
-  
-  return res.json()
-}
-
 export function useSettings() {
-  return useQuery({
-    queryKey: ['settings'],
-    queryFn: fetchSettings,
-    staleTime: 10 * 60 * 1000,
-  })
+  const [data, setData] = useState<HospitalSettings | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
+
+  useEffect(() => {
+    async function fetchSettings() {
+      try {
+        setIsLoading(true)
+        const res = await fetch('/api/settings', {
+          headers: getAuthHeaders(),
+        })
+        
+        if (!res.ok) throw new Error('Failed to fetch settings')
+        
+        const result = await res.json()
+        setData(result)
+        setError(null)
+      } catch (err) {
+        setError(err instanceof Error ? err : new Error('Unknown error'))
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchSettings()
+  }, [])
+
+  return { data, isLoading, error }
 }
 
 export function useUpdateSettings() {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: updateSettings,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['settings'] })
-    },
-  })
-}
+  const [isPending, setIsPending] = useState(false)
 
-export function useResetSettings() {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: resetSettings,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['settings'] })
-    },
-  })
+  const mutateAsync = async (data: Partial<HospitalSettings>) => {
+    setIsPending(true)
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(data),
+      })
+      
+      if (!res.ok) throw new Error('Failed to update settings')
+      return await res.json()
+    } finally {
+      setIsPending(false)
+    }
+  }
+
+  return { mutateAsync, isPending }
 }
