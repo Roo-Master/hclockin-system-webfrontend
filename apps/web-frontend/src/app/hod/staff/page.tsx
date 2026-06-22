@@ -1,137 +1,47 @@
 'use client';
-import { useEffect, useState, useCallback } from 'react';
+
 import { HODLayout } from '@/components/layout/HODLayout';
 import { StatusBadge, Spinner, Alert, Button, Input, Select, Modal, EmptyState } from '@/components/ui';
-import { employeeApi, getCurrentUser, auditLogApi } from '@/lib/api';
-import type { Employee, EmploymentStatus } from '@/types';
-
-const EMPLOYMENT_TYPES = ['FULL_TIME', 'PART_TIME', 'CONTRACT', 'LOCUM', 'INTERN'];
-const EMPLOYMENT_STATUSES: EmploymentStatus[] = ['ACTIVE', 'INACTIVE', 'SUSPENDED', 'TERMINATED'];
+import { EMPLOYMENT_STATUSES, EMPLOYMENT_TYPES, useHODProfile, useHODStaff } from '../../../hod-hooks';
 
 export default function StaffPage() {
-  const [staff, setStaff]           = useState<Employee[]>([]);
-  const [deptId, setDeptId]         = useState<string | null>(null);
-  const [loading, setLoading]       = useState(true);
-  const [error, setError]           = useState('');
-  const [search, setSearch]         = useState('');
-  const [statusFilter, setStatus]   = useState('');
-
-  // Edit modal
-  const [editTarget, setEditTarget]   = useState<Employee | null>(null);
-  const [editForm, setEditForm]       = useState({ firstName: '', lastName: '', phoneNumber: '', employmentType: '', hourlyRate: '' });
-  const [editLoading, setEditLoading] = useState(false);
-  const [editError, setEditError]     = useState('');
-
-  // Status update modal
-  const [statusTarget, setStatusTarget]       = useState<Employee | null>(null);
-  const [newStatus, setNewStatus]             = useState<EmploymentStatus>('ACTIVE');
-  const [statusLoading, setStatusLoading]     = useState(false);
-
-  // New employee modal
-  const [newModal, setNewModal]   = useState(false);
-  const [newForm, setNewForm]     = useState({
-    firstName: '', lastName: '', email: '', password: '', employeeCode: '',
-    deviceUserId: '', employmentType: 'FULL_TIME', phoneNumber: '',
-  });
-  const [newLoading, setNewLoading] = useState(false);
-  const [newError, setNewError]     = useState('');
-
-  const load = useCallback(async (depId: string) => {
-    setLoading(true); setError('');
-    try {
-      const params: Record<string, string> = { departmentId: depId };
-      if (statusFilter) params.employmentStatus = statusFilter;
-      const data = await employeeApi.list(params);
-      setStaff(data.data || data.items || []);
-    } catch (e: any) { setError(e.message); }
-    finally { setLoading(false); }
-  }, [statusFilter]);
-
-  useEffect(() => {
-    const raw = getCurrentUser();
-    if (!raw) return;
-    employeeApi.getById(raw.id || raw.sub).then((emp: any) => {
-      setDeptId(emp.departmentId);
-      if (emp.departmentId) load(emp.departmentId);
-    });
-  }, []); // eslint-disable-line
-
-  useEffect(() => { if (deptId) load(deptId); }, [deptId, statusFilter, load]);
-
-  const openEdit = (emp: Employee) => {
-    setEditTarget(emp);
-    setEditForm({
-      firstName: emp.firstName,
-      lastName: emp.lastName,
-      phoneNumber: emp.phoneNumber ?? '',
-      employmentType: emp.employmentType,
-      hourlyRate: String(emp.hourlyRate ?? ''),
-    });
-    setEditError('');
-  };
-
-  const handleEdit = async () => {
-    if (!editTarget) return;
-    setEditLoading(true); setEditError('');
-    try {
-      await employeeApi.update(editTarget.id, {
-        firstName: editForm.firstName,
-        lastName: editForm.lastName,
-        phoneNumber: editForm.phoneNumber || undefined,
-        employmentType: editForm.employmentType,
-        hourlyRate: editForm.hourlyRate ? Number(editForm.hourlyRate) : undefined,
-      });
-      auditLogApi.log('EMPLOYEE_UPDATED', `Updated profile for ${editForm.firstName} ${editForm.lastName}`);
-      setEditTarget(null);
-      if (deptId) load(deptId);
-    } catch (e: any) { setEditError(e.message); }
-    finally { setEditLoading(false); }
-  };
-
-  const handleStatusUpdate = async () => {
-    if (!statusTarget) return;
-    setStatusLoading(true);
-    try {
-      await employeeApi.updateStatus(statusTarget.id, newStatus);
-      auditLogApi.log(
-        'EMPLOYEE_STATUS_CHANGED',
-        `Changed ${statusTarget.firstName} ${statusTarget.lastName}'s status from ${statusTarget.employmentStatus} to ${newStatus}`,
-      );
-      setStatusTarget(null);
-      if (deptId) load(deptId);
-    } catch (e: any) { setError(e.message); }
-    finally { setStatusLoading(false); }
-  };
-
-  const handleCreate = async () => {
-    if (!newForm.firstName || !newForm.lastName || !newForm.email || !newForm.password || !newForm.employeeCode) {
-      setNewError('First name, last name, email, password, and employee code are required.'); return;
-    }
-    setNewLoading(true); setNewError('');
-    try {
-      await employeeApi.create({
-        ...newForm,
-        departmentId: deptId,
-        deviceUserId: newForm.deviceUserId || undefined,
-        role: 'GENERAL_STAFF',
-      });
-      auditLogApi.log('EMPLOYEE_REGISTERED', `Registered new employee ${newForm.firstName} ${newForm.lastName} (${newForm.employeeCode})`);
-      setNewModal(false);
-      setNewForm({ firstName: '', lastName: '', email: '', password: '', employeeCode: '', deviceUserId: '', employmentType: 'FULL_TIME', phoneNumber: '' });
-      if (deptId) load(deptId);
-    } catch (e: any) { setNewError(e.message); }
-    finally { setNewLoading(false); }
-  };
-
-  const displayed = search
-    ? staff.filter(e => `${e.firstName} ${e.lastName} ${e.employeeCode} ${e.email}`.toLowerCase().includes(search.toLowerCase()))
-    : staff;
+  const { departmentId } = useHODProfile();
+  const {
+    displayed,
+    loading,
+    error,
+    loadStaff,
+    search,
+    setSearch,
+    statusFilter,
+    setStatusFilter,
+    editTarget,
+    setEditTarget,
+    editForm,
+    setEditForm,
+    editLoading,
+    editError,
+    openEdit,
+    handleEdit,
+    statusTarget,
+    setStatusTarget,
+    newStatus,
+    setNewStatus,
+    statusLoading,
+    handleStatusUpdate,
+    newModal,
+    setNewModal,
+    newForm,
+    setNewForm,
+    newLoading,
+    newError,
+    handleCreate,
+  } = useHODStaff(departmentId);
 
   return (
     <HODLayout title="Staff" subtitle="Department staff directory">
-      {error && <Alert type="error" message={error} onRetry={() => deptId && load(deptId)} />}
+      {error && <Alert type="error" message={error} onRetry={() => departmentId && loadStaff(departmentId)} />}
 
-      {/* Controls */}
       <div className="flex flex-wrap items-end gap-3 mb-6">
         <div className="flex-1 min-w-48">
           <Input label="Search" placeholder="Name, code, or email…" value={search}
@@ -139,7 +49,7 @@ export default function StaffPage() {
         </div>
         <div className="w-44">
           <Select label="Status" value={statusFilter}
-            onChange={e => setStatus(e.target.value)}>
+            onChange={e => setStatusFilter(e.target.value)}>
             <option value="">All Statuses</option>
             {EMPLOYMENT_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
           </Select>
@@ -211,7 +121,6 @@ export default function StaffPage() {
         </div>
       )}
 
-      {/* Edit Modal */}
       <Modal open={!!editTarget} onClose={() => setEditTarget(null)} title="Edit Employee" size="md">
         {editError && <Alert type="error" message={editError} />}
         <div className="space-y-4 mt-2">
@@ -238,14 +147,13 @@ export default function StaffPage() {
         </div>
       </Modal>
 
-      {/* Status Modal */}
       <Modal open={!!statusTarget} onClose={() => setStatusTarget(null)} title="Update Employment Status" size="sm">
         <div className="space-y-4 mt-2">
           <p className="text-sm text-text-secondary font-medium">
             Change status for <span className="font-semibold text-text-primary">{statusTarget?.firstName} {statusTarget?.lastName}</span>
           </p>
           <Select label="New Status" value={newStatus}
-            onChange={e => setNewStatus(e.target.value as EmploymentStatus)}>
+            onChange={e => setNewStatus(e.target.value as typeof newStatus)}>
             {EMPLOYMENT_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
           </Select>
           <div className="flex gap-2 justify-end pt-2">
@@ -259,7 +167,6 @@ export default function StaffPage() {
         </div>
       </Modal>
 
-      {/* New Employee Modal */}
       <Modal open={newModal} onClose={() => setNewModal(false)} title="Register New Employee" size="lg">
         {newError && <Alert type="error" message={newError} />}
         <div className="space-y-4 mt-2">

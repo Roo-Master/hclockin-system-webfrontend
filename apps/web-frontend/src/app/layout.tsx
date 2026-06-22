@@ -4,7 +4,7 @@
 // It intentionally contains no auth logic, no role checks, and no navigation —
 // those live in each role's own layout (e.g. HODLayout) and in the shared login page
 // owned elsewhere in the team.
-import type { Metadata } from 'next';
+import type { Metadata } from 'next/types';
 import './globals.css';
 
 export const metadata: Metadata = {

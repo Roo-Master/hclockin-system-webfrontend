@@ -1,80 +1,29 @@
 'use client';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect } from 'react';
 import { HODLayout } from '@/components/layout/HODLayout';
 import { StatCard, StatusBadge, Spinner, Alert, EmptyState } from '@/components/ui';
-import { attendanceApi, getCurrentUser, employeeApi } from '@/lib/api';
-import type { DashboardStats, AttendanceSummary, AuthUser } from '@/types';
+import { getDisplayStatus, useHODDashboard, useHODProfile } from '../../../hod-hooks';
+import type { AttendanceSummary } from '@/types';
 
-const todayStr = () => new Date().toISOString().split('T')[0];
+
 
 function formatTime(iso: string | null) {
   if (!iso) return '—';
   return new Date(iso).toLocaleTimeString('en-KE', { hour: '2-digit', minute: '2-digit', hour12: true });
 }
 
-/**
- * Frontend-only safeguard: if a summary is marked ABSENT but the scheduled shift
- * start time is still in the future, this overrides the displayed label to
- * "Not started" instead of alarming the HOD with a false absence before the
- * shift has even begun. This does NOT fix the underlying computation — that
- * logic lives in the backend's attendance processor — it only prevents a
- * misleading display while that data is in flight. If the backend's ABSENT
- * determination is already shift-window-aware, this never triggers, since
- * scheduledStart will already be in the past whenever ABSENT is set.
- */
-function getDisplayStatus(summary: AttendanceSummary): { status: string; isPending: boolean } {
-  if (summary.status === 'ABSENT' && summary.scheduledStart) {
-    const startTime = new Date(summary.scheduledStart);
-    if (startTime.getTime() > Date.now()) {
-      return { status: 'NOT_STARTED', isPending: true };
-    }
-  }
-  return { status: summary.status, isPending: false };
-}
-
 export default function HODDashboardPage() {
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [summaries, setSummaries] = useState<AttendanceSummary[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-
-  const loadData = useCallback(async (deptId: string) => {
-    setLoading(true); setError('');
-    try {
-      const date = todayStr();
-      const [statsData, summaryData] = await Promise.all([
-        attendanceApi.getDashboardStats(date),
-        attendanceApi.getSummaries({ departmentId: deptId, startDate: date, endDate: date, limit: 100 }),
-      ]);
-      setStats(statsData);
-      setSummaries(summaryData.data || []);
-    } catch (e: any) {
-      setError(e.message || 'Failed to load dashboard data.');
-    } finally { setLoading(false); }
-  }, []);
+  const { user, departmentId, error: profileError } = useHODProfile();
+  const { summaries, loading, error, setError, loadDashboard, metrics } = useHODDashboard();
+  const { presentCount, lateCount, absentCount, pendingCount, leaveCount, total, rate } = metrics;
 
   useEffect(() => {
-    const raw = getCurrentUser();
-    if (!raw) return;
-    employeeApi.getById(raw.id || raw.sub).then((emp: any) => {
-      const u: AuthUser = {
-        id: emp.id, firstName: emp.firstName, lastName: emp.lastName,
-        email: emp.email, role: emp.role, tenantId: emp.tenantId,
-        departmentId: emp.departmentId, department: emp.department,
-      };
-      setUser(u);
-      if (emp.departmentId) loadData(emp.departmentId);
-    }).catch(() => setError('Could not load your profile.'));
-  }, [loadData]);
+    if (profileError) setError(profileError);
+  }, [profileError, setError]);
 
-  const presentCount = summaries.filter(s => s.status === 'PRESENT').length;
-  const lateCount    = summaries.filter(s => s.status === 'LATE').length;
-  const absentCount  = summaries.filter(s => getDisplayStatus(s).status === 'ABSENT').length;
-  const pendingCount = summaries.filter(s => getDisplayStatus(s).isPending).length;
-  const leaveCount   = summaries.filter(s => s.status === 'ON_LEAVE').length;
-  const total        = summaries.length;
-  const rate         = total > 0 ? Math.round(((presentCount + lateCount) / total) * 100) : 0;
+  useEffect(() => {
+    if (departmentId) loadDashboard(departmentId);
+  }, [departmentId, loadDashboard]);
 
   const greeting = () => {
     const h = new Date().getHours();
@@ -89,7 +38,7 @@ export default function HODDashboardPage() {
       subtitle={`${user?.department?.name ?? 'Department'} · Today's Overview`}>
 
       {error && (
-        <Alert type="error" message={error} onRetry={() => user?.departmentId && loadData(user.departmentId)} />
+        <Alert type="error" message={error} onRetry={() => departmentId && loadDashboard(departmentId)} />
       )}
 
       {/* Greeting */}
@@ -176,7 +125,7 @@ export default function HODDashboardPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
-                    {summaries.map((s) => (
+                    {summaries.map((s: AttendanceSummary) => (
                       <tr key={s.id} className="hover:bg-info-bg/40 transition-colors cursor-pointer"
                         onClick={() => window.location.href = `/hod/attendance/${s.id}`}>
                         <td className="px-6 py-3">

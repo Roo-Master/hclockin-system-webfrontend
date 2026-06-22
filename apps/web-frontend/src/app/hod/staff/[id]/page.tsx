@@ -1,38 +1,13 @@
 'use client';
-import { useEffect, useState } from 'react';
+
 import { useParams } from 'next/navigation';
 import { HODLayout } from '@/components/layout/HODLayout';
 import { StatusBadge, Spinner, Alert, Button } from '@/components/ui';
-import { employeeApi, attendanceApi } from '@/lib/api';
-import type { Employee, AttendanceSummary } from '@/types';
-
-const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-KE', { month: 'short', day: 'numeric' });
-const monthStartStr = () => { const d = new Date(); d.setDate(1); return d.toISOString().split('T')[0]; };
-const todayStr = () => new Date().toISOString().split('T')[0];
+import { fmtDateShort, fmtTimeShort, useHODStaffProfile } from '../../../../hod-hooks';
 
 export default function StaffProfilePage() {
   const { id } = useParams<{ id: string }>();
-  const [employee, setEmployee] = useState<Employee | null>(null);
-  const [history, setHistory] = useState<AttendanceSummary[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-
-  useEffect(() => {
-    if (!id) return;
-    setLoading(true);
-    employeeApi.getById(id)
-      .then(async (emp: Employee) => {
-        setEmployee(emp);
-        try {
-          const att = await attendanceApi.getSummaries({
-            userId: id, startDate: monthStartStr(), endDate: todayStr(), limit: 30,
-          });
-          setHistory(att.data || []);
-        } catch { /* attendance history is supplementary, fail silently */ }
-      })
-      .catch((e: any) => setError(e.message))
-      .finally(() => setLoading(false));
-  }, [id]);
+  const { employee, history, loading, error, stats } = useHODStaffProfile(id ?? null);
 
   if (loading) return (
     <HODLayout title="Staff Profile">
@@ -47,10 +22,7 @@ export default function StaffProfilePage() {
     </HODLayout>
   );
 
-  const presentDays = history.filter(h => h.status === 'PRESENT').length;
-  const lateDays    = history.filter(h => h.status === 'LATE').length;
-  const absentDays  = history.filter(h => h.status === 'ABSENT').length;
-  const totalHours  = history.reduce((sum, h) => sum + (h.totalHours ?? 0), 0);
+  const { presentDays, lateDays, absentDays, totalHours } = stats;
 
   return (
     <HODLayout title="Staff Profile" subtitle={`${employee.firstName} ${employee.lastName}`}>
@@ -58,7 +30,6 @@ export default function StaffProfilePage() {
         ← Back to Staff
       </Button>
 
-      {/* Profile Header */}
       <div className="bg-bg-surface rounded-card border border-border shadow-sm p-6 mb-6">
         <div className="flex items-start justify-between flex-wrap gap-4">
           <div className="flex items-center gap-4">
@@ -105,7 +76,6 @@ export default function StaffProfilePage() {
         </div>
       </div>
 
-      {/* 30-day stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
         <div className="bg-bg-surface rounded-card border border-border p-4 shadow-sm text-center">
           <p className="text-2xl font-bold text-success">{presentDays}</p>
@@ -125,7 +95,6 @@ export default function StaffProfilePage() {
         </div>
       </div>
 
-      {/* Attendance history table */}
       <div className="bg-bg-surface rounded-card border border-border shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-border">
           <h3 className="text-heading font-semibold text-text-primary">Recent Attendance</h3>
@@ -148,14 +117,10 @@ export default function StaffProfilePage() {
                 {history.map(h => (
                   <tr key={h.id} className="hover:bg-info-bg/40 transition-colors cursor-pointer"
                     onClick={() => window.location.href = `/hod/attendance/${h.id}`}>
-                    <td className="px-4 py-3 text-text-secondary font-medium">{fmtDate(h.date)}</td>
+                    <td className="px-4 py-3 text-text-secondary font-medium">{fmtDateShort(h.date)}</td>
                     <td className="px-4 py-3"><StatusBadge status={h.status} /></td>
-                    <td className="px-4 py-3 font-mono text-xs text-text-primary">
-                      {h.firstIn ? new Date(h.firstIn).toLocaleTimeString('en-KE', { hour: '2-digit', minute: '2-digit', hour12: true }) : '—'}
-                    </td>
-                    <td className="px-4 py-3 font-mono text-xs text-text-primary">
-                      {h.lastOut ? new Date(h.lastOut).toLocaleTimeString('en-KE', { hour: '2-digit', minute: '2-digit', hour12: true }) : '—'}
-                    </td>
+                    <td className="px-4 py-3 font-mono text-xs text-text-primary">{fmtTimeShort(h.firstIn)}</td>
+                    <td className="px-4 py-3 font-mono text-xs text-text-primary">{fmtTimeShort(h.lastOut)}</td>
                     <td className="px-4 py-3 text-text-primary font-medium">{h.totalHours != null ? `${h.totalHours.toFixed(1)}h` : '—'}</td>
                   </tr>
                 ))}
