@@ -1,95 +1,38 @@
 'use client';
-import { useEffect, useState, useCallback } from 'react';
-import { HODLayout } from '@/components/hod-components/layout/HODLayout';
-import { StatusBadge, Spinner, Alert, Button, Modal, Select, EmptyState } from '@/components/ui';
-import { leaveApi, employeeApi, getCurrentUser, auditLogApi } from '@/lib/api';
-import type { LeaveRequest, Employee, LeaveStatus } from '@/types';
 
-const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-KE', { month: 'short', day: 'numeric', year: 'numeric' });
-
-function daysBetween(start: string, end: string) {
-  const ms = new Date(end).getTime() - new Date(start).getTime();
-  return Math.round(ms / (1000 * 60 * 60 * 24)) + 1;
-}
+import { HODLayout } from '@/components/layout/HODLayout';
+import { Button, Select, Spinner, Alert, Modal, EmptyState, StatusBadge } from '@/components/ui';
+import type { LeaveStatus } from '@/types';
+import { daysBetween, fmtDateShort, useHODLeave, useHODProfile } from '../../../hod-hooks';
 
 export default function LeavePage() {
-  const [leaves, setLeaves]       = useState<LeaveRequest[]>([]);
-  const [staffMap, setStaffMap]   = useState<Record<string, Employee>>({});
-  const [deptId, setDeptId]       = useState<string | null>(null);
-  const [loading, setLoading]     = useState(true);
-  const [error, setError]         = useState('');
-  const [statusFilter, setStatus] = useState<LeaveStatus | ''>('');
-
-  // Detail / reject modal
-  const [selected, setSelected]       = useState<LeaveRequest | null>(null);
-  const [showRejectForm, setShowRejectForm] = useState(false);
-  const [rejectReason, setRejectReason]     = useState('');
-  const [rejecting, setRejecting]     = useState(false);
-  const [rejectError, setRejectError] = useState('');
-
-  const load = useCallback(async (depId: string) => {
-    setLoading(true); setError('');
-    try {
-      // Get department staff first — we need their IDs to scope leave queries
-      const staffData = await employeeApi.list({ departmentId: depId });
-      const staffList: Employee[] = staffData.data || staffData.items || [];
-      const map: Record<string, Employee> = {};
-      staffList.forEach(e => { map[e.id] = e; });
-      setStaffMap(map);
-
-      // Fetch leave requests scoped to this department's staff only — avoids pulling
-      // the entire tenant's leave table over the wire (see leaveApi.getByDepartmentStaff
-      // for why GET /leaves alone isn't department-scoped on the backend yet).
-      const leaveData = await leaveApi.getByDepartmentStaff(
-        staffList.map(e => e.id),
-        statusFilter || undefined,
-      );
-      setLeaves(leaveData.data || []);
-    } catch (e: any) { setError(e.message); }
-    finally { setLoading(false); }
-  }, [statusFilter]);
-
-  useEffect(() => {
-    const raw = getCurrentUser();
-    if (!raw) return;
-    employeeApi.getById(raw.id || raw.sub).then((emp: any) => {
-      setDeptId(emp.departmentId);
-      if (emp.departmentId) load(emp.departmentId);
-    });
-  }, []); // eslint-disable-line
-
-  useEffect(() => { if (deptId) load(deptId); }, [deptId, statusFilter, load]);
-
-  const handleReject = async () => {
-    if (!selected) return;
-    setRejecting(true); setRejectError('');
-    try {
-      await leaveApi.updateStatus(selected.id, 'REJECTED', rejectReason || undefined);
-      const emp = staffMap[selected.employeeId];
-      auditLogApi.log(
-        'LEAVE_REJECTED',
-        `Rejected ${emp ? `${emp.firstName} ${emp.lastName}'s` : 'a'} ${selected.leaveType?.replace('_', ' ').toLowerCase()} request`,
-      );
-      setSelected(null);
-      setShowRejectForm(false);
-      setRejectReason('');
-      if (deptId) load(deptId);
-    } catch (e: any) { setRejectError(e.message); }
-    finally { setRejecting(false); }
-  };
-
-  const closeModal = () => {
-    setSelected(null);
-    setShowRejectForm(false);
-    setRejectReason('');
-    setRejectError('');
-  };
+  const { departmentId } = useHODProfile();
+  const {
+    leaves,
+    staffMap,
+    loading,
+    error,
+    statusFilter,
+    setStatusFilter,
+    loadLeaves,
+    selected,
+    setSelected,
+    showRejectForm,
+    setShowRejectForm,
+    rejectReason,
+    setRejectReason,
+    rejecting,
+    rejectError,
+    handleReject,
+    closeModal,
+    requestCountLabel,
+  } = useHODLeave(departmentId);
 
   const STATUS_OPTIONS: (LeaveStatus | '')[] = ['', 'PENDING', 'APPROVED', 'REJECTED', 'CANCELLED'];
 
   return (
     <HODLayout title="Leave Requests" subtitle="Review your department's leave requests">
-      {error && <Alert type="error" message={error} onRetry={() => deptId && load(deptId)} />}
+      {error && <Alert type="error" message={error} onRetry={() => departmentId && loadLeaves(departmentId)} />}
 
       <div className="mb-6">
         <Alert type="info" message="As Head of Department, you can review and reject pending requests. Final approval is handled by HR." />
@@ -97,11 +40,11 @@ export default function LeavePage() {
 
       <div className="flex items-center justify-between mb-6">
         <div className="w-44">
-          <Select value={statusFilter} onChange={e => setStatus(e.target.value as LeaveStatus | '')}>
+          <Select value={statusFilter} onChange={e => setStatusFilter(e.target.value as LeaveStatus | '')}>
             {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s || 'All Statuses'}</option>)}
           </Select>
         </div>
-        <p className="text-sm font-medium text-text-secondary">{leaves.length} request{leaves.length !== 1 ? 's' : ''}</p>
+        <p className="text-sm font-medium text-text-secondary">{requestCountLabel}</p>
       </div>
 
       {loading ? (
@@ -141,11 +84,11 @@ export default function LeavePage() {
                         </div>
                       </td>
                       <td className="px-4 py-3 text-text-secondary font-medium">{l.leaveType?.replace('_', ' ')}</td>
-                      <td className="px-4 py-3 text-text-secondary font-medium">{fmtDate(l.startDate)}</td>
-                      <td className="px-4 py-3 text-text-secondary font-medium">{fmtDate(l.endDate)}</td>
+                      <td className="px-4 py-3 text-text-secondary font-medium">{fmtDateShort(l.startDate)}</td>
+                      <td className="px-4 py-3 text-text-secondary font-medium">{fmtDateShort(l.endDate)}</td>
                       <td className="px-4 py-3 text-text-secondary font-medium">{daysBetween(l.startDate, l.endDate)}</td>
                       <td className="px-4 py-3"><StatusBadge status={l.status} /></td>
-                      <td className="px-4 py-3 text-text-tertiary text-xs">{fmtDate(l.createdAt)}</td>
+                      <td className="px-4 py-3 text-text-tertiary text-xs">{fmtDateShort(l.createdAt)}</td>
                       <td className="px-4 py-3">
                         <Button variant="ghost" size="sm" onClick={() => setSelected(l)}>
                           View
@@ -160,7 +103,6 @@ export default function LeavePage() {
         </div>
       )}
 
-      {/* Detail / Reject Modal */}
       <Modal open={!!selected} onClose={closeModal} title="Leave Request Details" size="md">
         {selected && (
           <div className="space-y-4">
@@ -187,11 +129,11 @@ export default function LeavePage() {
               </div>
               <div>
                 <p className="text-xs font-semibold text-text-secondary uppercase">From</p>
-                <p className="text-sm font-semibold text-text-primary mt-1">{fmtDate(selected.startDate)}</p>
+                <p className="text-sm font-semibold text-text-primary mt-1">{fmtDateShort(selected.startDate)}</p>
               </div>
               <div>
                 <p className="text-xs font-semibold text-text-secondary uppercase">To</p>
-                <p className="text-sm font-semibold text-text-primary mt-1">{fmtDate(selected.endDate)}</p>
+                <p className="text-sm font-semibold text-text-primary mt-1">{fmtDateShort(selected.endDate)}</p>
               </div>
             </div>
 
