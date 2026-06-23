@@ -1,5 +1,3 @@
-import { RolesGuard } from '../auth/guards/roles.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
 import {
   Controller,
   Get,
@@ -10,13 +8,15 @@ import {
   Query,
   Req,
   UseGuards,
-  ParseUUIDPipe
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { AttendanceService } from './attendance.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
-import { PrismaService } from '../database/prisma.service'; // adjust path as needed
+import { PrismaService } from '../database/prisma.service';
+import { AttendanceLog} from '@chronos/database';
+
 export enum UserRole {
   EMPLOYEE = 'EMPLOYEE',
   SUPERVISOR = 'SUPERVISOR',
@@ -24,8 +24,8 @@ export enum UserRole {
   HR_MANAGER = 'HR_MANAGER',
   HOSPITAL_ADMIN = 'HOSPITAL_ADMIN',
   SUPER_ADMIN = 'SUPER_ADMIN',
-} // adjust path as needed
-import { AttendanceLog , Prisma } from '@chronos/database';
+}
+
 class IngestLogDto {
   userId: string;
   deviceId: string;
@@ -55,7 +55,7 @@ class RecalculateDto {
 }
 
 @Controller('attendance')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class AttendanceController {
   constructor(
     private readonly attendanceService: AttendanceService,
@@ -65,7 +65,7 @@ export class AttendanceController {
   // ===== INGEST ENDPOINTS =====
 
   @Post('ingest')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.HOSPITAL_ADMIN, UserRole.MANAGER)
   async ingestLog(@Body() dto: IngestLogDto, @Req() req: any) {
     return this.attendanceService.ingestLog({
       ...dto,
@@ -74,9 +74,9 @@ export class AttendanceController {
   }
 
   @Post('ingest/bulk')
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.HOSPITAL_ADMIN)
   async bulkIngest(@Body() dto: BulkIngestDto, @Req() req: any) {
-    const logsWithTenant = dto.logs.map(log => ({
+    const logsWithTenant = dto.logs.map((log) => ({
       ...log,
       tenantId: req.user.tenantId,
     }));
@@ -117,17 +117,19 @@ export class AttendanceController {
   }
 
   @Get('summaries/:id')
-  async getSummaryById(@Param('id', ParseUUIDPipe) id: string, @Req() req: any) {
-    const summary = await this.db.attendanceSummary.findFirst({
+  async getSummaryById(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: any,
+  ) {
+    return this.db.attendanceSummary.findFirst({
       where: { id, tenantId: req.user.tenantId },
     });
-    return summary;
   }
 
   // ===== ADMIN/MANAGER ENDPOINTS =====
 
   @Put('summaries/:id/override')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.HOSPITAL_ADMIN, UserRole.MANAGER)
   async manualOverride(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: ManualOverrideDto,
@@ -142,19 +144,16 @@ export class AttendanceController {
   }
 
   @Get('summaries/:id/audit')
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.HOSPITAL_ADMIN)
   async getAuditTrail(
     @Param('id', ParseUUIDPipe) id: string,
     @Req() req: any,
   ): Promise<any> {
-    return this.attendanceService.getAuditTrail(
-      req.user.tenantId,
-      id,
-    );
+    return this.attendanceService.getAuditTrail(req.user.tenantId, id);
   }
 
   @Post('recalculate')
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.HOSPITAL_ADMIN)
   async recalculateRange(@Body() dto: RecalculateDto, @Req() req: any) {
     return this.attendanceService.recalculateRange(
       req.user.tenantId,
@@ -166,49 +165,49 @@ export class AttendanceController {
 
   // ===== GENERAL USER ENDPOINTS =====
 
-@Get('my-summaries')
-async getMySummaries(
-  @Query('startDate') startDate: string,
-  @Query('endDate') endDate: string,
-  @Query('limit') limit: number,
-  @Req() req: any,
-) {
-  return this.attendanceService.getSummaries({
-    tenantId: req.user.tenantId,
-    userId: req.user.id,
-    startDate: startDate ? new Date(startDate) : undefined,
-    endDate: endDate ? new Date(endDate) : undefined,
-    limit: limit || 30,
-  });
-}
+  @Get('my-summaries')
+  async getMySummaries(
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
+    @Query('limit') limit: number,
+    @Req() req: any,
+  ) {
+    return this.attendanceService.getSummaries({
+      tenantId: req.user.tenantId,
+      userId: req.user.id,
+      startDate: startDate ? new Date(startDate) : undefined,
+      endDate: endDate ? new Date(endDate) : undefined,
+      limit: limit || 30,
+    });
+  }
 
-@Get('my-logs')
-async getMyLogs(
-  @Query('page') page: number,
-  @Query('limit') limit: number,
-  @Req() req: any,
-) {
-  return this.attendanceService.getRawLogs(req.user.tenantId, {
-    userId: req.user.id,
-    page: page || 1,
-    limit: limit || 50,
-  });
-}
+  @Get('my-logs')
+  async getMyLogs(
+    @Query('page') page: number,
+    @Query('limit') limit: number,
+    @Req() req: any,
+  ) {
+    return this.attendanceService.getRawLogs(req.user.tenantId, {
+      userId: req.user.id,
+      page: page || 1,
+      limit: limit || 50,
+    });
+  }
 
-@Post('clock-in')
-async clockIn(@Req() req: any) {
-  return this.attendanceService.clockIn(req.user.id, req.user.tenantId);
-}
+  @Post('clock-in')
+  async clockIn(@Req() req: any) {
+    return this.attendanceService.clockIn(req.user.id, req.user.tenantId);
+  }
 
-@Post('clock-out')
-async clockOut(@Req() req: any) {
-  return this.attendanceService.clockOut(req.user.id, req.user.tenantId);
-}
+  @Post('clock-out')
+  async clockOut(@Req() req: any) {
+    return this.attendanceService.clockOut(req.user.id, req.user.tenantId);
+  }
 
   // ===== RAW LOGS =====
 
   @Get('logs')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.HOSPITAL_ADMIN, UserRole.MANAGER)
   async getRawLogs(
     @Query('userId') userId: string,
     @Query('startDate') startDate: string,
