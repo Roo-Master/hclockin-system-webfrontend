@@ -1,6 +1,7 @@
-import { Controller, Get, Patch, Param, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Patch, Param, Body, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
 import { SuperAdminGuard } from '../guards/super-admin.guard';
 import { FeatureFlagsService } from './feature-flags.service';
+import { UpdateFeatureFlagsDto } from './dto/update-feature-flags.dto';
 
 @Controller('super-admin/feature-flags')
 @UseGuards(SuperAdminGuard)
@@ -13,7 +14,11 @@ export class FeatureFlagsController {
   }
 
   @Patch(':tenantId')
-  updateFlags(@Param('tenantId') tenantId: string, @Body() flags: Record<string, boolean>) {
-    return this.featureFlagsService.updateForTenant(tenantId, flags);
+  @HttpCode(HttpStatus.OK)
+  updateFlags(
+    @Param('tenantId') tenantId: string,
+    @Body() dto: UpdateFeatureFlagsDto,
+  ) {
+    return this.featureFlagsService.updateForTenant(tenantId, dto);
   }
 }

@@ -35,6 +35,25 @@ enum PaymentMethod {
   CASH
   MANUAL
 }
+model Plan {
+  id               String    @id @default(cuid())
+  tier             PlanTier  @unique
+  monthlyPriceKes  Float     @default(0)
+  annualPriceKes   Float     @default(0)
+  maxUsers         Int       @default(10)
+  maxLocations     Int       @default(1)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  tenants          Tenant[]
+}
+
+enum PlanTier {
+  FREE
+  STARTER
+  PROFESSIONAL
+  ENTERPRISE
+}
 
 model SubscriptionPlan {
   id          String         @id @default(uuid()) @db.Uuid

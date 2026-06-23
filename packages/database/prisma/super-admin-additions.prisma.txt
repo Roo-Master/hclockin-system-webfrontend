@@ -58,8 +58,7 @@ model TenantFeatureFlag {
   flag      String
   enabled   Boolean @default(false)
 
-  tenant    Tenant  @relation(fields: [tenantId], references: [id])
-
+  tenant    Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   @@unique([tenantId, flag])
   @@map("tenant_feature_flags")
 }
@@ -68,12 +67,17 @@ model ImpersonationLog {
   id             String    @id @default(cuid())
   superAdminId   String
   tenantId       String
-  tenantName     String
   reason         String
   startedAt      DateTime  @default(now())
   endedAt        DateTime?
+  expiresAt      DateTime
+  isActive       Boolean   @default(true)
 
-  @@map("impersonation_logs")
+  superAdmin     SuperAdmin @relation(fields: [superAdminId], references: [id])
+  tenant         Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([superAdminId])
+  @@index([tenantId])
 }
 
 enum TenantStatus {

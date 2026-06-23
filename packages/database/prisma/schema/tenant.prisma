@@ -5,8 +5,16 @@ model Tenant {
   licenseKey                String                     @map("license_key") @db.VarChar(255)
   slug                      String                     @unique
   isActive                  Boolean                    @default(true) @map("is_active")
+
+  // --- added fields ---
+  suspendReason             String?                    @map("suspend_reason") @db.VarChar(500)
+  suspendedAt               DateTime?                  @map("suspended_at") @db.Timestamptz(6)
+  deletedAt                 DateTime?                  @map("deleted_at") @db.Timestamptz(6)
+  // --- end added fields ---
+
   createdAt                 DateTime                   @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt                 DateTime                   @updatedAt @map("updated_at") @db.Timestamptz(6)
+
   attendanceAudits          AttendanceAudit[]
   attendanceLogs            AttendanceLog[]
   attendanceSummaries       AttendanceSummary[]
@@ -30,6 +38,12 @@ model Tenant {
   systemSetting             SystemSetting?
   users                     User[]
 
+  // --- added relations ---
+  impersonationLogs         ImpersonationLog[]
+  // --- end added relations ---
+
   @@index([subdomain])
+  @@index([isActive])     // added — stats queries filter by this frequently
+  @@index([deletedAt])    // added — soft delete filter on all list queries
   @@map("tenants")
 }

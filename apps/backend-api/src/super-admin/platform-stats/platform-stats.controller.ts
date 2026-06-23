@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { SuperAdminGuard } from '../guards/super-admin.guard';
 import { PlatformStatsService } from './platform-stats.service';
 
@@ -18,7 +18,8 @@ export class PlatformStatsController {
   }
 
   @Get('activity')
-  getActivity() {
-    return this.statsService.getRecentActivity();
+  getActivity(@Query('limit') limit?: string) {
+    const parsedLimit = limit ? parseInt(limit, 10) : 20;
+    return this.statsService.getRecentActivity(parsedLimit);
   }
 }

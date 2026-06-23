@@ -3,7 +3,6 @@
     "module": "node16",
     "moduleResolution": "node16",
     "target": "ES2022",
-    "rootDir": "./",
     "outDir": "./dist",
     "declaration": true,
     "removeComments": true,
@@ -13,9 +12,7 @@
     "sourceMap": true,
     "incremental": true,
     "skipLibCheck": true,
-    
-    "isolatedModules": false,  // ← CHANGE THIS TO false
-    
+    "isolatedModules": false,
     "types": ["node", "jest"],
     "paths": {
       "src/*": ["./src/*"],
@@ -30,6 +27,9 @@
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src/**/*", "test/**/*"],
+  "include": [
+    "src/**/*",
+    "test/**/*"
+  ],
   "exclude": ["node_modules", "dist"]
 }
