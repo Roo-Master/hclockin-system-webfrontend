@@ -1,11 +1,3 @@
-<<<<<<< HEAD
-"use client";
-import ShiftsPage from "../pages/ShiftsPage";
-
-export default function Page() {
-  return <ShiftsPage />;
-}
-=======
 'use client'
 
 import React, { useState, useCallback } from 'react'
@@ -346,4 +338,3 @@ export default function ShiftSchedulingPage() {
     </>
   )
 }
->>>>>>> origin/HA

@@ -1,11 +1,3 @@
-<<<<<<< HEAD
-"use client";
-import AttendancePage from "../pages/AttendancePage";
-
-export default function Page() {
-  return <AttendancePage />;
-}
-=======
 'use client'
 
 import React, { useState } from 'react'
@@ -141,4 +133,3 @@ export default function AttendancePage() {
     </div>
   )
 }
->>>>>>> origin/HA

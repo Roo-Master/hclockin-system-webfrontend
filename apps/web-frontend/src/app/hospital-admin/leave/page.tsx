@@ -1,11 +1,3 @@
-<<<<<<< HEAD
-"use client";
-import LeavePage from "../pages/LeavePage";
-
-export default function Page() {
-  return <LeavePage />;
-}
-=======
 'use client'
 
 import React, { useState } from 'react'
@@ -160,4 +152,3 @@ export default function LeavePage() {
     </div>
   )
 }
->>>>>>> origin/HA

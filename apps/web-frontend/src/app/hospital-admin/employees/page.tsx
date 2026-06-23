@@ -1,11 +1,3 @@
-<<<<<<< HEAD
-"use client";
-import EmployeesPage from "../pages/EmployeesPage";
-
-export default function Page() {
-  return <EmployeesPage />;
-}
-=======
 'use client'
 
 import React, { useState } from 'react'
@@ -189,4 +181,3 @@ export default function EmployeesPage() {
     </>
   )
 }
->>>>>>> origin/HA

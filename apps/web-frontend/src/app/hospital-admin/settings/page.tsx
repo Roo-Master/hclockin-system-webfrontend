@@ -1,11 +1,3 @@
-<<<<<<< HEAD
-"use client";
-import SettingsPage from "../pages/SettingsPage";
-
-export default function Page() {
-  return <SettingsPage />;
-}
-=======
 'use client'
 
 import React, { useState, useCallback, useEffect } from 'react'
@@ -352,4 +344,3 @@ export default function SettingsPage() {
     </>
   )
 }
->>>>>>> origin/HA

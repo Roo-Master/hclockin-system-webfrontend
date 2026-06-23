@@ -1,11 +1,3 @@
-<<<<<<< HEAD
-"use client";
-import DevicesPage from "../pages/DevicesPage";
-
-export default function Page() {
-  return <DevicesPage />;
-}
-=======
 'use client'
 
 import React, { useState, useCallback } from 'react'
@@ -144,4 +136,3 @@ export default function DevicesPage() {
     </>
   )
 }
->>>>>>> origin/HA

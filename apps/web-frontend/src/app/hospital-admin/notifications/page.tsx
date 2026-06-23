@@ -1,11 +1,3 @@
-<<<<<<< HEAD
-"use client";
-import NotificationsPage from "../pages/NotificationsPage";
-
-export default function Page() {
-  return <NotificationsPage />;
-}
-=======
 'use client'
 
 import React, { useState, useCallback } from 'react'
@@ -274,4 +266,3 @@ export default function NotificationsPage() {
     </>
   )
 }
->>>>>>> origin/HA
