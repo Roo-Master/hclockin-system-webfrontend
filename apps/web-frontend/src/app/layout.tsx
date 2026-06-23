@@ -4,18 +4,21 @@
 // It intentionally contains no auth logic, no role checks, and no navigation —
 // those live in each role's own layout (e.g. HODLayout) and in the shared login page
 // owned elsewhere in the team.
-import type { Metadata } from 'next/types';
-import './globals.css';
+import type { Metadata } from "next";
+import type { ReactNode } from "react";
+import "./globals.css";
 
 export const metadata: Metadata = {
-  title: 'Chronos — Hospital Workforce Management',
-  description: 'Hospital staff clock-in and attendance management platform',
+  title: "Chronos — Hospital Workforce Management",
+  description: "Hospital staff clock-in and attendance management platform",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
-      <body className="font-sans antialiased text-slate-900 bg-slate-50">{children}</body>
+      <body className="font-sans antialiased text-slate-900 bg-slate-50">
+        {children}
+      </body>
     </html>
   );
 }
