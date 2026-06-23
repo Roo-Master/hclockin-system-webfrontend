@@ -1,5 +1,5 @@
 // src/data/departmentsData.ts
-import { DepartmentRecord, StaffMember } from './types'
+import { DepartmentRecord, StaffMember } from '../types/hospital-admin/types'
 
 export const ALL_STAFF: StaffMember[] = [
   { id: '#EMP-0342', name: 'Sarah Njoku',      dept: 'Nursing'      },

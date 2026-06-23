@@ -1,5 +1,5 @@
 // src/data/settingsData.ts
-import { HospitalSettings } from './types'
+import { HospitalSettings } from '../types/hospital-admin/types'
 
 export const defaultSettings: HospitalSettings = {
   hospitalName: 'CityCare General Hospital',

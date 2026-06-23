@@ -1,5 +1,5 @@
 // src/data/employeesData.ts
-import { Employee } from './types'
+import { Employee } from '../types/hospital-admin/types'
 
 export const employeesData: Employee[] = [
   { id: 1,  name: 'Dr. R. Sharma',    initials: 'RS', role: 'Senior Surgeon',       department: 'Surgery',    status: 'active',    joinDate: 'Jan 12, 2018', email: 'r.sharma@citycare.co.ke',   phone: '+254 700 111 001', avatarColor: '#2563EB', salary: 280000 },

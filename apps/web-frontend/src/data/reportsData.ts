@@ -1,5 +1,5 @@
 // src/data/reportsData.ts
-import { ReportItem } from './types'
+import { ReportItem } from '../types/hospital-admin/types'
 
 export const reportsData: ReportItem[] = [
   { id: 1, title: 'Monthly Attendance Summary',    category: 'Attendance', date: 'May 31, 2025', size: '1.2 MB', type: 'pdf'  },

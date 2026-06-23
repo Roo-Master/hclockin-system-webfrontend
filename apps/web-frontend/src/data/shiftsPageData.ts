@@ -1,5 +1,5 @@
 // src/data/shiftsPageData.ts
-import { ShiftEntry } from './types'
+import { ShiftEntry } from '../types/hospital-admin/types'
 
 export const shiftEntriesData: ShiftEntry[] = [
   { id: 1, name: 'Morning ICU Shift',        department: 'ICU',       shiftType: 'Morning',   startTime: '06:00', endTime: '14:00', days: ['Mon','Tue','Wed','Thu','Fri'], createdDate: 'May 10, 2025' },

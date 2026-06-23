@@ -1,5 +1,5 @@
 // src/data/chartData.ts
-import { DepartmentSlice, AttendancePoint } from './types';
+import { DepartmentSlice, AttendancePoint } from '../types/hospital-admin/types';
 
 export const deptDonutData: DepartmentSlice[] = [
   { name: 'Nursing',    value: 320, color: '#2563EB' },
