@@ -17,7 +17,7 @@ export const navItems: NavItem[] = [
   { iconName: 'Activity',  label: 'Shift Scheduling',  path: '/shifts'      },
   { iconName: 'DollarSign',label: 'Payroll',           path: '/payroll'     },
   { iconName: 'FileText',  label: 'Reports',           path: '/reports'     },
-  { iconName: 'Bell',      label: 'Notifications',     path: '/notifications', badge: 5 },
+  { iconName: 'Bell',      label: 'Notifications',     path: '/notifications', },
   { iconName: 'Cpu', label: 'Devices',                  path: '/devices'    },
   { iconName: 'Settings',  label: 'Settings',          path: '/settings'    },
 ]
