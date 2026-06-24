@@ -16,9 +16,7 @@ export interface EmployeeListFilters {
 export class EmployeeRepository {
   constructor(private readonly database: PrismaService) {}
 
-  async list(tenantId: string, filters: EmployeeListFilters) {
     const where: any = {
-      tenantId,
       ...(filters.includeDeleted ? {} : { deletedAt: null }),
       ...(filters.departmentId ? { departmentId: filters.departmentId } : {}),
       ...(filters.accessibleDepartmentIds ? { departmentId: { in: filters.accessibleDepartmentIds } } : {}),
@@ -52,46 +50,37 @@ export class EmployeeRepository {
     return { items, total };
   }
 
-  async findByIdOrThrow(tenantId: string, id: string, includeDeleted = false) {
     const employee = await this.database.user.findFirst({  // ✅ no .client
       where: {
         id,
-        tenantId,
         ...(includeDeleted ? {} : { deletedAt: null }),
       },
       select: this.employeeSelect(),
     });
 
     if (!employee) {
-      throw new NotFoundException('Employee was not found for this tenant.');
     }
 
     return employee;
   }
 
-  async assertDepartmentBelongsToTenant(tenantId: string, departmentId: string): Promise<void> {
     const department = await this.database.department.findFirst({  // ✅ no .client
-      where: { id: departmentId, tenantId },
       select: { id: true },
     });
 
     if (!department) {
-      throw new NotFoundException('Department was not found for this tenant.');
     }
   }
 
-  async create(tenantId: string, data: any, audit?: any) {
     try {
       return await this.database.$transaction(async (tx) => {  // ✅ no .client
         const employee = await tx.user.create({
-          data: { ...data, tenantId },
           select: this.employeeSelect(),
         });
 
         if (audit) {
           await tx.employeeAudit.create({
             data: {
-              tenantId,
               employeeId: employee.id,
               actorUserId: audit.actorUserId,
               action: audit.action,
@@ -109,24 +98,19 @@ export class EmployeeRepository {
     }
   }
 
-  async update(tenantId: string, id: string, data: any, audit?: any) {
-    await this.findByIdOrThrow(tenantId, id, true);
 
     try {
       return await this.database.$transaction(async (tx) => {  // ✅ already correct
         const result = await tx.user.updateMany({
-          where: { id, tenantId },
           data,
         });
 
         if (result.count !== 1) {
-          throw new NotFoundException('Employee was not found for this tenant.');
         }
 
         if (audit) {
           await tx.employeeAudit.create({
             data: {
-              tenantId,
               employeeId: id,
               actorUserId: audit.actorUserId,
               action: audit.action,
@@ -137,7 +121,6 @@ export class EmployeeRepository {
         }
 
         return tx.user.findFirstOrThrow({
-          where: { id, tenantId },
           select: this.employeeSelect(),
         });
       });
@@ -147,13 +130,10 @@ export class EmployeeRepository {
     }
   }
 
-  async softDelete(tenantId: string, id: string, actorUserId: string) {
-    const existing = await this.findByIdOrThrow(tenantId, id);
 
     return this.database.$transaction(async (tx) => {  // ✅ no .client
       const deletedAt = new Date();
       const result = await tx.user.updateMany({
-        where: { id, tenantId, deletedAt: null },
         data: {
           deletedAt,
           isActive: false,
@@ -162,12 +142,10 @@ export class EmployeeRepository {
       });
 
       if (result.count !== 1) {
-        throw new NotFoundException('Employee was not found for this tenant.');
       }
 
       await tx.employeeAudit.create({
         data: {
-          tenantId,
           employeeId: id,
           actorUserId,
           action: 'SOFT_DELETE',
@@ -177,14 +155,11 @@ export class EmployeeRepository {
       });
 
       return tx.user.findFirstOrThrow({
-        where: { id, tenantId },
         select: this.employeeSelect(),
       });
     });
   }
 
-  async restore(tenantId: string, id: string, actorUserId: string) {
-    const existing = await this.findByIdOrThrow(tenantId, id, true);
 
     if (!existing.deletedAt) {
       return existing;
@@ -192,7 +167,6 @@ export class EmployeeRepository {
 
     return this.database.$transaction(async (tx) => {  // ✅ no .client
       const result = await tx.user.updateMany({
-        where: { id, tenantId, deletedAt: { not: null } },
         data: {
           deletedAt: null,
           isActive: true,
@@ -201,12 +175,10 @@ export class EmployeeRepository {
       });
 
       if (result.count !== 1) {
-        throw new NotFoundException('Employee was not found for this tenant.');
       }
 
       await tx.employeeAudit.create({
         data: {
-          tenantId,
           employeeId: id,
           actorUserId,
           action: 'RESTORE',
@@ -216,7 +188,6 @@ export class EmployeeRepository {
       });
 
       return tx.user.findFirstOrThrow({
-        where: { id, tenantId },
         select: this.employeeSelect(),
       });
     });
@@ -225,7 +196,6 @@ export class EmployeeRepository {
   private employeeSelect() {
     return {
       id: true,
-      tenantId: true,
       departmentId: true,
       payrollNumber: true,
       firstName: true,
@@ -265,7 +235,6 @@ export class EmployeeRepository {
     const code = (error as { code?: string }).code;
 
     if (code === 'P2002') {
-      throw new ConflictException('Employee code, email, or device user id already exists for this tenant.');
     }
   }
 }

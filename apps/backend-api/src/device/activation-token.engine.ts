@@ -29,7 +29,6 @@ export interface ConsumeTokenParams {
 export interface ActivateDeviceResult {
   deviceId: string;
   serialCode: string;
-  tenantId: string;
 }
 
 @Injectable()
@@ -46,15 +45,12 @@ export class ActivationTokenEngine {
    * Generates a short-lived 6-digit code for display on the admin dashboard.
    * The admin types this into the SenseFace 2A terminal screen to begin pairing.
    */
-  async generateToken(tenantId: string): Promise<{ code: string; expiresInMinutes: number }> {
     const code = this.generateSixDigitCode();
     const expiresAt = new Date(Date.now() + this.TOKEN_TTL_MINUTES * 60 * 1000);
 
     await this.db.rawClient.activationToken.create({
-      data: { tenantId, code, expiresAt },
     });
 
-    this.logger.log(`[ActivationTokenEngine] Token generated for tenant: ${tenantId}`);
     return { code, expiresInMinutes: this.TOKEN_TTL_MINUTES };
   }
 
@@ -99,7 +95,6 @@ export class ActivationTokenEngine {
       }),
       this.db.rawClient.device.create({
         data: {
-          tenantId: token.tenantId,
           serialCode: params.serialCode,
           publicKey: params.publicKey,
           name: params.name,
@@ -110,16 +105,13 @@ export class ActivationTokenEngine {
     ]);
 
     // Hydrate cache immediately — terminal's first webhook must not miss
-    this.cache.hydrate(device.serialCode, device.publicKey, device.tenantId);
 
     this.logger.log(
-      `[ActivationTokenEngine] Device activated: ${params.serialCode} for tenant: ${token.tenantId}`,
     );
 
     return {
       deviceId: device.id,
       serialCode: device.serialCode,
-      tenantId: device.tenantId,
     };
   }
 

@@ -6,7 +6,6 @@ export class NotificationResponseDto {
   id: string;
 
   @ApiProperty()
-  tenantId: string;
 
   @ApiProperty()
   userId: string;

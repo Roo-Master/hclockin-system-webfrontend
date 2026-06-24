@@ -24,8 +24,6 @@ export class DeviceService {
 
   // ─── Admin dashboard: device registration flow ─────────────────────────────
 
-  async generateActivationToken(tenantId: string) {
-    return this.tokenEngine.generateToken(tenantId);
   }
 
   async activateDevice(params: ConsumeTokenParams) {
@@ -34,8 +32,6 @@ export class DeviceService {
 
   // ─── Admin dashboard: device management ────────────────────────────────────
 
-  async listDevices(tenantId: string) {
-    return this.keyStore.findAllByTenant(tenantId);
   }
 
   async decommissionDevice(serialCode: string): Promise<{ message: string }> {

@@ -1,7 +1,6 @@
 // entities/user-notification-settings.entity.ts
 export interface UserNotificationSettings {
   id: string;
-  tenantId: string;
   userId: string;
   preferences: Record<string, any>;
   quietHoursEnabled: boolean;
@@ -16,15 +15,11 @@ export interface UserNotificationSettings {
  * Stores global notification settings for a user (quiet hours, digest preferences, etc.)
  */
 @Entity('user_notification_settings')
-@Unique('UQ_user_notification_settings', ['tenantId', 'userId'])
-@Index(['tenantId', 'userId'])
 export class UserNotificationSettingsEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'tenant_id', type: 'uuid' })
   @Index()
-  tenantId: string;
 
   @Column({ name: 'user_id', type: 'uuid' })
   @Index()
@@ -166,7 +161,6 @@ export class UserNotificationSettingsEntity {
  * DTO for creating user notification settings
  */
 export class CreateUserNotificationSettingsDto {
-  tenantId: string;
   userId: string;
   quietHoursEnabled?: boolean;
   quietHoursStart?: string;
@@ -205,7 +199,6 @@ export class UpdateUserNotificationSettingsDto {
  */
 export class UserNotificationSettingsResponseDto {
   id: string;
-  tenantId: string;
   userId: string;
   quietHoursEnabled: boolean;
   quietHoursStart: string;
@@ -224,7 +217,6 @@ export class UserNotificationSettingsResponseDto {
 
   constructor(entity: UserNotificationSettingsEntity) {
     this.id = entity.id;
-    this.tenantId = entity.tenantId;
     this.userId = entity.userId;
     this.quietHoursEnabled = entity.quietHoursEnabled;
     this.quietHoursStart = entity.quietHoursStart;

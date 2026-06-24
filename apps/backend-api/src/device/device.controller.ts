@@ -41,7 +41,6 @@ export class DeviceController {
   @Roles(UserRole.HOSPITAL_ADMIN, UserRole.SUPER_ADMIN)
   @HttpCode(HttpStatus.CREATED)
   generateActivationToken(@CurrentUser() user: AuthenticatedUser) {
-    return this.deviceService.generateActivationToken(user.tenantId);
   }
 
   /**
@@ -63,7 +62,6 @@ export class DeviceController {
   @Get()
   @Roles(UserRole.HOSPITAL_ADMIN, UserRole.SUPER_ADMIN, UserRole.HR_MANAGER)
   listDevices(@CurrentUser() user: AuthenticatedUser) {
-    return this.deviceService.listDevices(user.tenantId);
   }
 
   /**

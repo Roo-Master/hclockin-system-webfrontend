@@ -84,7 +84,6 @@ export interface NotificationAction {
 }
 
 export interface NotificationPayload {
-  tenantId: string;
   userId: string;
   event: NotificationTriggerEvent;
   priority?: NotificationPriority;
@@ -110,7 +109,6 @@ export interface DispatchResult {
 
 export interface NotificationPreference {
   userId: string;
-  tenantId: string;
   channel: NotificationChannel;
   event: NotificationTriggerEvent;
   enabled: boolean;
@@ -119,7 +117,6 @@ export interface NotificationPreference {
 
 export interface UserNotificationSettings {
   userId: string;
-  tenantId: string;
   dndEnabled: boolean;
   dndStart: string;  // HH:mm
   dndEnd: string;    // HH:mm

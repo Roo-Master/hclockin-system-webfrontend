@@ -1,1 +1,25 @@
+generator client {
+  provider = "prisma-client-js"
+}
 
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Import all schema files
+/// @prisma/schema/base.prisma
+/// @prisma/schema/user.prisma
+/// @prisma/schema/tenant.prisma
+/// @prisma/schema/attendance.prisma
+/// @prisma/schema/payroll.prisma
+/// @prisma/schema/leave.prisma
+/// @prisma/schema/device.prisma
+/// @prisma/schema/reports.prisma
+/// @prisma/schema/notifications.prisma
+/// @prisma/schema/department.prisma
+/// @prisma/schema/billing.prisma
+/// @prisma/schema/roster.prisma
+/// @prisma/schema/reconciliation.prisma
+/// @prisma/schema/setting.prisma
+/// @prisma/schema/super-admin-additions.prisma

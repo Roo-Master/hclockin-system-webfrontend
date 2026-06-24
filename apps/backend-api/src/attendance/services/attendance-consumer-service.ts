@@ -38,18 +38,14 @@ export class AttendanceConsumerService implements OnModuleInit {
 
   private async processJob(job: Job) {
     try {
-      const { userId, tenantId, date } = job.data;
       
       if (job.name === ATTENDANCE_JOB_NAMES.PROCESS_LOG) {
-        await this.processor.processUserDay(userId, tenantId, new Date(date));
         await job.progress(100);
         await job.moveToCompleted('success', true);
       } else if (job.name === ATTENDANCE_JOB_NAMES.REPROCESS_LOG) {
-        await this.processor.processUserDay(userId, tenantId, new Date(date));
         await job.moveToCompleted('success', true);
       } else if (job.name === 'attendance.nightshift') {
         const { shiftDate } = job.data;
-        await this.processor.processNightShift(userId, tenantId, new Date(shiftDate));
         await job.moveToCompleted('success', true);
       }
     } catch (error) {

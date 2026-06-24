@@ -13,7 +13,6 @@ import {
 // ==================== DTOs ====================
 
 export interface SendNotificationDto {
-  tenantId: string;
   userId: string;
   title: string;
   body: string;
@@ -40,7 +39,6 @@ export interface BulkNotificationDto {
 }
 
 export interface NotificationQuery {
-  tenantId: string;
   userId?: string;
   page?: number;
   limit?: number;
@@ -67,13 +65,11 @@ export class NotificationsService {
    * Find notifications by user with pagination
    */
   async findByUser(
-    tenantId: string,
     userId: string,
     page: number,
     limit: number,
     filters?: { unreadOnly?: boolean; type?: NotificationTriggerEvent }
   ) {
-    return this.notificationRepository.findByUser(tenantId, userId, page, limit, filters);
   }
 
   /**
@@ -81,8 +77,6 @@ export class NotificationsService {
    */
   async findAll(query: NotificationQuery) {
     return this.notificationRepository.findByUser(
-      query.tenantId,
-      query.userId || query.tenantId,
       query.page || 1,
       query.limit || 20,
     );
@@ -91,8 +85,6 @@ export class NotificationsService {
   /**
    * Find notification by ID
    */
-  async findById(id: string, tenantId: string) {
-    const notification = await this.notificationRepository.findById(id, tenantId);
     if (!notification) {
       throw new NotFoundException('Notification not found');
     }
@@ -102,8 +94,6 @@ export class NotificationsService {
   /**
    * Find one notification (alias for findById)
    */
-  async findOne(id: string, tenantId: string) {
-    return this.findById(id, tenantId);
   }
 
   /**
@@ -111,7 +101,6 @@ export class NotificationsService {
    */
   async create(data: any) {
     return this.notificationRepository.create({
-      tenantId: data.tenantId,
       userId: data.userId,
       channel: data.channel,
       recipient: data.recipient || data.userId,
@@ -131,32 +120,24 @@ export class NotificationsService {
   /**
    * Count unread notifications
    */
-  async countUnread(tenantId: string, userId: string): Promise<number> {
-    return this.notificationRepository.countUnread(tenantId, userId);
   }
 
   /**
    * Mark notification as read
    */
-  async markAsRead(id: string, tenantId: string) {
-    await this.notificationRepository.markAsRead(id, tenantId);
   }
 
   /**
    * Mark all notifications as read for a user
    */
-  async markAllAsRead(tenantId: string, userId: string): Promise<number> {
-    const result = await this.notificationRepository.markAllAsRead(tenantId, userId);
     return result.count;
   }
 
   /**
    * Mark multiple notifications as read
    */
-  async markBulkAsRead(tenantId: string, notificationIds: string[]): Promise<number> {
     let count = 0;
     for (const id of notificationIds) {
-      await this.notificationRepository.markAsRead(id, tenantId);
       count++;
     }
     return count;
@@ -167,23 +148,17 @@ export class NotificationsService {
   /**
    * Delete a notification
    */
-  async delete(id: string, tenantId: string) {
-    await this.notificationRepository.deleteByUser(tenantId, undefined, undefined);
   }
 
   /**
    * Clear all notifications for a user
    */
-  async clearAll(tenantId: string, userId: string): Promise<number> {
-    const result = await this.notificationRepository.deleteByUser(tenantId, userId);
     return result.count;
   }
 
   /**
    * Clean up old notifications
    */
-  async cleanup(tenantId: string, daysOld: number): Promise<{ deletedCount: number }> {
-    const result = await this.notificationRepository.deleteOldNotifications(tenantId, daysOld);
     return { deletedCount: result.count };
   }
 
@@ -192,9 +167,6 @@ export class NotificationsService {
   /**
    * Get notification summary
    */
-  async getSummary(tenantId: string, userId: string) {
-    const unreadCount = await this.countUnread(tenantId, userId);
-    const recent = await this.notificationRepository.findByUser(tenantId, userId, 1, 5);
     
     return {
       unreadCount,
@@ -207,10 +179,8 @@ export class NotificationsService {
   /**
    * Get admin statistics
    */
-  async getStats(tenantId: string, startDate?: Date, endDate?: Date) {
     const start = startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const end = endDate || new Date();
-    return this.notificationRepository.getStats(tenantId, start, end);
   }
 
   // ==================== Send Operations ====================
@@ -220,7 +190,6 @@ export class NotificationsService {
    */
   async send(dto: SendNotificationDto): Promise<{ success: boolean; messageId?: string }> {
     const payload: NotificationPayload = {
-      tenantId: dto.tenantId,
       userId: dto.userId,
       event: dto.triggerEvent,
       priority: dto.priority,
@@ -241,14 +210,12 @@ export class NotificationsService {
   /**
    * Send a simple notification with default settings
    */
-  async sendSimple(tenantId: string, dto: SimpleNotificationDto): Promise<{ success: boolean; messageId: string }> {
     this.logger.log(`Sending simple notification to ${dto.userId}: ${dto.title}`);
 
     const priority = this.mapTypeToPriority(dto.type || 'info');
     const channel = this.mapChannel(dto.channel || 'in_app');
 
     const result = await this.send({
-      tenantId,
       userId: dto.userId,
       title: dto.title,
       body: dto.message,
@@ -267,11 +234,9 @@ export class NotificationsService {
   /**
    * Send bulk notifications to multiple users
    */
-  async sendBulk(tenantId: string, dto: BulkNotificationDto): Promise<{ success: boolean; count: number }> {
     this.logger.log(`Sending bulk notification to ${dto.userIds.length} users: ${dto.title}`);
 
     const result = await this.broadcast(
-      tenantId,
       dto.userIds,
       {
         title: dto.title,
@@ -289,7 +254,6 @@ export class NotificationsService {
    * Broadcast notification to multiple users
    */
   async broadcast(
-    tenantId: string,
     userIds: string[],
     data: {
       title: string;
@@ -300,7 +264,6 @@ export class NotificationsService {
     }
   ): Promise<{ count: number }> {
     const notifications = userIds.map(userId => ({
-      tenantId,
       userId,
       channel: data.channel,
       recipient: userId,
@@ -319,9 +282,7 @@ export class NotificationsService {
   /**
    * Send SMS
    */
-  async sendSMS(tenantId: string, userId: string, phoneNumber: string, message: string) {
     const payload: NotificationPayload = {
-      tenantId,
       userId,
       event: NotificationTriggerEvent.CLOCK_IN_REMINDER,
       priority: NotificationPriority.MEDIUM,
@@ -338,9 +299,7 @@ export class NotificationsService {
   /**
    * Send email
    */
-  async sendEmail(tenantId: string, userId: string, email: string, subject: string, body: string) {
     const payload: NotificationPayload = {
-      tenantId,
       userId,
       event: NotificationTriggerEvent.SCHEDULE_POSTED,
       priority: NotificationPriority.MEDIUM,
@@ -357,13 +316,11 @@ export class NotificationsService {
   /**
    * Send attendance notification
    */
-  async sendAttendanceNotification(tenantId: string, userId: string, data: any) {
     const event = data.direction === 'in' 
       ? NotificationTriggerEvent.CLOCK_IN 
       : NotificationTriggerEvent.CLOCK_OUT;
     
     const payload: NotificationPayload = {
-      tenantId,
       userId,
       event,
       priority: NotificationPriority.LOW,
@@ -380,11 +337,8 @@ export class NotificationsService {
   /**
    * Retry failed notification
    */
-  async retryFailed(tenantId: string, id: string) {
-    const notification = await this.findById(id, tenantId);
     
     const payload: NotificationPayload = {
-      tenantId: notification.tenantId,
       userId: notification.userId,
       event: notification.triggerEvent as NotificationTriggerEvent,
       priority: notification.priority as NotificationPriority,
@@ -403,11 +357,9 @@ export class NotificationsService {
   /**
    * Send a welcome notification to new user
    */
-  async sendWelcome(tenantId: string, userId: string, userName: string, email: string): Promise<void> {
     this.logger.log(`Sending welcome notification to ${userId}`);
 
     await this.send({
-      tenantId,
       userId,
       title: 'Welcome to H-Clock System! 🎉',
       body: `Hello ${userName}, welcome to the H-Clock attendance system. Please complete your profile setup.`,
@@ -426,7 +378,6 @@ export class NotificationsService {
    * Send password reset notification
    */
   async sendPasswordReset(
-    tenantId: string,
     userId: string,
     email: string,
     resetToken: string,
@@ -436,7 +387,6 @@ export class NotificationsService {
     const resetUrl = `${process.env.APP_URL}/auth/reset-password?token=${resetToken}`;
 
     await this.send({
-      tenantId,
       userId,
       title: 'Password Reset Request',
       body: `You requested to reset your password. Click the link below to reset it. This link expires in 1 hour.\n\n${resetUrl}\n\nIf you didn't request this, please ignore this email.`,
@@ -452,7 +402,6 @@ export class NotificationsService {
    * Send leave request status update
    */
   async sendLeaveStatus(
-    tenantId: string,
     userId: string,
     employeeName: string,
     leaveType: string,
@@ -474,7 +423,6 @@ export class NotificationsService {
       : `Dear ${employeeName}, your ${leaveType} leave request from ${this.formatDate(startDate)} to ${this.formatDate(endDate)} has been rejected. Please contact your manager for more information.`;
 
     await this.send({
-      tenantId,
       userId,
       title,
       body,
@@ -493,7 +441,6 @@ export class NotificationsService {
    * Send shift reminder
    */
   async sendShiftReminder(
-    tenantId: string,
     userId: string,
     userName: string,
     shiftDate: Date,
@@ -503,7 +450,6 @@ export class NotificationsService {
     this.logger.log(`Sending shift reminder to ${userId}`);
 
     await this.send({
-      tenantId,
       userId,
       title: '⏰ Shift Reminder',
       body: `Hello ${userName}, you have a shift tomorrow (${this.formatDate(shiftDate)}) from ${shiftStart} to ${shiftEnd}. Please don't forget to clock in on time.`,
@@ -522,7 +468,6 @@ export class NotificationsService {
    * Send overtime alert
    */
   async sendOvertimeAlert(
-    tenantId: string,
     userId: string,
     userName: string,
     overtimeHours: number,
@@ -531,7 +476,6 @@ export class NotificationsService {
     this.logger.log(`Sending overtime alert to ${userId}: ${overtimeHours} hours`);
 
     await this.send({
-      tenantId,
       userId,
       title: '⚠️ Overtime Alert',
       body: `Hello ${userName}, you have accumulated ${overtimeHours} hours of overtime this week (Total: ${totalHours} hours). Please review your timecard.`,
@@ -550,7 +494,6 @@ export class NotificationsService {
    * Send system maintenance notification
    */
   async sendMaintenanceAlert(
-    tenantId: string,
     userIds: string[],
     startTime: Date,
     endTime: Date,
@@ -558,7 +501,6 @@ export class NotificationsService {
   ): Promise<void> {
     this.logger.log(`Sending maintenance alert to ${userIds.length} users`);
 
-    await this.sendBulk(tenantId, {
       userIds,
       title: '🔧 System Maintenance',
       message: `The system will be under maintenance on ${this.formatDateTime(startTime)} until ${this.formatDateTime(endTime)}. Reason: ${reason}. Please save your work before this time.`,

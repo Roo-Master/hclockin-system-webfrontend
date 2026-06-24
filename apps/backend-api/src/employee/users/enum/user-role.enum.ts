@@ -1,7 +1,8 @@
-// src/employee/users/enum/user-role.enum.ts
 export enum UserRole {
   SUPER_ADMIN = 'SUPER_ADMIN',
-  ADMIN = 'ADMIN',
-  MANAGER = 'MANAGER',
+  HOSPITAL_ADMIN = 'HOSPITAL_ADMIN',
+  HR_MANAGER = 'HR_MANAGER',
+  DEPT_HEAD = 'DEPT_HEAD',
+  SUPERVISOR = 'SUPERVISOR',
   EMPLOYEE = 'EMPLOYEE',
 }

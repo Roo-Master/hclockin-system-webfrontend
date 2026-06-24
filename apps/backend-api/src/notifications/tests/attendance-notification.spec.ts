@@ -5,7 +5,6 @@ import { DispatcherService } from '../services/dispatcher.service';
 import { LateInRule } from '../rules/late-in.rule';
 import { MissedPunchRule } from '../rules/missed-punch.rule';
 import { OvertimeRule } from '../rules/overtime.rule';
-import { WebSocketService } from '../../websocket/services/websocket.service';
 
 describe('Attendance Notifications', () => {
   let listener: NotificationListener;
@@ -89,7 +88,6 @@ describe('Attendance Notifications', () => {
   });
 
   const mockClockInEvent: ClockInEvent = {
-    tenantId: 'tenant-001',
     userId: 'user-123',
     employeeId: 'emp-123',
     employeeName: 'John Doe',
@@ -124,7 +122,6 @@ describe('Attendance Notifications', () => {
       
       expect(mockWebSocketService.sendAttendanceAlert).toHaveBeenCalledWith(
         mockClockInEvent.userId,
-        mockClockInEvent.tenantId,
         'late_in',
         expect.objectContaining({
           lateMinutes: 15,

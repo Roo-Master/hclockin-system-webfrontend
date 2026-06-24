@@ -1,0 +1,35 @@
+{
+  "compilerOptions": {
+    "module": "node16",
+    "moduleResolution": "node16",
+    "target": "ES2022",
+    "outDir": "./dist",
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "sourceMap": true,
+    "incremental": true,
+    "skipLibCheck": true,
+    "isolatedModules": false,
+    "types": ["node", "jest"],
+    "paths": {
+      "src/*": ["./src/*"],
+      "@chronos/database": ["../../packages/database/src"],
+      "@chronos/database/*": ["../../packages/database/src/*"],
+      "@chronos/types-common": ["../../packages/types-common/src"],
+      "@chronos/types-common/*": ["../../packages/types-common/src/*"]
+    },
+    "strictNullChecks": false,
+    "noImplicitAny": false,
+    "strictBindCallApply": false,
+    "forceConsistentCasingInFileNames": false,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": [
+    "src/**/*",
+    "test/**/*"
+  ],
+  "exclude": ["node_modules", "dist"]
+}

@@ -143,7 +143,6 @@ import { Injectable, Logger,
      * 4. Queue stores job in Redis
      * 5. reconciliation/ worker picks up job and processes
      * 
-     * @param payload - Job data (userId, date, tenantId)
      * @param priority - Optional priority (1=highest, 10=lowest, default=5)
      * @returns Promise resolving to BullMQ Job object
      * 
@@ -153,7 +152,6 @@ import { Injectable, Logger,
      * ```typescript
      * // In attendance/ module after saving log to database
      * await this.queueService.addAttendanceJob({
-     *   tenantId: log.tenantId,
      *   userId: log.userId,
      *   date: log.timestamp.toISOString().split('T')[0],
      *   createdAt: new Date().toISOString(),
@@ -187,7 +185,6 @@ import { Injectable, Logger,
           `🚫 Queue at capacity. Rejecting job:\n` +
           `  User: ${payload.userId}\n` +
           `  Date: ${payload.date}\n` +
-          `  Tenant: ${payload.tenantId}\n` +
           `  Priority: ${validPriority}`,
         );
   
@@ -244,7 +241,6 @@ import { Injectable, Logger,
             operation: 'addAttendanceJob',
             userId: payload.userId,
             date: payload.date,
-            tenantId: payload.tenantId,
           }),
         );
   
@@ -285,7 +281,6 @@ import { Injectable, Logger,
      * // In jobs/ module for nightly reconciliation
      * const missedLogs = await this.findMissedLogs();
      * const payloads = missedLogs.map(log => ({
-     *   tenantId: log.tenantId,
      *   userId: log.userId,
      *   date: log.date,
      *   createdAt: new Date().toISOString(),

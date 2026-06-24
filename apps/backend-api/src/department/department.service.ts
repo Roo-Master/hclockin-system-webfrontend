@@ -15,9 +15,7 @@ export class DepartmentService {
   constructor(private readonly prisma: PrismaService) {}
 
   // CREATE
-  async create(dto: CreateDepartmentDto, tenantId: string) {
     const exists = await this.prisma.client.department.findFirst({
-      where: { tenantId, code: dto.code },
     });
 
     if (exists) {
@@ -28,7 +26,6 @@ export class DepartmentService {
 
     return this.prisma.client.department.create({
       data: {
-        tenantId,
         name: dto.name,
         code: dto.code,
         rules: dto.rules ?? {},
@@ -40,17 +37,14 @@ export class DepartmentService {
   async updateDepartment(
     departmentId: string,
     dto: UpdateDepartmentDto,
-    tenantId: string,
   ) {
     const department = await this.getDepartmentOrThrow(departmentId);
 
-    if (department.tenantId !== tenantId) {
       throw new BadRequestException('Unauthorized');
     }
 
     if (dto.code && dto.code !== department.code) {
       const existingDepartment = await this.prisma.client.department.findFirst({
-        where: { tenantId, code: dto.code },
       });
 
       if (existingDepartment && existingDepartment.id !== departmentId) {
@@ -69,18 +63,14 @@ export class DepartmentService {
   }
 
   // LIST
-  async listDepartments(tenantId: string) {
     return this.prisma.client.department.findMany({
-      where: { tenantId },
       orderBy: { createdAt: 'desc' },
     });
   }
 
   // DELETE
-  async deleteDepartment(departmentId: string, tenantId: string) {
     const department = await this.getDepartmentOrThrow(departmentId);
 
-    if (department.tenantId !== tenantId) {
       throw new BadRequestException('Unauthorized');
     }
 
@@ -94,7 +84,6 @@ export class DepartmentService {
     const department = await this.getDepartmentOrThrow(departmentId);
     const user = await this.getUserOrThrow(userId);
 
-    this.assertTenantMatch(department.tenantId, user.tenantId);
 
     return this.prisma.client.user.update({
       where: { id: userId },
@@ -110,7 +99,6 @@ export class DepartmentService {
     const department = await this.getDepartmentOrThrow(departmentId);
     const user = await this.getUserOrThrow(userId);
 
-    this.assertTenantMatch(department.tenantId, user.tenantId);
 
     return this.prisma.client.user.update({
       where: { id: userId },

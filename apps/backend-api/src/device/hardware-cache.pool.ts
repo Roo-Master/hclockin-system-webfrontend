@@ -37,7 +37,6 @@ export class HardwareCachePool {
     const cached = this.cache.get(serialCode);
 
     if (cached && Date.now() - cached.cachedAt < this.TTL_MS) {
-      return { publicKey: cached.publicKey, tenantId: cached.tenantId };
     }
 
     // Cache miss — go to database
@@ -51,8 +50,6 @@ export class HardwareCachePool {
       return null;
     }
 
-    this.hydrate(serialCode, device.publicKey, device.tenantId);
-    return { publicKey: device.publicKey, tenantId: device.tenantId };
   }
 
   /**
@@ -60,8 +57,6 @@ export class HardwareCachePool {
    * Called by ActivationTokenEngine right after a device is registered
    * so the very first webhook from that terminal hits the cache.
    */
-  hydrate(serialCode: string, publicKey: string, tenantId: string): void {
-    this.cache.set(serialCode, { publicKey, tenantId, cachedAt: Date.now() });
     this.logger.debug(`[HardwareCachePool] Hydrated cache for: ${serialCode}`);
   }
 
