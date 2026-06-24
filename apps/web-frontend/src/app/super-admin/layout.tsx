@@ -1,16 +1,12 @@
 'use client';
 
-import { Sidebar, Header } from '@/components/employee-components/layout';
+import { Sidebar, Header } from '@/components/super-admin/layout';
 import { ImpersonationBanner } from '@/components/super-admin/layout/ImpersonationBanner';
-import { ToastProvider } from '@/contexts/(super-admin)/ToastContext';
+import { AppProviders } from './providers';  // ← add this
 
-export default function SuperAdminLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function SuperAdminLayout({ children }: { children: React.ReactNode }) {
   return (
-    <ToastProvider>
+    <AppProviders>
       <div className="flex h-screen overflow-hidden bg-gray-50">
         <Sidebar />
         <div className="flex-1 flex flex-col overflow-hidden">
@@ -23,6 +19,6 @@ export default function SuperAdminLayout({
           </div>
         </div>
       </div>
-    </ToastProvider>
+    </AppProviders>
   );
 }

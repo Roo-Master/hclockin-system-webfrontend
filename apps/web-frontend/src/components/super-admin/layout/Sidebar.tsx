@@ -4,13 +4,13 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const NAV = [
-  { label: 'Overview',      href: '/dashboard',      icon: '📊' },
-  { label: 'Tenants',       href: '/tenants',         icon: '🏥' },
-  { label: 'Billing',       href: '/billing',         icon: '💳' },
-  { label: 'Feature Flags', href: '/feature-flags',   icon: '🚩' },
-  { label: 'Admins',        href: '/admins',           icon: '👤' },
-  { label: 'Monitoring',    href: '/monitoring',       icon: '📡' },
-  { label: 'Settings',      href: '/settings',         icon: '⚙️'  },
+  { label: 'Overview',      href: '/super-admin/dashboard',      icon: '📊' },
+  { label: 'Tenants',       href: '/super-admin/tenants',         icon: '🏥' },
+  { label: 'Billing',       href: '/super-admin/billing',         icon: '💳' },
+  { label: 'Feature Flags', href: '/super-admin/feature-flags',   icon: '🚩' },
+  { label: 'Admins',        href: '/super-admin/admins',           icon: '👤' },
+  { label: 'Monitoring',    href: '/super-admin/monitoring',       icon: '📡' },
+  { label: 'Settings',      href: '/super-admin/settings',         icon: '⚙️'  },
 ];
 
 export function SuperAdminSidebar() {
