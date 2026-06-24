@@ -27,7 +27,6 @@ export class PreferenceService {
   // ==================== Existing Methods ====================
 
   async getEnabledChannels(
-    tenantId: string,
     userId: string,
     event: NotificationTriggerEvent,
   ): Promise<NotificationChannel[]> {
@@ -38,7 +37,6 @@ export class PreferenceService {
     const defaultChannels = PRIORITY_CHANNEL_RULES[priority];
 
     const dbPreferences = await this.db.notificationPreference.findMany({
-      where: { tenantId, userId, event },
     });
 
     const prefMap = new Map<string, boolean>();
@@ -56,7 +54,6 @@ export class PreferenceService {
   }
 
   async updatePreference(
-    tenantId: string,
     userId: string,
     event: NotificationTriggerEvent,
     channel: NotificationChannel,
@@ -70,14 +67,11 @@ export class PreferenceService {
 
     const dbPreference = await this.db.notificationPreference.upsert({
       where: {
-        tenantId_userId_event_channel: { tenantId, userId, event, channel },
       },
       update: { enabled },
-      create: { tenantId, userId, event, channel, enabled },
     });
 
     const pref: NotificationPreference = {
-      tenantId,
       userId,
       event,
       channel,
@@ -90,9 +84,7 @@ export class PreferenceService {
     return dbPreference as any;
   }
 
-  async getAll(tenantId: string, userId: string): Promise<NotificationPreference[]> {
     const dbPreferences = await this.db.notificationPreference.findMany({
-      where: { tenantId, userId },
     });
 
     const dbPrefMap = new Map<string, typeof dbPreferences[number]>();
@@ -114,7 +106,6 @@ export class PreferenceService {
 
         if (dbPref) {
           result.push({
-            tenantId,
             userId,
             event: event as NotificationTriggerEvent,
             channel,
@@ -125,7 +116,6 @@ export class PreferenceService {
           result.push(stored);
         } else {
           result.push({
-            tenantId,
             userId,
             event: event as NotificationTriggerEvent,
             channel,
@@ -139,9 +129,6 @@ export class PreferenceService {
     return result;
   }
 
-  async getSummary(tenantId: string, userId: string): Promise<any> {
-    const preferences = await this.getAll(tenantId, userId);
-    const settings = await this.getUserSettings(tenantId, userId);
 
     const byEvent = preferences.reduce((acc, pref) => {
       if (!acc[pref.event]) {
@@ -168,7 +155,6 @@ export class PreferenceService {
   }
 
   async bulkUpdate(
-    tenantId: string,
     userId: string,
     preferences: Array<{ event: NotificationTriggerEvent; channel: NotificationChannel; enabled: boolean }>,
   ): Promise<NotificationPreference[]> {
@@ -176,7 +162,6 @@ export class PreferenceService {
 
     for (const pref of preferences) {
       const result = await this.updatePreference(
-        tenantId,
         userId,
         pref.event,
         pref.channel,
@@ -189,9 +174,7 @@ export class PreferenceService {
     return results;
   }
 
-  async resetToDefault(tenantId: string, userId: string): Promise<number> {
     const deleted = await this.db.notificationPreference.deleteMany({
-      where: { tenantId, userId },
     });
 
     for (const event of Object.values(NotificationTriggerEvent)) {
@@ -204,16 +187,13 @@ export class PreferenceService {
     return deleted.count;
   }
 
-  async getUserSettings(tenantId: string, userId: string): Promise<any> {
     // ✅ DatabaseService extends PrismaClient — call model directly, no .client needed
     const settings = await this.db.userSettings.findUnique({
-      where: { userId_tenantId: { userId, tenantId } },
     });
 
     if (!settings) {
       return {
         userId,
-        tenantId,
         quietHoursEnabled: false,
         quietHoursStart: '22:00',
         quietHoursEnd: '07:00',
@@ -229,11 +209,8 @@ export class PreferenceService {
     return settings;
   }
 
-  async updateUserSettings(tenantId: string, userId: string, dto: any): Promise<any> {
-    await this.ensureUserSettings(tenantId, userId);
 
     const updated = await this.db.userSettings.update({
-      where: { userId_tenantId: { userId, tenantId } },
       data: dto,
     });
 
@@ -242,14 +219,12 @@ export class PreferenceService {
   }
 
   async updateDigestSettings(
-    tenantId: string,
     userId: string,
     enabled: boolean,
     frequency?: string,
     emailDigest?: boolean,
     pushDigest?: boolean,
   ): Promise<void> {
-    await this.ensureUserSettings(tenantId, userId);
 
     const updateData: any = { digestEnabled: enabled };
     if (frequency !== undefined) updateData.digestFrequency = frequency;
@@ -257,7 +232,6 @@ export class PreferenceService {
     if (pushDigest !== undefined) updateData.pushDigest = pushDigest;
 
     await this.db.userSettings.update({
-      where: { userId_tenantId: { userId, tenantId } },
       data: updateData,
     });
 
@@ -266,9 +240,7 @@ export class PreferenceService {
 
   // ==================== Additional Helper Methods ====================
 
-  async getQuietHours(tenantId: string, userId: string): Promise<{ enabled: boolean; start: string; end: string }> {
     const settings = await this.db.userSettings.findUnique({
-      where: { userId_tenantId: { userId, tenantId } },
     });
 
     return {
@@ -279,14 +251,11 @@ export class PreferenceService {
   }
 
   async updateQuietHours(     // ✅ added — was missing, referenced in notification.controller.ts
-    tenantId: string,
     userId: string,
     dto: { enabled: boolean; start: string; end: string },
   ): Promise<void> {
-    await this.ensureUserSettings(tenantId, userId);
 
     await this.db.userSettings.update({
-      where: { userId_tenantId: { userId, tenantId } },
       data: {
         quietHoursEnabled: dto.enabled,
         quietHoursStart: dto.start,
@@ -298,13 +267,11 @@ export class PreferenceService {
   }
 
   async shouldSendNow(
-    tenantId: string,
     userId: string,
     priority: NotificationPriority,
   ): Promise<boolean> {
     if (priority === NotificationPriority.HIGH) return true;
 
-    const quietHours = await this.getQuietHours(tenantId, userId);
     if (!quietHours.enabled) return true;
 
     const currentHour = new Date().getHours();
@@ -319,42 +286,33 @@ export class PreferenceService {
     }
   }
 
-  async getDigestEnabled(tenantId: string, userId: string): Promise<boolean> {
     const settings = await this.db.userSettings.findUnique({
-      where: { userId_tenantId: { userId, tenantId } },
     });
     return settings?.digestEnabled ?? true;
   }
 
-  async updateDigestEnabled(tenantId: string, userId: string, enabled: boolean): Promise<void> {
     await this.db.userSettings.upsert({
-      where: { userId_tenantId: { userId, tenantId } },
       update: { digestEnabled: enabled },
       create: {
         userId,
-        tenantId,
         digestEnabled: enabled,
         quietHoursEnabled: false,
       },
     });
   }
 
-  async getUsersWithDigestEnabled(): Promise<Array<{ tenantId: string; userId: string }>> {
     const settings = await this.db.userSettings.findMany({
       where: { digestEnabled: true },
-      select: { tenantId: true, userId: true },
     });
 
     return settings;
   }
 
   async getPreferenceByEvent(
-    tenantId: string,
     userId: string,
     event: NotificationTriggerEvent,
   ): Promise<NotificationPreference[]> {
     const dbPreferences = await this.db.notificationPreference.findMany({
-      where: { tenantId, userId, event },
     });
 
     if (dbPreferences.length > 0) return dbPreferences as any;
@@ -366,7 +324,6 @@ export class PreferenceService {
     const defaultChannels = PRIORITY_CHANNEL_RULES[priority];
 
     return defaultChannels.map(channel => ({
-      tenantId,
       userId,
       event,
       channel,
@@ -376,7 +333,6 @@ export class PreferenceService {
   }
 
   async validateChannelForEvent(
-    tenantId: string,
     userId: string,
     event: NotificationTriggerEvent,
     channel: NotificationChannel,
@@ -389,16 +345,13 @@ export class PreferenceService {
     return allowedChannels.includes(channel);
   }
 
-  private async ensureUserSettings(tenantId: string, userId: string): Promise<void> {
     const existing = await this.db.userSettings.findUnique({
-      where: { userId_tenantId: { userId, tenantId } },
     });
 
     if (!existing) {
       await this.db.userSettings.create({
         data: {
           userId,
-          tenantId,
           quietHoursEnabled: false,
           digestEnabled: false,
         },

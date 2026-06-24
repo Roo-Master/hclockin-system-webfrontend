@@ -9,7 +9,6 @@ import {
 } from '../types/notification.types';
 
 export interface CreatePreferenceDto {
-  tenantId: string;
   userId: string;
   event: NotificationTriggerEvent;
   channel: NotificationChannel;
@@ -41,7 +40,6 @@ export class PreferenceRepository {
     try {
       const preference = await this.db.notificationPreference.create({
         data: {
-          tenantId: data.tenantId,
           userId: data.userId,
           event: data.event,
           channel: data.channel,
@@ -61,7 +59,6 @@ export class PreferenceRepository {
    * Upsert (update or create) a notification preference
    */
   async upsert(
-    tenantId: string,
     userId: string,
     event: NotificationTriggerEvent,
     channel: NotificationChannel,
@@ -70,8 +67,6 @@ export class PreferenceRepository {
     try {
       const preference = await this.db.notificationPreference.upsert({
         where: {
-          tenantId_userId_event_channel: {
-            tenantId,
             userId,
             event,
             channel,
@@ -79,7 +74,6 @@ export class PreferenceRepository {
         },
         update: { enabled },
         create: {
-          tenantId,
           userId,
           event,
           channel,
@@ -111,10 +105,8 @@ export class PreferenceRepository {
   }
 
   /**
-   * Find preference by tenant, user, event, and channel
    */
   async findOne(
-    tenantId: string,
     userId: string,
     event: NotificationTriggerEvent,
     channel: NotificationChannel,
@@ -122,8 +114,6 @@ export class PreferenceRepository {
     try {
       const preference = await this.db.notificationPreference.findUnique({
         where: {
-          tenantId_userId_event_channel: {
-            tenantId,
             userId,
             event,
             channel,
@@ -142,12 +132,10 @@ export class PreferenceRepository {
    * Find all preferences for a user
    */
   async findByUser(
-    tenantId: string,
     userId: string,
     options?: { event?: NotificationTriggerEvent; channel?: NotificationChannel },
   ): Promise<NotificationPreference[]> {
     try {
-      const where: any = { tenantId, userId };
       
       if (options?.event) {
         where.event = options.event;
@@ -173,12 +161,10 @@ export class PreferenceRepository {
    * Find all preferences for an event across users
    */
   async findByEvent(
-    tenantId: string,
     event: NotificationTriggerEvent,
   ): Promise<NotificationPreference[]> {
     try {
       const preferences = await this.db.notificationPreference.findMany({
-        where: { tenantId, event },
       });
       
       return preferences as NotificationPreference[];
@@ -192,13 +178,11 @@ export class PreferenceRepository {
    * Get enabled channels for a specific event and user
    */
   async getEnabledChannels(
-    tenantId: string,
     userId: string,
     event: NotificationTriggerEvent,
     defaultChannels: NotificationChannel[],
   ): Promise<NotificationChannel[]> {
     try {
-      const preferences = await this.findByUser(tenantId, userId, { event });
       
       // If no preferences found, return default channels
       if (preferences.length === 0) {
@@ -231,7 +215,6 @@ export class PreferenceRepository {
    * Update a preference
    */
   async update(
-    tenantId: string,
     userId: string,
     event: NotificationTriggerEvent,
     channel: NotificationChannel,
@@ -240,8 +223,6 @@ export class PreferenceRepository {
     try {
       const preference = await this.db.notificationPreference.update({
         where: {
-          tenantId_userId_event_channel: {
-            tenantId,
             userId,
             event,
             channel,
@@ -264,7 +245,6 @@ export class PreferenceRepository {
    * Bulk update preferences for a user
    */
   async bulkUpdate(
-    tenantId: string,
     userId: string,
     updates: BulkUpdateDto,
   ): Promise<NotificationPreference[]> {
@@ -272,7 +252,6 @@ export class PreferenceRepository {
     
     for (const pref of updates.preferences) {
       const result = await this.upsert(
-        tenantId,
         userId,
         pref.event,
         pref.channel,
@@ -288,10 +267,8 @@ export class PreferenceRepository {
   /**
    * Reset all preferences for a user to default (enabled)
    */
-  async resetToDefault(tenantId: string, userId: string): Promise<number> {
     try {
       const result = await this.db.notificationPreference.updateMany({
-        where: { tenantId, userId },
         data: { enabled: true },
       });
       
@@ -307,7 +284,6 @@ export class PreferenceRepository {
    * Delete a specific preference
    */
   async delete(
-    tenantId: string,
     userId: string,
     event: NotificationTriggerEvent,
     channel: NotificationChannel,
@@ -315,8 +291,6 @@ export class PreferenceRepository {
     try {
       await this.db.notificationPreference.delete({
         where: {
-          tenantId_userId_event_channel: {
-            tenantId,
             userId,
             event,
             channel,
@@ -335,10 +309,8 @@ export class PreferenceRepository {
   /**
    * Delete all preferences for a user
    */
-  async deleteByUser(tenantId: string, userId: string): Promise<number> {
     try {
       const result = await this.db.notificationPreference.deleteMany({
-        where: { tenantId, userId },
       });
       
       this.logger.log(`Deleted ${result.count} preferences for user ${userId}`);
@@ -352,14 +324,12 @@ export class PreferenceRepository {
   /**
    * Get preference summary for a user
    */
-  async getSummary(tenantId: string, userId: string): Promise<{
     total: number;
     enabled: number;
     disabled: number;
     byEvent: Record<string, { enabled: number; total: number }>;
     byChannel: Record<string, { enabled: number; total: number }>;
   }> {
-    const preferences = await this.findByUser(tenantId, userId);
     
     const total = preferences.length;
     const enabled = preferences.filter(p => p.enabled).length;
@@ -391,17 +361,14 @@ export class PreferenceRepository {
    * Copy preferences from one user to another
    */
   async copyPreferences(
-    tenantId: string,
     fromUserId: string,
     toUserId: string,
   ): Promise<number> {
     try {
-      const sourcePreferences = await this.findByUser(tenantId, fromUserId);
       
       let created = 0;
       for (const pref of sourcePreferences) {
         await this.upsert(
-          tenantId,
           toUserId,
           pref.event,
           pref.channel,
@@ -422,13 +389,11 @@ export class PreferenceRepository {
    * Get all preferences with pagination
    */
   async findAllPaginated(
-    tenantId: string,
     page = 1,
     limit = 50,
     filter?: { event?: NotificationTriggerEvent; channel?: NotificationChannel; enabled?: boolean },
   ): Promise<{ data: NotificationPreference[]; total: number; page: number; limit: number }> {
     try {
-      const where: any = { tenantId };
       
       if (filter?.event) where.event = filter.event;
       if (filter?.channel) where.channel = filter.channel;
@@ -459,10 +424,8 @@ export class PreferenceRepository {
   /**
    * Check if a user has any custom preferences
    */
-  async hasCustomPreferences(tenantId: string, userId: string): Promise<boolean> {
     try {
       const count = await this.db.notificationPreference.count({
-        where: { tenantId, userId },
       });
       
       return count > 0;
@@ -476,7 +439,6 @@ export class PreferenceRepository {
    * Get default preferences for all events and channels
    */
   async getDefaultsForUser(
-    tenantId: string,
     userId: string,
   ): Promise<Array<{ event: NotificationTriggerEvent; channel: NotificationChannel; enabled: boolean }>> {
     const events = Object.values(NotificationTriggerEvent);
@@ -499,12 +461,9 @@ export class PreferenceRepository {
   /**
    * Initialize default preferences for a new user
    */
-  async initializeUserPreferences(tenantId: string, userId: string): Promise<number> {
-    const defaults = await this.getDefaultsForUser(tenantId, userId);
     let created = 0;
     
     for (const pref of defaults) {
-      await this.upsert(tenantId, userId, pref.event, pref.channel, pref.enabled);
       created++;
     }
     

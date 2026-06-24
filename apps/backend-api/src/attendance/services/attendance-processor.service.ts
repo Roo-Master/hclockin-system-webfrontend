@@ -35,7 +35,6 @@ export class AttendanceProcessorService {
   /**
    * Process a user's attendance for a specific date
    */
-  async processUserDay(userId: string, tenantId: string, date: Date) {
     const dateStr = date.toISOString().split('T')[0];
     const startOfDay = new Date(dateStr);
     startOfDay.setHours(0, 0, 0, 0);
@@ -46,7 +45,6 @@ export class AttendanceProcessorService {
     const roster = await this.db.rosterAssignment.findFirst({  // ✅ was this.databaseService
       where: {
         userId,
-        tenantId,
         date: startOfDay,
       },
       include: {
@@ -72,7 +70,6 @@ export class AttendanceProcessorService {
     const logs = await this.db.attendanceLog.findMany({
       where: {
         userId,
-        tenantId,
         timestamp: {
           gte: shiftStart ?? startOfDay,
           lte: shiftEnd ?? endOfDay,
@@ -166,7 +163,6 @@ export class AttendanceProcessorService {
       },
       update: summaryPayload,
       create: {
-        tenantId,
         userId,
         date: startOfDay,
         ...summaryPayload,
@@ -181,9 +177,7 @@ export class AttendanceProcessorService {
    * Process a night shift (spanning midnight).
    * Logs are collected across both days but filed under the shift's start date.
    */
-  async processNightShift(userId: string, tenantId: string, shiftDate: Date) {
     const roster = await this.db.rosterAssignment.findFirst({
-      where: { userId, tenantId, date: shiftDate },
       include: { shiftTemplate: true },
     });
 
@@ -202,7 +196,6 @@ export class AttendanceProcessorService {
     const logs = await this.db.attendanceLog.findMany({
       where: {
         userId,
-        tenantId,
         timestamp: { gte: shiftStart, lte: shiftEnd },
       },
       orderBy: { timestamp: 'asc' },
@@ -213,6 +206,5 @@ export class AttendanceProcessorService {
     );
 
     // File under the original shift date
-    return this.processUserDay(userId, tenantId, shiftDate);
   }
 }

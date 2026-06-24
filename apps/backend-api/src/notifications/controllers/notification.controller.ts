@@ -92,7 +92,6 @@ async getUserNotifications(
   @Query('type') type?: NotificationTriggerEvent,
 ): Promise<PaginatedNotificationResponseDto> {
   const userId = req.user?.id;
-  const tenantId = req.user?.tenantId || req.headers['x-tenant-id'];
 
   // ✅ FIXED: Changed Query?. to the parameter variables
   const filters = {
@@ -101,7 +100,6 @@ async getUserNotifications(
   };
   
   const result = await this.notificationService.findByUser(
-    tenantId, 
     userId, 
     page, 
     limit, 
@@ -123,9 +121,7 @@ async getUserNotifications(
 @ApiResponse({ status: 200, description: 'Returns unread count' })
 async getUnreadCount(@Req() req: any): Promise<{ count: number }> {
   const userId = req.user?.id;
-  const tenantId = req.user?.tenantId || req.headers['x-tenant-id'];
   
-  const count = await this.notificationService.countUnread(tenantId, userId);
   return { count };
 }
 
@@ -134,9 +130,7 @@ async getUnreadCount(@Req() req: any): Promise<{ count: number }> {
 @ApiResponse({ status: 200, type: NotificationSummaryDto })
 async getSummary(@Req() req: any): Promise<NotificationSummaryDto> {
   const userId = req.user?.id;
-  const tenantId = req.user?.tenantId || req.headers['x-tenant-id'];
   
-  const result = await this.notificationService.getSummary(tenantId, userId);
   
   // ✅ FIXED: Ensure recentNotifications have required properties
   return {
@@ -145,7 +139,6 @@ async getSummary(@Req() req: any): Promise<NotificationSummaryDto> {
     hasUnread: result.hasUnread,
     recentNotifications: ((result as any).recentNotifications || []).map((n: any) => ({
       id: n.id,
-      tenantId: n.tenantId,
       userId: n.userId,
       title: n.title,
       body: n.body,
@@ -169,9 +162,7 @@ async getNotification(
   @Param('id', ParseUUIDPipe) id: string,
   @Req() req: any,
 ): Promise<NotificationResponseDto> {
-  const tenantId = req.user?.tenantId || req.headers['x-tenant-id'];
   
-  const result = await this.notificationService.findById(id, tenantId);
   
   // ✅ FIXED: Add missing required properties
   return {
@@ -191,11 +182,9 @@ async createNotification(
   @Body(ValidationPipe) dto: CreateNotificationDto,
   @Req() req: any,
 ): Promise<NotificationResponseDto> {
-  const tenantId = req.user?.tenantId || req.headers['x-tenant-id'];
   
   const result = await this.notificationService.create({
     ...dto,
-    tenantId,
     userId: dto.userId || req.user?.id,
   });
   
@@ -216,10 +205,8 @@ async sendNotification(
   @Body(ValidationPipe) dto: CreateNotificationDto,
   @Req() req: any,
 ): Promise<{ success: boolean; results?: any[] }> {
-  const tenantId = req.user?.tenantId || req.headers['x-tenant-id'];
   
   const payload: NotificationPayload = {
-    tenantId,
     userId: dto.userId || req.user?.id,
     event: dto.triggerEvent,
     priority: dto.priority || 'MEDIUM',
@@ -242,9 +229,7 @@ async markAsRead(
   @Param('id', ParseUUIDPipe) id: string,
   @Req() req: any,
 ): Promise<{ success: boolean }> {
-  const tenantId = req.user?.tenantId || req.headers['x-tenant-id'];
   
-  await this.notificationService.markAsRead(id, tenantId);
   return { success: true };
 }
 
@@ -253,9 +238,7 @@ async markAsRead(
 @ApiResponse({ status: 200, description: 'All notifications marked as read' })
 async markAllAsRead(@Req() req: any): Promise<{ count: number }> {
   const userId = req.user?.id;
-  const tenantId = req.user?.tenantId || req.headers['x-tenant-id'];
   
-  const count = await this.notificationService.markAllAsRead(tenantId, userId);
   return { count };
 }
 
@@ -267,10 +250,8 @@ async markBulkAsRead(
   @Body(ValidationPipe) dto: MarkAsReadDto,
   @Req() req: any,
 ): Promise<{ count: number }> {
-  const tenantId = req.user?.tenantId || req.headers['x-tenant-id'];
   
   const count = await this.notificationService.markBulkAsRead(
-    tenantId,
     dto.notificationIds,
   );
   return { count };
@@ -284,9 +265,7 @@ async deleteNotification(
   @Param('id', ParseUUIDPipe) id: string,
   @Req() req: any,
 ): Promise<{ success: boolean }> {
-  const tenantId = req.user?.tenantId || req.headers['x-tenant-id'];
   
-  await this.notificationService.delete(id, tenantId);
   return { success: true };
 }
 
@@ -295,9 +274,7 @@ async deleteNotification(
 @ApiResponse({ status: 200, description: 'All notifications cleared' })
 async clearAllNotifications(@Req() req: any): Promise<{ count: number }> {
   const userId = req.user?.id;
-  const tenantId = req.user?.tenantId || req.headers['x-tenant-id'];
   
-  const count = await this.notificationService.clearAll(tenantId, userId);
   return { count };
 }
 
@@ -310,9 +287,7 @@ async clearAllNotifications(@Req() req: any): Promise<{ count: number }> {
 @ApiResponse({ status: 200, type: [NotificationPreferenceResponseDto] })
 async getPreferences(@Req() req: any): Promise<NotificationPreferenceResponseDto[]> {
   const userId = req.user?.id;
-  const tenantId = req.user?.tenantId || req.headers['x-tenant-id'];
   
-  const preferences = await this.preferenceService.getAll(tenantId, userId);
   return preferences.map(pref => ({
     ...pref,
     mandatory: pref.mandatory || false,
@@ -324,9 +299,7 @@ async getPreferences(@Req() req: any): Promise<NotificationPreferenceResponseDto
 @ApiResponse({ status: 200, description: 'Returns preference summary' })
 async getPreferenceSummary(@Req() req: any): Promise<any> {
   const userId = req.user?.id;
-  const tenantId = req.user?.tenantId || req.headers['x-tenant-id'];
   
-  return this.preferenceService.getSummary(tenantId, userId);
 }
 
 // First method - uses PUT /preferences
@@ -338,9 +311,7 @@ async bulkUpdatePreferencesLegacy(
   @Req() req: any,
 ): Promise<NotificationPreferenceResponseDto[]> {
   const userId = req.user?.id;
-  const tenantId = req.user?.tenantId || req.headers['x-tenant-id'];
   
-  const updatedList = await this.preferenceService.bulkUpdate(tenantId, userId, dto.preferences);
   return updatedList.map(pref => ({
     ...pref,
     mandatory: pref.mandatory || false,
@@ -357,10 +328,8 @@ async bulkUpdatePreferences(
   @Req() req: any,
 ): Promise<NotificationPreferenceResponseDto[]> {
   const userId = req.user?.id;
-  const tenantId = req.user?.tenantId || req.headers['x-tenant-id'];
   
   const updatedList = await this.preferenceService.bulkUpdate(
-    tenantId,
     userId,
     dto.preferences,
   );
@@ -376,9 +345,7 @@ async bulkUpdatePreferences(
 @ApiResponse({ status: 200, description: 'Preferences reset' })
 async resetPreferences(@Req() req: any): Promise<{ count: number }> {
   const userId = req.user?.id;
-  const tenantId = req.user?.tenantId || req.headers['x-tenant-id'];
   
-  const count = await this.preferenceService.resetToDefault(tenantId, userId);
   return { count };
 }
 
@@ -389,9 +356,7 @@ async resetPreferences(@Req() req: any): Promise<{ count: number }> {
 @ApiResponse({ status: 200, type: UserNotificationSettingsResponseDto })
 async getUserSettings(@Req() req: any): Promise<UserNotificationSettingsResponseDto> {
   const userId = req.user?.id;
-  const tenantId = req.user?.tenantId || req.headers['x-tenant-id'];
   
-  return this.preferenceService.getUserSettings(tenantId, userId);
 }
 
 @Put('settings')
@@ -403,9 +368,7 @@ async updateUserSettings(
   @Req() req: any,
 ): Promise<UserNotificationSettingsResponseDto> {
   const userId = req.user?.id;
-  const tenantId = req.user?.tenantId || req.headers['x-tenant-id'];
   
-  return this.preferenceService.updateUserSettings(tenantId, userId, dto);
 }
 
 @Put('settings/quiet-hours')
@@ -416,10 +379,8 @@ async updateQuietHours(
   @Req() req: any,
 ): Promise<{ success: boolean }> {
   const userId = req.user?.id;
-  const tenantId = req.user?.tenantId || req.headers['x-tenant-id'];
   
   await this.preferenceService.updateQuietHours(
-    tenantId,
     userId,
     dto.enabled,
     dto.start,
@@ -436,10 +397,8 @@ async updateDigestSettings(
   @Req() req: any,
 ): Promise<{ success: boolean }> {
   const userId = req.user?.id;
-  const tenantId = req.user?.tenantId || req.headers['x-tenant-id'];
   
   await this.preferenceService.updateDigestSettings(
-    tenantId,
     userId,
     dto.enabled,
     dto.frequency,
@@ -466,10 +425,8 @@ async updateDigestSettings(
     },
     @Req() req: any,
   ): Promise<{ success: boolean; count: number }> {
-    const tenantId = req.user?.tenantId || req.headers['x-tenant-id'];
     
     const count = await this.notificationService.broadcast(
-      tenantId,
       dto.userIds,
       {
         title: dto.title,
@@ -491,17 +448,13 @@ async updateDigestSettings(
     @Query('days', new DefaultValuePipe(30), ParseIntPipe) days: number,
     @Req() req: any,
   ): Promise<any> {
-    const tenantId = req.user?.tenantId || req.headers['x-tenant-id'];
     
-    return this.notificationService.getStats(tenantId, undefined, undefined);  }
 
   @Post('admin/retry-failed')
   @ApiOperation({ summary: 'Admin: Retry failed notifications' })
   @ApiResponse({ status: 200, description: 'Retry job started' })
   async retryFailedNotifications(@Req() req: any): Promise<{ success: boolean }> {
-    const tenantId = req.user?.tenantId || req.headers['x-tenant-id'];
     
-    await this.dispatcherService.retryFailed(tenantId);
     return { success: true };
   }
 
@@ -513,9 +466,7 @@ async updateDigestSettings(
     @Query('daysOld', new DefaultValuePipe(90), ParseIntPipe) daysOld: number,
     @Req() req: any,
   ): Promise<{ deletedCount: number }> {
-    const tenantId = req.user?.tenantId || req.headers['x-tenant-id'];
     
-    const deletedCount = await this.notificationService.cleanup(tenantId, daysOld);
     return { deletedCount };
   }
 

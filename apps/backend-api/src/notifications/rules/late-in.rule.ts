@@ -15,7 +15,6 @@ import {
 } from '../types/notification.types';
 
 export interface ClockInEventData {
-  tenantId: string;
   userId: string;
   employeeId: string;
   employeeName: string;
@@ -143,7 +142,6 @@ export class LateInRule {
 
     // 13. Emit event for analytics
     this.eventEmitter.emit('late-in.detected', {
-      tenantId: event.tenantId,
       userId: event.userId,
       employeeName: event.employeeName,
       lateMinutes: actualLateMinutes,
@@ -159,7 +157,6 @@ export class LateInRule {
       shouldNotify: true,
       lateMinutes: actualLateMinutes,
       payload: {
-        tenantId: event.tenantId,
         userId: event.userId,
         event: NotificationTriggerEvent.LATE_IN,
         priority,
@@ -395,7 +392,6 @@ export class LateInRule {
 
   // Public helper methods for other services
   async getEmployeeLateStats(
-    tenantId: string,
     userId: string,
     date: Date = new Date(),
   ): Promise<{

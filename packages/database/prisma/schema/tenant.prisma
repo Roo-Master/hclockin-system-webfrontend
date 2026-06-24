@@ -1,49 +1,28 @@
 model Tenant {
-  id                        String                     @id @default(uuid()) @db.Uuid
-  name                      String                     @db.VarChar(255)
-  subdomain                 String                     @unique @db.VarChar(100)
-  licenseKey                String                     @map("license_key") @db.VarChar(255)
-  slug                      String                     @unique
-  isActive                  Boolean                    @default(true) @map("is_active")
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @db.VarChar(100)
+  slug        String   @unique @db.VarChar(50)
+  subdomain   String   @unique @db.VarChar(50)
+  licenseKey  String   @map("license_key") @db.VarChar(100)
+  isActive    Boolean  @default(true)
+  settings    Json     @default("{}")
+  features    Json     @default("{}")
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamptz(6)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  // --- added fields ---
-  suspendReason             String?                    @map("suspend_reason") @db.VarChar(500)
-  suspendedAt               DateTime?                  @map("suspended_at") @db.Timestamptz(6)
-  deletedAt                 DateTime?                  @map("deleted_at") @db.Timestamptz(6)
-  // --- end added fields ---
+  // Relations
+  users           User[]           @relation("UserTenant")
+  departments     Department[]     @relation("DepartmentTenant")
+  employees       Employee[]       @relation("EmployeeTenant")
+  devices         Device[]         @relation("DeviceTenant")
+  leaveRequests   LeaveRequest[]   @relation("LeaveRequestTenant")
+  attendance      Attendance[]     @relation("AttendanceTenant")
+  payrolls        Payroll[]        @relation("PayrollTenant")
+  invoices        Invoice[]        @relation("InvoiceTenant")
+  settings        Setting?         @relation("SettingTenant")
+  shifts          Shift[]          @relation("ShiftTenant")
+  rosters         Roster[]         @relation("RosterTenant")
 
-  createdAt                 DateTime                   @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt                 DateTime                   @updatedAt @map("updated_at") @db.Timestamptz(6)
-
-  attendanceAudits          AttendanceAudit[]
-  attendanceLogs            AttendanceLog[]
-  attendanceSummaries       AttendanceSummary[]
-  compiledReports           CompiledReport[]
-  departments               Department[]
-  devices                   Device[]
-  employeeAudits            EmployeeAudit[]
-  leaveRequests             LeaveRequest[]
-  notificationLogs          NotificationLog[]
-  notificationPreferences   NotificationPreference[]
-  userNotificationSettings  UserNotificationSettings[]
-  notificationDigests       NotificationDigest[]
-  notificationTemplates     NotificationTemplate[]
-  notificationRateLimits    NotificationRateLimit[]
-  payrollPeriods            PayrollPeriod[]
-  payslips                  Payslip[]
-  reconciliationLogs        ReconciliationLog[]
-  rosterAssignmentHistories RosterAssignmentHistory[]
-  rosterAssignments         RosterAssignment[]
-  shiftTemplates            ShiftTemplate[]
-  systemSetting             SystemSetting?
-  users                     User[]
-
-  // --- added relations ---
-  impersonationLogs         ImpersonationLog[]
-  // --- end added relations ---
-
-  @@index([subdomain])
-  @@index([isActive])     // added — stats queries filter by this frequently
-  @@index([deletedAt])    // added — soft delete filter on all list queries
   @@map("tenants")
 }

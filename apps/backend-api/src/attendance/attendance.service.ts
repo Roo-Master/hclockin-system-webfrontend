@@ -9,7 +9,6 @@ import { QueueService } from '../queue/queue.service';
 import { AttendanceStatus, AttendanceLog } from '@chronos/database';
 
 export interface CreateAttendanceLogDto {
-  tenantId: string;
   userId: string;
   deviceId: string;
   direction: 'IN' | 'OUT';
@@ -18,7 +17,6 @@ export interface CreateAttendanceLogDto {
 }
 
 export interface AttendanceSummaryFilters {
-  tenantId: string;
   userId?: string;
   startDate?: Date;
   endDate?: Date;
@@ -39,21 +37,16 @@ export class AttendanceService {
 
   // ─── Clock In / Clock Out (manual web) ────────────────────────────────────
 
-  async clockIn(userId: string, tenantId: string) {
     const user = await this.db.user.findFirst({
-      where: { id: userId, tenantId, isActive: true },
     });
     if (!user) throw new BadRequestException('User not found or inactive');
 
     // Find a virtual/web device for manual clock-ins
     const webDevice = await this.db.device.findFirst({
-      where: { tenantId, serialCode: 'WEB-MANUAL' },
     });
-    if (!webDevice) throw new BadRequestException('No web clock-in device configured for this tenant');
 
     const log = await this.db.attendanceLog.create({
       data: {
-        tenantId,
         userId,
         deviceId: webDevice.id,
         direction: 'IN',
@@ -62,7 +55,6 @@ export class AttendanceService {
     });
 
     await this.queue.addAttendanceJob({
-      tenantId,
       userId,
       date: log.timestamp.toISOString().split('T')[0],
       createdAt: new Date().toISOString(),
@@ -73,20 +65,15 @@ export class AttendanceService {
     return log;
   }
 
-  async clockOut(userId: string, tenantId: string) {
     const user = await this.db.user.findFirst({
-      where: { id: userId, tenantId, isActive: true },
     });
     if (!user) throw new BadRequestException('User not found or inactive');
 
     const webDevice = await this.db.device.findFirst({
-      where: { tenantId, serialCode: 'WEB-MANUAL' },
     });
-    if (!webDevice) throw new BadRequestException('No web clock-in device configured for this tenant');
 
     const log = await this.db.attendanceLog.create({
       data: {
-        tenantId,
         userId,
         deviceId: webDevice.id,
         direction: 'OUT',
@@ -95,7 +82,6 @@ export class AttendanceService {
     });
 
     await this.queue.addAttendanceJob({
-      tenantId,
       userId,
       date: log.timestamp.toISOString().split('T')[0],
       createdAt: new Date().toISOString(),
@@ -108,22 +94,18 @@ export class AttendanceService {
 
   // ─── Device Sync ──────────────────────────────────────────────────────────
 
-  async syncLogsFromDevices(tenantId: string) {
     // Pull unprocessed logs directly — no DeviceService dependency needed
     const logs = await this.db.attendanceLog.findMany({
-      where: { tenantId, processed: false },
       take: 500,
       orderBy: { timestamp: 'asc' },
     });
 
     if (!logs.length) {
-      this.logger.debug(`No pending device logs for tenant ${tenantId}`);
       return { synced: 0 };
     }
 
     const results = await this.bulkIngest(
       logs.map((log) => ({
-        tenantId: log.tenantId,
         userId: log.userId,
         deviceId: log.deviceId,
         direction: log.direction as 'IN' | 'OUT',
@@ -141,7 +123,6 @@ export class AttendanceService {
     }
 
     this.logger.log(
-      `Synced ${results.success} logs from devices for tenant ${tenantId}` +
         (results.failed ? ` (${results.failed} failed)` : ''),
     );
 
@@ -153,7 +134,6 @@ export class AttendanceService {
   async ingestLog(data: CreateAttendanceLogDto) {
     try {
       const user = await this.db.user.findFirst({
-        where: { id: data.userId, tenantId: data.tenantId, isActive: true },
       });
 
       if (!user) throw new BadRequestException('Invalid user or user not active');
@@ -169,7 +149,6 @@ export class AttendanceService {
         },
         update: {},
         create: {
-          tenantId: data.tenantId,
           userId: data.userId,
           deviceId: data.deviceId,
           direction: data.direction,
@@ -179,7 +158,6 @@ export class AttendanceService {
       });
 
       await this.queue.addAttendanceJob({
-        tenantId: log.tenantId,
         userId: log.userId,
         date: log.timestamp.toISOString().split('T')[0],
         createdAt: new Date().toISOString(),
@@ -221,7 +199,6 @@ export class AttendanceService {
 
   async getSummaries(filters: AttendanceSummaryFilters) {
     const {
-      tenantId,
       userId,
       startDate,
       endDate,
@@ -232,7 +209,6 @@ export class AttendanceService {
     } = filters;
 
     const where: any = {
-      tenantId,
       ...(userId && { userId }),
       ...(status && { status }),
       ...(startDate && { date: { gte: startDate } }),
@@ -241,7 +217,6 @@ export class AttendanceService {
 
     if (departmentId) {
       const users = await this.db.user.findMany({
-        where: { tenantId, departmentId },
         select: { id: true },
       });
       where.userId = { in: users.map((u) => u.id) };
@@ -277,14 +252,12 @@ export class AttendanceService {
     };
   }
 
-  async getDailyBreakdown(tenantId: string, date: Date) {
     const startDate = new Date(date);
     startDate.setHours(0, 0, 0, 0);
     const endDate = new Date(date);
     endDate.setHours(23, 59, 59, 999);
 
     return this.db.attendanceSummary.findMany({
-      where: { tenantId, date: { gte: startDate, lte: endDate } },
       include: {
         user: {
           select: {
@@ -303,7 +276,6 @@ export class AttendanceService {
   // ─── Manual Override ──────────────────────────────────────────────────────
 
   async manualOverride(
-    tenantId: string,
     adminUserId: string,
     summaryId: string,
     data: {
@@ -317,7 +289,6 @@ export class AttendanceService {
     },
   ) {
     const existing = await this.db.attendanceSummary.findFirst({
-      where: { id: summaryId, tenantId },
     });
     if (!existing) throw new NotFoundException('Attendance summary not found');
 
@@ -337,7 +308,6 @@ export class AttendanceService {
       }),
       this.db.attendanceAudit.create({
         data: {
-          tenantId,
           userId: adminUserId,
           targetSummaryId: summaryId,
           actionType: 'OVERRIDE',
@@ -359,9 +329,7 @@ export class AttendanceService {
 
   // ─── Audit Trail ──────────────────────────────────────────────────────────
 
-  async getAuditTrail(tenantId: string, summaryId: string): Promise<any[]> {
     return this.db.attendanceAudit.findMany({
-      where: { tenantId, targetSummaryId: summaryId },
       include: {
         user: {
           select: { id: true, firstName: true, lastName: true, email: true },
@@ -374,13 +342,11 @@ export class AttendanceService {
   // ─── Recalculate ──────────────────────────────────────────────────────────
 
   async recalculateRange(
-    tenantId: string,
     startDate: Date,
     endDate: Date,
     userId?: string,
   ) {
     const where: any = {
-      tenantId,
       date: { gte: startDate, lte: endDate },
       ...(userId && { userId }),
     };
@@ -393,7 +359,6 @@ export class AttendanceService {
     for (const summary of summaries) {
       await this.queue.addAttendanceJob(
         {
-          tenantId,
           userId: summary.userId,
           date: summary.date,
           createdAt: new Date().toISOString(),
@@ -410,13 +375,11 @@ export class AttendanceService {
   // ─── Raw Logs ─────────────────────────────────────────────────────────────
 
   async getRawLogs(
-    tenantId: string,
     filters: any,
   ): Promise<{ data: AttendanceLog[]; total: number; page: number; limit: number }> {
     const { userId, startDate, endDate, direction, page = 1, limit = 100 } = filters;
 
     const where: any = {
-      tenantId,
       ...(userId && { userId }),
       ...(direction && { direction }),
       ...(startDate && { timestamp: { gte: startDate } }),
@@ -439,7 +402,6 @@ export class AttendanceService {
 
   // ─── Dashboard Stats ──────────────────────────────────────────────────────
 
-  async getDashboardStats(tenantId: string, date: Date) {
     const startDate = new Date(date);
     startDate.setHours(0, 0, 0, 0);
     const endDate = new Date(date);
@@ -447,12 +409,6 @@ export class AttendanceService {
     const dateFilter = { gte: startDate, lte: endDate };
 
     const stats = await this.db.$transaction([
-      this.db.attendanceSummary.count({ where: { tenantId, date: dateFilter } }),
-      this.db.attendanceSummary.count({ where: { tenantId, date: dateFilter, status: 'PRESENT' } }),
-      this.db.attendanceSummary.count({ where: { tenantId, date: dateFilter, lateMinutes: { gt: 0 } } }),
-      this.db.attendanceSummary.count({ where: { tenantId, date: dateFilter, status: 'ABSENT' } }),
-      this.db.attendanceSummary.count({ where: { tenantId, date: dateFilter, status: 'ON_LEAVE' } }),
-      this.db.user.count({ where: { tenantId, isActive: true } }),
     ]);
 
     return {

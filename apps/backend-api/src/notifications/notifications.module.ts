@@ -6,8 +6,6 @@ import { NotificationsService } from './services/notification.service';
 import { NotificationsController } from './notifications.controller'; // Simplified controller
 import { NotificationController } from './controllers/notification.controller'; // Comprehensive controller
 import { PrismaService } from '../database/prisma.service';
-import { WebsocketModule } from '../websocket/websocket.module';
-import { NotificationGateway } from '../websocket/notification.gateway';
 
 // Attendance helpers
 import { AttendanceCalculator } from '../attendance/helpers/attendance-calculator';

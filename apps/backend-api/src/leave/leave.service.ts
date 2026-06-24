@@ -39,7 +39,6 @@ import {
   
       const record = await this.db.leaveRequest.create({
         data: {
-          tenantId: dto.tenantId,
           employeeId: dto.employeeId,
           leaveType: dto.type,
           startDate: start,
@@ -52,17 +51,13 @@ import {
       return this.mapToILeave(record);
     }
   
-    async getAllLeaves(tenantId: string): Promise<ILeave[]> {
       const records = await this.db.leaveRequest.findMany({
-        where: { tenantId },
         orderBy: { createdAt: 'desc' },
       });
       return records.map((r) => this.mapToILeave(r));
     }
   
-    async getLeaveById(tenantId: string, id: string): Promise<ILeave> {
       const record = await this.db.leaveRequest.findFirst({
-        where: { id, tenantId },
       });
   
       if (!record) {
@@ -73,33 +68,27 @@ import {
     }
   
     async getLeavesByEmployee(
-      tenantId: string,
       employeeId: string,
     ): Promise<ILeave[]> {
       const records = await this.db.leaveRequest.findMany({
-        where: { tenantId, employeeId },
         orderBy: { createdAt: 'desc' },
       });
       return records.map((r) => this.mapToILeave(r));
     }
   
     async getLeavesByStatus(
-      tenantId: string,
       status: LeaveStatus,
     ): Promise<ILeave[]> {
       const records = await this.db.leaveRequest.findMany({
-        where: { tenantId, status },
         orderBy: { createdAt: 'desc' },
       });
       return records.map((r) => this.mapToILeave(r));
     }
   
     async updateLeaveStatus(
-      tenantId: string,
       id: string,
       dto: UpdateLeaveStatusDto,
     ): Promise<ILeave> {
-      const existing = await this.getLeaveById(tenantId, id);
   
       if (existing.status !== LeaveStatus.PENDING) {
         throw new BadRequestException(
@@ -120,11 +109,9 @@ import {
     }
   
     async cancelLeave(
-      tenantId: string,
       id: string,
       employeeId: string,
     ): Promise<ILeave> {
-      const existing = await this.getLeaveById(tenantId, id);
   
       if (existing.employeeId !== employeeId) {
         throw new BadRequestException(
@@ -149,8 +136,6 @@ import {
       return this.mapToILeave(updated);
     }
   
-    async deleteLeave(tenantId: string, id: string): Promise<void> {
-      await this.getLeaveById(tenantId, id);
       await this.db.leaveRequest.delete({ where: { id } });
     }
   

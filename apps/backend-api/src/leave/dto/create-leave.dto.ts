@@ -12,7 +12,6 @@ import {
   export class CreateLeaveDto {
     @IsUUID()
     @IsOptional()
-    tenantId: string; // injected from JWT in controller
   
     @IsUUID()
     @IsNotEmpty()

@@ -1,7 +1,6 @@
 export class Attendance {
   id: string;
   userId: string;
-  tenantId: string;
   firstIn: Date | null;
   lastOut: Date | null;
   status: string;

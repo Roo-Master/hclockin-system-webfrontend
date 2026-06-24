@@ -213,7 +213,6 @@ export class NotificationAuthMiddleware implements NestMiddleware {
     // This is a placeholder
     // For now, accept any token in development
     if (process.env.NODE_ENV === 'development') {
-      return { id: 'test-user', tenantId: 'test-tenant' };
     }
     
     // In production, verify with JWT or auth service
@@ -366,7 +365,6 @@ export class NotificationUserContextMiddleware implements NestMiddleware {
 
   async use(req: Request, res: Response, next: NextFunction) {
     const userId = req['user']?.id;
-    const tenantId = req['user']?.tenantId || req.headers['x-tenant-id'] as string;
     
     if (!userId) {
       // For public endpoints, continue without user context
@@ -381,10 +379,8 @@ export class NotificationUserContextMiddleware implements NestMiddleware {
       });
     }
     
-    if (!tenantId) {
       return res.status(400).json({
         statusCode: 400,
-        message: 'Tenant context required. Provide x-tenant-id header.',
         error: 'Bad Request',
       });
     }
@@ -392,18 +388,14 @@ export class NotificationUserContextMiddleware implements NestMiddleware {
     // Attach context to request
     req['context'] = {
       userId,
-      tenantId,
       requestId: req['requestId'],
       timestamp: new Date(),
     };
     
-    // Validate user has access to tenant
-    const hasAccess = await this.validateUserTenantAccess(userId, tenantId);
     
     if (!hasAccess) {
       return res.status(403).json({
         statusCode: 403,
-        message: 'User does not have access to this tenant',
         error: 'Forbidden',
       });
     }
@@ -421,9 +413,6 @@ export class NotificationUserContextMiddleware implements NestMiddleware {
     return publicEndpoints.some(endpoint => path.startsWith(endpoint));
   }
 
-  private async validateUserTenantAccess(userId: string, tenantId: string): Promise<boolean> {
-    // Implement user-tenant validation
-    // This would check if the user belongs to the tenant
     // For now, return true
     return true;
   }

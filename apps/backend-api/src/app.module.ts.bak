@@ -1,0 +1,19 @@
+import { Module } from '@nestjs/common';
+import { DatabaseModule } from './database/database.module';
+import { QueueModule } from './queue/queue.module';
+import { WebsocketModule } from './websocket/websocket.module';
+import { JobsModule } from './jobs/jobs.module';
+import { TenantModule } from './tenant/tenant.module';
+import { AuthModule } from './auth/auth.module';
+
+@Module({
+  imports: [
+    DatabaseModule,
+    QueueModule,
+    WebsocketModule,
+    JobsModule,
+    TenantModule,
+    AuthModule, // ← ADD THIS LINE
+  ],
+})
+export class AppModule {}

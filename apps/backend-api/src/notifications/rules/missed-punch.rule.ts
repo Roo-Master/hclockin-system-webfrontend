@@ -12,7 +12,6 @@ import {
 } from '../types/notification.types';
 
 export interface MissedPunchEventData {
-  tenantId: string;
   userId: string;
   employeeId: string;
   employeeName: string;
@@ -154,7 +153,6 @@ export class MissedPunchRule {
       
       // Create payload for employee
       const payload: NotificationPayload = {
-        tenantId: event.tenantId,
         userId: event.userId,
         event: NotificationTriggerEvent.MISSED_PUNCH,
         priority,
@@ -167,7 +165,6 @@ export class MissedPunchRule {
       
       // Emit event for analytics
       this.eventEmitter.emit('missed-punch.detected', {
-        tenantId: event.tenantId,
         userId: event.userId,
         employeeName: event.employeeName,
         missedHours,
@@ -192,17 +189,14 @@ export class MissedPunchRule {
   /**
    * Check for missed punches system-wide (to be run by cron job)
    */
-  async scanForMissedPunches(tenantId: string): Promise<{
     scanned: number;
     notified: number;
   }> {
-    this.logger.log(`Scanning for missed punches in tenant: ${tenantId}`);
     
     // This would query the database for active clock-ins without clock-outs
     // Implementation depends on your database schema
     
     // Placeholder for actual implementation
-    const activeSessions = await this.getActiveClockInSessions(tenantId);
     
     let notified = 0;
     for (const session of activeSessions) {
@@ -222,7 +216,6 @@ export class MissedPunchRule {
    * Get missed punch statistics for an employee
    */
   async getEmployeeMissedPunchStats(
-    tenantId: string,
     userId: string,
     date: Date = new Date(),
   ): Promise<{
@@ -340,7 +333,6 @@ export class MissedPunchRule {
     channels: NotificationChannel[],
   ): NotificationPayload {
     return {
-      tenantId: event.tenantId,
       userId: event.managerId,
       event: NotificationTriggerEvent.MISSED_PUNCH,
       priority,
@@ -390,7 +382,6 @@ export class MissedPunchRule {
     return 0;
   }
 
-  private async getActiveClockInSessions(tenantId: string): Promise<MissedPunchEventData[]> {
     // This would query the database for active clock-in sessions without clock-out
     // For now, return empty array (implement with your database repository)
     return [];

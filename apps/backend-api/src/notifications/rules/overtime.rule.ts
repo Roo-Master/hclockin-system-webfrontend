@@ -12,7 +12,6 @@ import {
 } from '../types/notification.types';
 
 export interface OvertimeEventData {
-  tenantId: string;
   userId: string;
   employeeId: string;
   employeeName: string;
@@ -205,7 +204,6 @@ export class OvertimeRule {
 
       // Create payload for employee
       const payload: NotificationPayload = {
-        tenantId: event.tenantId,
         userId: event.userId,
         event: NotificationTriggerEvent.OVERTIME_RECORDED,
         priority,
@@ -218,7 +216,6 @@ export class OvertimeRule {
 
       // Emit event for analytics
       this.eventEmitter.emit('overtime.detected', {
-        tenantId: event.tenantId,
         userId: event.userId,
         employeeName: event.employeeName,
         shiftOvertime,
@@ -268,7 +265,6 @@ export class OvertimeRule {
       const monthlyOvertime = await this.getMonthlyOvertime(event.userId, event.shiftDate);
 
       const payload: NotificationPayload = {
-        tenantId: event.tenantId,
         userId: event.userId,
         event: NotificationTriggerEvent.OVERTIME_APPROACHING,
         priority: NotificationPriority.MEDIUM,
@@ -292,7 +288,6 @@ export class OvertimeRule {
       };
 
       this.eventEmitter.emit('overtime.approaching', {
-        tenantId: event.tenantId,
         userId: event.userId,
         projectedOvertime,
       });
@@ -313,7 +308,6 @@ export class OvertimeRule {
   /**
    * Send weekly overtime summary
    */
-  async sendWeeklySummary(tenantId: string, userId: string, weekEndDate: Date): Promise<void> {
     this.logger.debug(`Sending weekly overtime summary for user: ${userId}`);
 
     try {
@@ -328,7 +322,6 @@ export class OvertimeRule {
       }
 
       const payload: NotificationPayload = {
-        tenantId,
         userId,
         event: NotificationTriggerEvent.OVERTIME_RECORDED,
         priority: NotificationPriority.LOW,
@@ -360,7 +353,6 @@ export class OvertimeRule {
    * Get overtime statistics for an employee
    */
   async getOvertimeStats(
-    tenantId: string,
     userId: string,
     date: Date = new Date(),
   ): Promise<{
@@ -497,7 +489,6 @@ export class OvertimeRule {
     channels: NotificationChannel[],
   ): NotificationPayload {
     return {
-      tenantId: event.tenantId,
       userId: event.managerId,
       event: NotificationTriggerEvent.OVERTIME_RECORDED,
       priority,

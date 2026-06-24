@@ -4,7 +4,6 @@ import { OnEvent } from '@nestjs/event-emitter';
 import { DispatcherService } from '../services/dispatcher.service';
 import { LateInRule, ClockInEventData } from '../rules/late-in.rule';
 import { MissedPunchRule } from '../rules/missed-punch.rule';
-import { WebSocketService } from '../../websocket/services/websocket.service';
 import { OvertimeRule } from '../rules/overtime.rule';
 import {
   NotificationTriggerEvent,
@@ -13,7 +12,6 @@ import {
 } from '../types/notification.types';
 
 export interface ClockInEvent {
-  tenantId: string;
   userId: string;
   employeeId: string;
   employeeName: string;
@@ -36,7 +34,6 @@ export interface ClockInEvent {
 }
 
 export interface ClockOutEvent {
-  tenantId: string;
   userId: string;
   employeeId: string;
   employeeName: string;
@@ -53,7 +50,6 @@ export interface ClockOutEvent {
 }
 
 export interface LeaveRequestEvent {
-  tenantId: string;
   userId: string;
   employeeId: string;
   employeeName: string;
@@ -70,7 +66,6 @@ export interface LeaveRequestEvent {
 }
 
 export interface TimecardEditEvent {
-  tenantId: string;
   userId: string;
   employeeId: string;
   employeeName: string;
@@ -85,7 +80,6 @@ export interface TimecardEditEvent {
 }
 
 export interface ShiftAssignmentEvent {
-  tenantId: string;
   userId: string;
   employeeId: string;
   employeeName: string;
@@ -131,7 +125,6 @@ export class NotificationListener {
         // Send real-time WebSocket notification
         await this.webSocketService.sendAttendanceAlert(
           event.userId,
-          event.tenantId,
           'late_in',
           {
             lateMinutes: result.lateMinutes,
@@ -145,7 +138,6 @@ export class NotificationListener {
         if (result.lateMinutes > 30) {
           await this.webSocketService.sendNotificationToUser(
             event.managerId,
-            event.tenantId,
             '⚠️ Employee Late Alert',
             `${event.employeeName} is ${result.lateMinutes} minutes late for their shift starting at ${event.scheduledStartTime}.`,
             'manager_alert',
@@ -183,7 +175,6 @@ export class NotificationListener {
         if (overtimeResult.overtimeHours > 0) {
           await this.webSocketService.sendAttendanceAlert(
             event.userId,
-            event.tenantId,
             'overtime',
             {
               overtimeHours: overtimeResult.overtimeHours,
@@ -202,7 +193,6 @@ export class NotificationListener {
    * Scheduled check for missed punches (runs via cron job)
    */
   @OnEvent('attendance.missed-punch.check')
-  async handleMissedPunchCheck(data: { tenantId: string; userId: string; attendanceRecord: any }) {
     this.logger.debug(`Checking missed punch for user: ${data.userId}`);
     
     try {
@@ -215,7 +205,6 @@ export class NotificationListener {
         // Send urgent WebSocket notification for missed punch
         await this.webSocketService.sendAttendanceAlert(
           data.userId,
-          data.tenantId,
           'missed_punch',
           {
             shiftDate: data.attendanceRecord?.shiftDate,
@@ -240,7 +229,6 @@ export class NotificationListener {
     
     try {
       const payload = {
-        tenantId: event.tenantId,
         userId: event.managerId,
         event: NotificationTriggerEvent.LEAVE_REQUEST_CREATED,
         priority: NotificationPriority.MEDIUM,
@@ -270,7 +258,6 @@ export class NotificationListener {
       // Send WebSocket notification to manager
       await this.webSocketService.sendNotificationToUser(
         event.managerId,
-        event.tenantId,
         '📝 New Leave Request',
         `${event.employeeName} has submitted a ${event.leaveType} leave request from ${event.startDate} to ${event.endDate}.`,
         'leave_request',
@@ -299,7 +286,6 @@ export class NotificationListener {
     
     try {
       const payload = {
-        tenantId: event.tenantId,
         userId: event.userId,
         event: NotificationTriggerEvent.LEAVE_REQUEST_APPROVED,
         priority: NotificationPriority.MEDIUM,
@@ -327,7 +313,6 @@ export class NotificationListener {
       // Send WebSocket notification to employee
       await this.webSocketService.sendLeaveRequestUpdate(
         event.userId,
-        event.tenantId,
         'approved',
         {
           leaveType: event.leaveType,
@@ -353,7 +338,6 @@ export class NotificationListener {
     
     try {
       const payload = {
-        tenantId: event.tenantId,
         userId: event.userId,
         event: NotificationTriggerEvent.LEAVE_REQUEST_REJECTED,
         priority: NotificationPriority.MEDIUM,
@@ -381,7 +365,6 @@ export class NotificationListener {
       // Send WebSocket notification to employee
       await this.webSocketService.sendLeaveRequestUpdate(
         event.userId,
-        event.tenantId,
         'rejected',
         {
           leaveType: event.leaveType,
@@ -414,7 +397,6 @@ export class NotificationListener {
         .join(', ');
       
       const payload = {
-        tenantId: event.tenantId,
         userId: event.userId,
         event: NotificationTriggerEvent.TIMECARD_EDITED,
         priority: NotificationPriority.HIGH,
@@ -442,7 +424,6 @@ export class NotificationListener {
       // Send WebSocket notification
       await this.webSocketService.sendNotificationToUser(
         event.userId,
-        event.tenantId,
         '✏️ Timecard Edited',
         `Your timecard for ${event.shiftDate} was modified by ${event.editedByName}. Changes: ${changeSummary}`,
         'timecard_edit',
@@ -471,7 +452,6 @@ export class NotificationListener {
     
     try {
       const payload = {
-        tenantId: event.tenantId,
         userId: event.userId,
         event: NotificationTriggerEvent.SHIFT_ASSIGNED,
         priority: NotificationPriority.MEDIUM,
@@ -501,7 +481,6 @@ export class NotificationListener {
       // Send WebSocket notification
       await this.webSocketService.sendShiftReminder(
         event.userId,
-        event.tenantId,
         {
           startTime: event.shiftStart,
           endTime: event.shiftEnd,
@@ -525,7 +504,6 @@ export class NotificationListener {
     
     try {
       const payload = {
-        tenantId: event.tenantId,
         userId: event.userId,
         event: NotificationTriggerEvent.SHIFT_CHANGED,
         priority: NotificationPriority.HIGH,
@@ -555,7 +533,6 @@ export class NotificationListener {
       // Send WebSocket notification
       await this.webSocketService.sendNotificationToUser(
         event.userId,
-        event.tenantId,
         '🔄 Shift Changed',
         `Your shift on ${event.shiftDate} has been changed from ${event.oldShiftStart}-${event.oldShiftEnd} to ${event.shiftStart}-${event.shiftEnd}.`,
         'shift_change',
@@ -582,12 +559,10 @@ export class NotificationListener {
    * Listen to schedule posted events
    */
   @OnEvent('schedule.posted')
-  async handleSchedulePosted(data: { tenantId: string; userIds: string[]; weekStart: Date; postedBy: string }) {
     this.logger.debug(`Schedule posted for ${data.userIds.length} users`);
     
     try {
       const payloads = data.userIds.map(userId => ({
-        tenantId: data.tenantId,
         userId,
         event: NotificationTriggerEvent.SCHEDULE_POSTED,
         priority: NotificationPriority.LOW,
@@ -610,7 +585,6 @@ export class NotificationListener {
       for (const userId of data.userIds) {
         await this.webSocketService.sendNotificationToUser(
           userId,
-          data.tenantId,
           '📅 New Schedule Posted',
           `A new schedule has been posted for the week of ${data.weekStart}.`,
           'schedule_update',
@@ -633,12 +607,10 @@ export class NotificationListener {
    * Listen to clock-in reminder events (triggered by cron)
    */
   @OnEvent('reminder.clock-in')
-  async handleClockInReminder(data: { tenantId: string; userId: string; employeeName: string; employeeEmail: string; scheduledStartTime: string }) {
     this.logger.debug(`Clock-in reminder for user: ${data.userId}`);
     
     try {
       const payload = {
-        tenantId: data.tenantId,
         userId: data.userId,
         event: NotificationTriggerEvent.CLOCK_IN_REMINDER,
         priority: NotificationPriority.LOW,
@@ -660,7 +632,6 @@ export class NotificationListener {
       // Send WebSocket reminder
       await this.webSocketService.sendNotificationToUser(
         data.userId,
-        data.tenantId,
         '⏰ Clock-In Reminder',
         `Your shift starts at ${data.scheduledStartTime}. Please don't forget to clock in.`,
         'reminder',
@@ -680,12 +651,10 @@ export class NotificationListener {
    * Listen to unsubmitted timesheet reminder
    */
   @OnEvent('reminder.unsubmitted-timesheet')
-  async handleUnsubmittedTimesheet(data: { tenantId: string; userId: string; employeeName: string; employeeEmail: string; periodEnd: Date }) {
     this.logger.debug(`Unsubmitted timesheet reminder for user: ${data.userId}`);
     
     try {
       const payload = {
-        tenantId: data.tenantId,
         userId: data.userId,
         event: NotificationTriggerEvent.UNSUBMITTED_TIMESHEET,
         priority: NotificationPriority.MEDIUM,
@@ -707,7 +676,6 @@ export class NotificationListener {
       // Send WebSocket reminder
       await this.webSocketService.sendNotificationToUser(
         data.userId,
-        data.tenantId,
         '📋 Unsubmitted Timesheet',
         `Your timesheet for the period ending ${data.periodEnd} has not been submitted. Please submit it as soon as possible.`,
         'reminder',
@@ -729,12 +697,10 @@ export class NotificationListener {
    * Listen to integration failure events
    */
   @OnEvent('integration.failed')
-  async handleIntegrationFailed(data: { tenantId: string; userId: string; integration: string; error: string; timestamp: Date }) {
     this.logger.debug(`Integration failure: ${data.integration}`);
     
     try {
       const payload = {
-        tenantId: data.tenantId,
         userId: data.userId,
         event: NotificationTriggerEvent.INTEGRATION_FAILED,
         priority: NotificationPriority.HIGH,
@@ -758,7 +724,6 @@ export class NotificationListener {
       // Send WebSocket alert to admin
       await this.webSocketService.sendSystemAlert(
         [data.userId],
-        data.tenantId,
         '🚨 Integration Failed',
         `The ${data.integration} integration failed at ${data.timestamp}. Error: ${data.error}`,
         'error',

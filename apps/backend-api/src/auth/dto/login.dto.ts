@@ -1,13 +1,16 @@
-import { IsEmail, IsString, MinLength } from "class-validator";
+import { IsEmail, IsNotEmpty, IsUUID, IsString, MaxLength } from 'class-validator';
 
 export class LoginDto {
-  @IsString()
-  tenantId: string;
+  @IsEmail()
+  @IsNotEmpty()
+  email: string;
 
+  @IsNotEmpty()
   @IsString()
-  identifier: string; // email OR payrollNumber
-
-  @IsString()
-  @MinLength(6)
+  @MaxLength(128)
   password: string;
+
+  @IsUUID()
+  @IsNotEmpty()
+  tenantId: string;
 }

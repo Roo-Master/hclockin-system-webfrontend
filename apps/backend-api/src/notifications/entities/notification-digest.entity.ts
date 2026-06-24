@@ -1,7 +1,6 @@
 // entities/notification-digest.entity.ts
 export interface NotificationDigest {
   id: string;
-  tenantId: string;
   userId: string;
   digestType: string;
   notifications: any[];
@@ -14,17 +13,13 @@ export interface NotificationDigest {
  * Stores batched digest notifications for daily/weekly summaries
  */
 @Entity('notification_digests')
-@Index(['tenantId', 'userId'])
 @Index(['status'])
 @Index(['createdAt'])
-@Index(['tenantId', 'status'])
 export class NotificationDigestEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'tenant_id', type: 'uuid' })
   @Index()
-  tenantId: string;
 
   @Column({ name: 'user_id', type: 'uuid' })
   @Index()
@@ -228,7 +223,6 @@ export class NotificationDigestEntity {
  * DTO for creating a notification digest
  */
 export class CreateNotificationDigestDto {
-  tenantId: string;
   userId: string;
   type: string;
   title: string;
@@ -278,7 +272,6 @@ export class AddDigestItemsDto {
  */
 export class NotificationDigestResponseDto {
   id: string;
-  tenantId: string;
   userId: string;
   type: string;
   title: string;
@@ -313,7 +306,6 @@ export class NotificationDigestResponseDto {
 
   constructor(entity: NotificationDigestEntity) {
     this.id = entity.id;
-    this.tenantId = entity.tenantId;
     this.userId = entity.userId;
     this.type = entity.type;
     this.title = entity.title;

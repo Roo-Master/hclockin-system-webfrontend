@@ -29,7 +29,6 @@ export class EmailChannel {
 
     try {
       const log = await this.repo.create({
-        tenantId: payload.tenantId,
         userId: payload.userId,
         channel: NotificationChannel.EMAIL,
         recipient: payload.recipient,
