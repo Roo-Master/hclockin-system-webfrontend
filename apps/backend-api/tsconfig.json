@@ -1,35 +1,24 @@
 {
   "compilerOptions": {
-    "module": "node16",
-    "moduleResolution": "node16",
-    "target": "ES2022",
-    "outDir": "./dist",
+    "module": "commonjs",
     "declaration": true,
     "removeComments": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
+    "target": "ES2021",
     "sourceMap": true,
-    "incremental": true,
+    "outDir": "./dist",
+    "baseUrl": "./",
+    "incremental": false,
     "skipLibCheck": true,
-    "isolatedModules": false,
-    "types": ["node", "jest"],
-    "paths": {
-      "src/*": ["./src/*"],
-      "@chronos/database": ["../../packages/database/src"],
-      "@chronos/database/*": ["../../packages/database/src/*"],
-      "@chronos/types-common": ["../../packages/types-common/src"],
-      "@chronos/types-common/*": ["../../packages/types-common/src/*"]
-    },
     "strictNullChecks": false,
     "noImplicitAny": false,
     "strictBindCallApply": false,
     "forceConsistentCasingInFileNames": false,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": false,
+    "esModuleInterop": true
   },
-  "include": [
-    "src/**/*",
-    "test/**/*"
-  ],
-  "exclude": ["node_modules", "dist"]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "src/tenant", "src/super-admin", "src/websocket"]
 }

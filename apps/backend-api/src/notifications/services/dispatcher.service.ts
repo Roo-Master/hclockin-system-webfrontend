@@ -44,7 +44,6 @@ export class DispatcherService {
     try {
       // Get enabled channels for this user and event
       const enabledChannels = await this.preferenceService.getEnabledChannels(
-        payload.tenantId,
         payload.userId,
         payload.event,
       );
@@ -84,7 +83,6 @@ export class DispatcherService {
 
       // Emit event for analytics
       this.eventEmitter.emit('notification.dispatched', {
-        tenantId: payload.tenantId,
         userId: payload.userId,
         event: payload.event,
         priority: payload.priority,
@@ -102,7 +100,6 @@ export class DispatcherService {
   async sendNow(payload: NotificationPayload): Promise<DispatchResult[]> {
     const results: DispatchResult[] = [];
     const enabledChannels = await this.preferenceService.getEnabledChannels(
-      payload.tenantId,
       payload.userId,
       payload.event,
     );
@@ -128,15 +125,12 @@ export class DispatcherService {
   /**
    * Retry failed notifications
    */
-  async retryFailed(tenantId: string): Promise<void> {
-    const failed = await this.notificationRepository.findFailed(tenantId);
     
     for (const notification of failed) {
       try {
         await this.notificationRepository.incrementRetry(notification.id);
         
         const payload: NotificationPayload = {
-          tenantId: notification.tenantId,
           userId: notification.userId,
           event: notification.triggerEvent as NotificationTriggerEvent,
           priority: notification.priority as NotificationPriority,
@@ -190,9 +184,7 @@ export class DispatcherService {
   /**
    * Send digest notifications (batched low priority)
    */
-  async sendDigest(tenantId: string, userId: string): Promise<void> {
     const digestCandidates = await this.notificationRepository.findDigestCandidates(
-      tenantId,
       userId,
     );
 
@@ -204,7 +196,6 @@ export class DispatcherService {
     const digestBody = this.buildDigestBody(digestCandidates);
 
     const payload: NotificationPayload = {
-      tenantId,
       userId,
       event: NotificationTriggerEvent.SCHEDULE_POSTED,
       priority: NotificationPriority.LOW,
@@ -262,7 +253,6 @@ export class DispatcherService {
 
     for (const channel of channels) {
       const record = await this.notificationRepository.create({
-        tenantId: payload.tenantId,
         userId: payload.userId,
         channel,
         recipient: payload.recipient,

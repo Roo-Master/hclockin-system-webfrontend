@@ -5,7 +5,6 @@ import { AppModule } from '../../app.module';
 
 describe('Notification System (E2E)', () => {
   let app: INestApplication;
-  let tenantId: string;
   let userId: string;
   let notificationId: string;
 
@@ -18,7 +17,6 @@ describe('Notification System (E2E)', () => {
     app.useGlobalPipes(new ValidationPipe());
     await app.init();
 
-    tenantId = 'test-tenant-001';
     userId = 'test-user-001';
   });
 
@@ -31,7 +29,6 @@ describe('Notification System (E2E)', () => {
       const response = await request(app.getHttpServer())
         .post('/api/notifications')
         .send({
-          tenantId,
           userId,
           title: 'Test Notification',
           body: 'This is a test notification',

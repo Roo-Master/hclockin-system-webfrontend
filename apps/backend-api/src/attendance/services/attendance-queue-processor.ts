@@ -15,14 +15,12 @@ export class AttendanceQueueProcessor {
 
   @Process(ATTENDANCE_JOB_NAMES.PROCESS_LOG)
   async handleAttendanceProcess(job: Job) {
-    const { userId, tenantId, date, retryCount = 0 } = job.data;
     
     this.logger.debug(`Processing attendance for user ${userId} on ${date}`);
     
     try {
       const result = await this.processor.processUserDay(
         userId,
-        tenantId,
         new Date(date),
       );
       
@@ -37,20 +35,16 @@ export class AttendanceQueueProcessor {
 
   @Process(ATTENDANCE_JOB_NAMES.REPROCESS_LOG)
   async handleReprocess(job: Job) {
-    const { userId, tenantId, date } = job.data;
     
     this.logger.log(`Reprocessing attendance for user ${userId} on ${date}`);
     
-    return this.processor.processUserDay(userId, tenantId, new Date(date));
   }
 
   @Process('attendance.nightshift')
   async handleNightShift(job: Job) {
-    const { userId, tenantId, shiftDate } = job.data;
     
     this.logger.debug(`Processing night shift for user ${userId} on ${shiftDate}`);
     
-    return this.processor.processNightShift(userId, tenantId, new Date(shiftDate));
   }
 
   @OnQueueActive()

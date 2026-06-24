@@ -260,7 +260,6 @@ export class SendNotificationJob {
    */
   @Process('digest')
   async handleDigestNotification(job: Job<{
-    tenantId: string;
     userId: string;
     notifications: Array<{
       id: string;
@@ -273,7 +272,6 @@ export class SendNotificationJob {
   }>): Promise<boolean> {
     this.logger.log(`Processing ${job.data.digestType} digest for user: ${job.data.userId}`);
     
-    const { tenantId, userId, notifications, digestType } = job.data;
     
     if (notifications.length === 0) {
       this.logger.debug(`No notifications to digest for user: ${userId}`);
@@ -290,7 +288,6 @@ export class SendNotificationJob {
       
       // Create digest record
       const digestRecord = await this.notificationRepository.createDigest({
-        tenantId,
         userId,
         type: digestType,
         title: digestTitle,
@@ -301,7 +298,6 @@ export class SendNotificationJob {
       
       // Send digest via email
       const emailResult = await this.emailChannel.sendDigest({
-        tenantId,
         userId,
         recipient: userId, // Will be resolved to email
         title: digestTitle,
@@ -346,7 +342,6 @@ export class SendNotificationJob {
     try {
       const notification = await this.notificationRepository.findById(
         job.data.notificationId,
-        '', // tenantId would be needed
       );
       
       if (!notification) {
@@ -356,7 +351,6 @@ export class SendNotificationJob {
       
       // Prepare payload
       const payload: NotificationPayload = {
-        tenantId: notification.tenantId,
         userId: notification.userId,
         event: notification.triggerEvent as NotificationTriggerEvent,
         priority: notification.priority as NotificationPriority,

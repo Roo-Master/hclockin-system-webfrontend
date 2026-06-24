@@ -22,13 +22,11 @@ export class DepartmentController {
   // CREATE
   @Post()
   createDepartment(@Body() dto: CreateDepartmentDto, @Req() req: any) {
-    return this.departmentService.create(dto, req.user.tenantId);
   }
 
   // LIST
   @Get()
   listDepartments(@Req() req: any) {
-    return this.departmentService.listDepartments(req.user.tenantId);
   }
 
   // UPDATE
@@ -41,7 +39,6 @@ export class DepartmentController {
     return this.departmentService.updateDepartment(
       departmentId,
       dto,
-      req.user.tenantId,
     );
   }
 
@@ -53,7 +50,6 @@ export class DepartmentController {
   ) {
     return this.departmentService.deleteDepartment(
       departmentId,
-      req.user.tenantId,
     );
   }
 

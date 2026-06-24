@@ -32,7 +32,6 @@ export class EmployeeService {
 
   constructor(private readonly employeeRepository: EmployeeRepository) {}
 
-  async create(tenantId: string, actor: AuthenticatedUser, payload: EmployeeCreateDTO) {
     const departmentId = payload.departmentId;
     const targetRole = payload.role ? assertEnumValue(payload.role, UserRole, 'role') : UserRole.EMPLOYEE;
 
@@ -40,7 +39,6 @@ export class EmployeeService {
 
     if (departmentId) {
       assertUuid(departmentId, 'departmentId');
-      await this.employeeRepository.assertDepartmentBelongsToTenant(tenantId, departmentId);
     }
 
     if (hasDepartmentScopedEmployeeAccess(actor.role) && departmentId !== actor.deptId) {
@@ -50,7 +48,6 @@ export class EmployeeService {
     const password = assertRequiredString(payload.password, 'password', 128);
     const passwordHash = await bcrypt.hash(password, EmployeeService.passwordSaltRounds);
 
-    const employee = await this.employeeRepository.create(tenantId, {
       payrollNumber: assertRequiredString(payload.employeeCode, 'employeeCode', 50),
       firstName: assertRequiredString(payload.firstName, 'firstName', 100),
       lastName: assertRequiredString(payload.lastName, 'lastName', 100),
@@ -85,7 +82,6 @@ export class EmployeeService {
     return this.toResponse(employee);
   }
 
-  async list(tenantId: string, actor: AuthenticatedUser, query: EmployeeQueryDTO) {
     const pagination = normalizePagination(query.page, query.limit);
     const search = assertOptionalString(query.search, 'search', 100);
     const departmentId = assertOptionalString(query.departmentId, 'departmentId', 50);
@@ -97,7 +93,6 @@ export class EmployeeService {
     const employmentStatus = assertOptionalEnumValue(query.employmentStatus, EmploymentStatus, 'employmentStatus');
     const employmentType = assertOptionalEnumValue(query.employmentType, EmploymentType, 'employmentType');
     const accessibleDepartmentIds = this.resolveAccessibleDepartmentIds(actor, departmentId ?? undefined);
-    const result = await this.employeeRepository.list(tenantId, {
       ...pagination,
       search: search ?? undefined,
       departmentId: accessibleDepartmentIds ? undefined : departmentId ?? undefined,
@@ -110,16 +105,12 @@ export class EmployeeService {
     return paginatedResponse(result.items.map((employee) => this.toResponse(employee)), result.total, pagination.page, pagination.limit);
   }
 
-  async getById(tenantId: string, actor: AuthenticatedUser, id: string) {
     assertUuid(id, 'id');
-    const employee = await this.employeeRepository.findByIdOrThrow(tenantId, id);
     this.assertCanAccessEmployee(actor, employee);
     return this.toResponse(employee);
   }
 
-  async update(tenantId: string, actor: AuthenticatedUser, id: string, payload: EmployeeUpdateDTO) {
     assertUuid(id, 'id');
-    const existing = await this.employeeRepository.findByIdOrThrow(tenantId, id);
     this.assertCanAccessEmployee(actor, existing);
 
     const data: Record<string, unknown> = {};
@@ -142,7 +133,6 @@ export class EmployeeService {
       throw new BadRequestException('At least one employee field must be provided.');
     }
 
-    return this.toResponse(await this.employeeRepository.update(tenantId, id, data, {
       actorUserId: actor.userId,
       action: data.role ? 'ROLE_CHANGE' : 'PROFILE_UPDATE',
       previousValue: this.pickAuditedValues(existing, Object.keys(data)),
@@ -150,17 +140,14 @@ export class EmployeeService {
     }));
   }
 
-  async updateStatus(tenantId: string, actor: AuthenticatedUser, id: string, payload: EmployeeStatusUpdateDTO) {
     assertUuid(id, 'id');
     const employmentStatus = assertEnumValue(payload.employmentStatus, EmploymentStatus, 'employmentStatus');
-    const existing = await this.employeeRepository.findByIdOrThrow(tenantId, id, true);
     this.assertCanAccessEmployee(actor, existing);
 
     if (existing.deletedAt && employmentStatus !== EmploymentStatus.TERMINATED) {
       throw new BadRequestException('Use the explicit restore workflow for terminated employees.');
     }
 
-    return this.toResponse(await this.employeeRepository.update(tenantId, id, {
       employmentStatus,
       isActive: employmentStatus === EmploymentStatus.ACTIVE,
       ...(employmentStatus === EmploymentStatus.TERMINATED ? { deletedAt: new Date() } : {}),
@@ -176,9 +163,7 @@ export class EmployeeService {
     }));
   }
 
-  async updateDepartment(tenantId: string, actor: AuthenticatedUser, id: string, payload: EmployeeDepartmentUpdateDTO) {
     assertUuid(id, 'id');
-    const existing = await this.employeeRepository.findByIdOrThrow(tenantId, id);
     this.assertCanAccessEmployee(actor, existing);
 
     if (payload.departmentId === undefined) {
@@ -187,14 +172,12 @@ export class EmployeeService {
 
     if (payload.departmentId !== null) {
       assertUuid(payload.departmentId, 'departmentId');
-      await this.employeeRepository.assertDepartmentBelongsToTenant(tenantId, payload.departmentId);
     }
 
     if (hasDepartmentScopedEmployeeAccess(actor.role) && payload.departmentId !== actor.deptId) {
       throw new ForbiddenException('You can only assign employees within your department.');
     }
 
-    return this.toResponse(await this.employeeRepository.update(tenantId, id, { departmentId: payload.departmentId }, {
       actorUserId: actor.userId,
       action: 'DEPARTMENT_CHANGE',
       previousValue: { departmentId: existing.departmentId },
@@ -202,13 +185,10 @@ export class EmployeeService {
     }));
   }
 
-  async updateDeviceUser(tenantId: string, actor: AuthenticatedUser, id: string, payload: EmployeeDeviceUserUpdateDTO) {
     assertUuid(id, 'id');
-    const existing = await this.employeeRepository.findByIdOrThrow(tenantId, id);
     this.assertCanAccessEmployee(actor, existing);
     const devicePin = assertRequiredString(payload.deviceUserId, 'deviceUserId', 50);
 
-    return this.toResponse(await this.employeeRepository.update(tenantId, id, {
       devicePin,
     }, {
       actorUserId: actor.userId,
@@ -218,19 +198,14 @@ export class EmployeeService {
     }));
   }
 
-  async softDelete(tenantId: string, actor: AuthenticatedUser, id: string) {
     assertUuid(id, 'id');
-    const existing = await this.employeeRepository.findByIdOrThrow(tenantId, id);
     this.assertCanAccessEmployee(actor, existing);
-    return this.toResponse(await this.employeeRepository.softDelete(tenantId, id, actor.userId));
   }
 
-  async restore(tenantId: string, actor: AuthenticatedUser, id: string) {
     assertUuid(id, 'id');
     if (![UserRole.SUPER_ADMIN, UserRole.HOSPITAL_ADMIN, UserRole.HR_MANAGER].includes(actor.role)) {
       throw new ForbiddenException('You are not allowed to restore employees.');
     }
-    return this.toResponse(await this.employeeRepository.restore(tenantId, id, actor.userId));
   }
 
   private normalizeEmergencyContacts(value: unknown) {
@@ -261,7 +236,6 @@ export class EmployeeService {
   private toResponse(employee: any): EmployeeResponseDTO {
     return {
       id: employee.id,
-      tenantId: employee.tenantId,
       employeeCode: employee.payrollNumber,
       firstName: employee.firstName,
       lastName: employee.lastName,

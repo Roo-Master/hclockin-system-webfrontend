@@ -21,14 +21,10 @@ export class DatabaseService extends PrismaClient implements OnModuleInit {
     this.logger.log('Database disconnected');
   }
 
-  // Enhanced transaction with tenant context support
   async secureTransaction<T>(
     callback: (tx: this) => Promise<T>,
-    tenantId?: string
   ): Promise<T> {
-    if (tenantId) {
       return this.$transaction(async (tx) => {
-        await tx.$executeRaw`SELECT set_config('app.current_tenant_id', ${tenantId}, true);`;
         return callback(tx as this);
       });
     }

@@ -10,7 +10,6 @@ import {
 } from '../types/notification.types';
 
 export interface ChannelPayload {
-  tenantId: string;
   userId: string;
   recipient: string;
   title: string;
@@ -30,7 +29,6 @@ export class InAppChannel {
   async send(payload: ChannelPayload): Promise<DispatchResult> {
     try {
       await this.repo.create({
-        tenantId: payload.tenantId,
         userId: payload.userId,
         channel: NotificationChannel.IN_APP,
         recipient: payload.recipient,

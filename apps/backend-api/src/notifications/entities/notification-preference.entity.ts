@@ -4,7 +4,6 @@ import { NotificationTriggerEvent, NotificationChannel } from '../types/notifica
 
 export class NotificationPreferenceResponseDto {
   @ApiProperty()
-  tenantId: string;
 
   @ApiProperty()
   userId: string;
@@ -43,7 +42,6 @@ export class UserNotificationSettingsResponseDto {
   userId: string;
 
   @ApiProperty()
-  tenantId: string;
 
   @ApiProperty()
   quietHoursEnabled: boolean;
@@ -101,7 +99,6 @@ export class NotificationResponseDto {
   id: string;
 
   @ApiProperty()
-  tenantId: string;
 
   @ApiProperty()
   userId: string;

@@ -69,7 +69,6 @@ export class AttendanceController {
   async ingestLog(@Body() dto: IngestLogDto, @Req() req: any) {
     return this.attendanceService.ingestLog({
       ...dto,
-      tenantId: req.user.tenantId,
     });
   }
 
@@ -78,7 +77,6 @@ export class AttendanceController {
   async bulkIngest(@Body() dto: BulkIngestDto, @Req() req: any) {
     const logsWithTenant = dto.logs.map((log) => ({
       ...log,
-      tenantId: req.user.tenantId,
     }));
     return this.attendanceService.bulkIngest(logsWithTenant);
   }
@@ -97,7 +95,6 @@ export class AttendanceController {
     @Req() req: any,
   ) {
     return this.attendanceService.getSummaries({
-      tenantId: req.user.tenantId,
       userId,
       startDate: startDate ? new Date(startDate) : undefined,
       endDate: endDate ? new Date(endDate) : undefined,
@@ -111,7 +108,6 @@ export class AttendanceController {
   @Get('summaries/daily/:date')
   async getDailyBreakdown(@Param('date') date: string, @Req() req: any) {
     return this.attendanceService.getDailyBreakdown(
-      req.user.tenantId,
       new Date(date),
     );
   }
@@ -122,7 +118,6 @@ export class AttendanceController {
     @Req() req: any,
   ) {
     return this.db.attendanceSummary.findFirst({
-      where: { id, tenantId: req.user.tenantId },
     });
   }
 
@@ -136,7 +131,6 @@ export class AttendanceController {
     @Req() req: any,
   ) {
     return this.attendanceService.manualOverride(
-      req.user.tenantId,
       req.user.id,
       id,
       dto,
@@ -149,14 +143,12 @@ export class AttendanceController {
     @Param('id', ParseUUIDPipe) id: string,
     @Req() req: any,
   ): Promise<any> {
-    return this.attendanceService.getAuditTrail(req.user.tenantId, id);
   }
 
   @Post('recalculate')
   @Roles(UserRole.HOSPITAL_ADMIN)
   async recalculateRange(@Body() dto: RecalculateDto, @Req() req: any) {
     return this.attendanceService.recalculateRange(
-      req.user.tenantId,
       new Date(dto.startDate),
       new Date(dto.endDate),
       dto.userId,
@@ -173,7 +165,6 @@ export class AttendanceController {
     @Req() req: any,
   ) {
     return this.attendanceService.getSummaries({
-      tenantId: req.user.tenantId,
       userId: req.user.id,
       startDate: startDate ? new Date(startDate) : undefined,
       endDate: endDate ? new Date(endDate) : undefined,
@@ -187,7 +178,6 @@ export class AttendanceController {
     @Query('limit') limit: number,
     @Req() req: any,
   ) {
-    return this.attendanceService.getRawLogs(req.user.tenantId, {
       userId: req.user.id,
       page: page || 1,
       limit: limit || 50,
@@ -196,12 +186,10 @@ export class AttendanceController {
 
   @Post('clock-in')
   async clockIn(@Req() req: any) {
-    return this.attendanceService.clockIn(req.user.id, req.user.tenantId);
   }
 
   @Post('clock-out')
   async clockOut(@Req() req: any) {
-    return this.attendanceService.clockOut(req.user.id, req.user.tenantId);
   }
 
   // ===== RAW LOGS =====
@@ -217,7 +205,6 @@ export class AttendanceController {
     @Query('limit') limit: number,
     @Req() req: any,
   ): Promise<{ data: AttendanceLog[]; total: number; page: number; limit: number }> {
-    return this.attendanceService.getRawLogs(req.user.tenantId, {
       userId,
       startDate: startDate ? new Date(startDate) : undefined,
       endDate: endDate ? new Date(endDate) : undefined,
@@ -232,7 +219,6 @@ export class AttendanceController {
   @Get('dashboard/stats')
   async getDashboardStats(@Query('date') date: string, @Req() req: any) {
     return this.attendanceService.getDashboardStats(
-      req.user.tenantId,
       date ? new Date(date) : new Date(),
     );
   }

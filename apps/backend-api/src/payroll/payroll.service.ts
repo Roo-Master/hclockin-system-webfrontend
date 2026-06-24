@@ -19,18 +19,15 @@ interface DepartmentRules {
 }
 
 export interface CreatePeriodDTO {
-  tenantId: string;
   name: string;
   startDate: string;
   endDate: string;
 }
 
 export interface RunPayrollDTO {
-  tenantId: string;
 }
 
 export interface ApprovePayslipDTO {
-  tenantId: string;
 }
 
 @Injectable()
@@ -39,7 +36,6 @@ export class PayrollService {
 
   async createPeriod(dto: CreatePeriodDTO) {
     const existing = await this.db.payrollPeriod.findFirst({
-      where: { tenantId: dto.tenantId, name: dto.name },
     });
     if (existing) {
       throw new BadRequestException(
@@ -48,7 +44,6 @@ export class PayrollService {
     }
     return this.db.payrollPeriod.create({
       data: {
-        tenantId:  dto.tenantId,
         name:      dto.name,
         startDate: new Date(dto.startDate),
         endDate:   new Date(dto.endDate),
@@ -57,16 +52,13 @@ export class PayrollService {
     });
   }
 
-  async getPeriods(tenantId: string) {
     return this.db.payrollPeriod.findMany({
-      where: { tenantId },
       orderBy: { createdAt: 'desc' },
     });
   }
 
   async runPayroll(periodId: string, dto: RunPayrollDTO) {
     const period = await this.db.payrollPeriod.findFirst({
-      where: { id: periodId, tenantId: dto.tenantId },
     });
     if (!period) {
       throw new NotFoundException(`Payroll period ${periodId} not found.`);
@@ -83,10 +75,8 @@ export class PayrollService {
     });
 
     const settings = await this.db.systemSetting.findUnique({
-      where: { tenantId: dto.tenantId },
     });
     if (!settings) {
-      throw new NotFoundException(`SystemSetting not found for tenant.`);
     }
 
     const salaryRules      = settings.salaryRules as unknown as SalaryRules;
@@ -99,7 +89,6 @@ export class PayrollService {
     const holidayMultiplier  = salaryRules.holidayMultiplier  ?? 2.0;
 
     const employees = await this.db.user.findMany({
-      where: { tenantId: dto.tenantId, isActive: true },
     });
 
     const payslips: object[] = [];
@@ -107,7 +96,6 @@ export class PayrollService {
     for (const employee of employees) {
       const reconLogs = await this.db.reconciliationLog.findMany({
         where: {
-          tenantId: dto.tenantId,
           isResolved: true,
           rosterAssignment: {
             userId: employee.id,
@@ -169,13 +157,11 @@ export class PayrollService {
 
       // ── Delete any existing draft for idempotency ─────────────────
       await this.db.payslip.deleteMany({
-        where: { tenantId: dto.tenantId, periodId, employeeId: employee.id },
       });
 
       // ── Save ledger record ────────────────────────────────────────
       const payslip = await this.db.payslip.create({
         data: {
-          tenantId:            dto.tenantId,
           periodId,
           employeeId:          employee.id,
           hourlyRate,
@@ -226,9 +212,7 @@ export class PayrollService {
     };
   }
 
-  async getPayslipsByPeriod(periodId: string, tenantId: string) {
     return this.db.payslip.findMany({
-      where: { periodId, tenantId },
       include: {
         employee: {
           select: {
@@ -242,9 +226,7 @@ export class PayrollService {
     });
   }
 
-  async getEmployeePayslip(periodId: string, employeeId: string, tenantId: string) {
     const payslip = await this.db.payslip.findFirst({
-      where: { periodId, employeeId, tenantId },
       include: {
         employee: {
           select: {
@@ -267,7 +249,6 @@ export class PayrollService {
 
   async approvePayslip(payslipId: string, dto: ApprovePayslipDTO) {
     const payslip = await this.db.payslip.findFirst({
-      where: { id: payslipId, tenantId: dto.tenantId },
     });
     if (!payslip) throw new NotFoundException(`Payslip ${payslipId} not found.`);
     if (payslip.status === 'PAID') {
@@ -279,9 +260,7 @@ export class PayrollService {
     });
   }
 
-  async markPaid(payslipId: string, tenantId: string) {
     const payslip = await this.db.payslip.findFirst({
-      where: { id: payslipId, tenantId },
     });
     if (!payslip) throw new NotFoundException(`Payslip ${payslipId} not found.`);
     if (payslip.status !== 'APPROVED') {
@@ -295,14 +274,11 @@ export class PayrollService {
     });
   }
 
-  async exportPayroll(periodId: string, tenantId: string) {
     const period = await this.db.payrollPeriod.findFirst({
-      where: { id: periodId, tenantId },
     });
     if (!period) throw new NotFoundException(`Period ${periodId} not found.`);
 
     const payslips = await this.db.payslip.findMany({
-      where: { periodId, tenantId },
       include: {
         employee: {
           select: { firstName: true, lastName: true, payrollNumber: true },

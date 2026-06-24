@@ -19,8 +19,6 @@ export class PayrollController {
   constructor(private readonly payrollService: PayrollService) {}
 
   @Get('periods')
-  getPeriods(@Query('tenantId') tenantId: string) {
-    return this.payrollService.getPeriods(tenantId);
   }
 
   @Post('periods')
@@ -36,26 +34,20 @@ export class PayrollController {
   @Get('periods/:id/payslips')
   getPayslipsByPeriod(
     @Param('id') periodId: string,
-    @Query('tenantId') tenantId: string,
   ) {
-    return this.payrollService.getPayslipsByPeriod(periodId, tenantId);
   }
 
   @Get('periods/:id/export')
   exportPayroll(
     @Param('id') periodId: string,
-    @Query('tenantId') tenantId: string,
   ) {
-    return this.payrollService.exportPayroll(periodId, tenantId);
   }
 
   @Get('payslip/:pid/employee/:eid')
   getEmployeePayslip(
     @Param('pid') periodId: string,
     @Param('eid') employeeId: string,
-    @Query('tenantId') tenantId: string,
   ) {
-    return this.payrollService.getEmployeePayslip(periodId, employeeId, tenantId);
   }
 
   @Patch('payslip/:id/approve')
@@ -69,8 +61,6 @@ export class PayrollController {
   @Patch('payslip/:id/paid')
   markPaid(
     @Param('id') payslipId: string,
-    @Query('tenantId') tenantId: string,
   ) {
-    return this.payrollService.markPaid(payslipId, tenantId);
   }
 }

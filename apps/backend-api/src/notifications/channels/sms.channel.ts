@@ -18,7 +18,6 @@ export class SmsChannel {
 
     try {
       const log = await this.repo.create({
-        tenantId: payload.tenantId,
         userId: payload.userId,
         channel: NotificationChannel.SMS,
         recipient: payload.recipient,

@@ -10,7 +10,6 @@ import {
 } from '../types/notification.types';
 
 export interface CreateNotificationRecord {
-  tenantId: string;
   userId: string;
   channel: NotificationChannel;
   recipient: string;
@@ -40,7 +39,6 @@ export class NotificationRepository {
   async create(data: CreateNotificationRecord) {
     return this.db.notificationLog.create({
       data: {
-        tenantId: data.tenantId,
         userId: data.userId,
         channel: data.channel,
         recipient: data.recipient,
@@ -89,20 +87,16 @@ export class NotificationRepository {
     });
   }
 
-  async findById(id: string, tenantId: string) {
     return this.db.notificationLog.findFirst({
-      where: { id, tenantId },
     });
   }
 
   async findByUser(
-    tenantId: string,
     userId: string,
     page = 1,
     limit = 20,
     filter?: { unreadOnly?: boolean; type?: NotificationTriggerEvent },
   ) {
-    const where: any = { tenantId, userId };
 
     if (filter?.unreadOnly) {
       where.status = {
@@ -127,10 +121,8 @@ export class NotificationRepository {
     return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
-  async findPending(tenantId: string, limit = 100) {
     return this.db.notificationLog.findMany({
       where: {
-        tenantId,
         status: NotificationStatus.PENDING,
         createdAt: { lte: new Date() },
         OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
@@ -140,10 +132,8 @@ export class NotificationRepository {
     });
   }
 
-  async findPendingByChannel(tenantId: string, channel: NotificationChannel, limit = 50) {
     return this.db.notificationLog.findMany({
       where: {
-        tenantId,
         channel,
         status: NotificationStatus.PENDING,
         createdAt: { lte: new Date() },
@@ -154,10 +144,8 @@ export class NotificationRepository {
     });
   }
 
-  async findFailed(tenantId: string, maxRetries = 3) {
     return this.db.notificationLog.findMany({
       where: {
-        tenantId,
         status: NotificationStatus.FAILED,
         retryCount: { lt: maxRetries },
       },
@@ -183,9 +171,7 @@ export class NotificationRepository {
     });
   }
 
-  async markAsRead(id: string, tenantId: string) {
     return this.db.notificationLog.updateMany({
-      where: { id, tenantId },
       data: { status: NotificationStatus.READ, readAt: new Date() },
     });
   }
@@ -214,10 +200,8 @@ export class NotificationRepository {
     });
   }
 
-  async markAllAsRead(tenantId: string, userId: string) {
     return this.db.notificationLog.updateMany({
       where: {
-        tenantId,
         userId,
         status: {
           in: [NotificationStatus.SENT, NotificationStatus.DELIVERED, NotificationStatus.PENDING],
@@ -227,10 +211,8 @@ export class NotificationRepository {
     });
   }
 
-  async countUnread(tenantId: string, userId: string): Promise<number> {
     return this.db.notificationLog.count({
       where: {
-        tenantId,
         userId,
         status: {
           in: [NotificationStatus.SENT, NotificationStatus.DELIVERED, NotificationStatus.PENDING],
@@ -239,17 +221,13 @@ export class NotificationRepository {
     });
   }
 
-  async countByStatus(tenantId: string, status: NotificationStatus): Promise<number> {
-    return this.db.notificationLog.count({ where: { tenantId, status } });
   }
 
-  async findDigestCandidates(tenantId: string, userId: string, since?: Date) {
     const sinceDate = since || new Date();
     sinceDate.setHours(sinceDate.getHours() - 24);
 
     return this.db.notificationLog.findMany({
       where: {
-        tenantId,
         userId,
         priority: NotificationPriority.LOW,
         status: NotificationStatus.PENDING,
@@ -260,7 +238,6 @@ export class NotificationRepository {
   }
 
   async findByEvent(
-    tenantId: string,
     userId: string,
     event: NotificationTriggerEvent,
     startDate: Date,
@@ -268,7 +245,6 @@ export class NotificationRepository {
   ) {
     return this.db.notificationLog.findMany({
       where: {
-        tenantId,
         userId,
         triggerEvent: event,
         createdAt: { gte: startDate, lte: endDate },
@@ -277,37 +253,30 @@ export class NotificationRepository {
     });
   }
 
-  async findByDateRange(tenantId: string, startDate: Date, endDate: Date, page = 1, limit = 50) {
     const [data, total] = await Promise.all([
       this.db.notificationLog.findMany({
-        where: { tenantId, createdAt: { gte: startDate, lte: endDate } },
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * limit,
         take: limit,
       }),
       this.db.notificationLog.count({
-        where: { tenantId, createdAt: { gte: startDate, lte: endDate } },
       }),
     ]);
 
     return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
-  async deleteOldNotifications(tenantId: string, daysOld = 90) {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - daysOld);
 
     return this.db.notificationLog.deleteMany({
       where: {
-        tenantId,
         createdAt: { lt: cutoffDate },
         status: { in: [NotificationStatus.READ, NotificationStatus.EXPIRED] },
       },
     });
   }
 
-  async deleteByUser(tenantId: string, userId?: string, olderThanDays?: number) {
-    const where: any = { tenantId };
     if (userId) where.userId = userId;
     if (olderThanDays) {
       const cutoffDate = new Date();
@@ -317,25 +286,18 @@ export class NotificationRepository {
     return this.db.notificationLog.deleteMany({ where });
   }
 
-  async getStats(tenantId: string, startDate: Date, endDate: Date) {
     const [total, sent, delivered, failed, read, pending] = await Promise.all([
       this.db.notificationLog.count({
-        where: { tenantId, createdAt: { gte: startDate, lte: endDate } },
       }),
       this.db.notificationLog.count({
-        where: { tenantId, createdAt: { gte: startDate, lte: endDate }, status: NotificationStatus.SENT },
       }),
       this.db.notificationLog.count({
-        where: { tenantId, createdAt: { gte: startDate, lte: endDate }, status: NotificationStatus.DELIVERED },
       }),
       this.db.notificationLog.count({
-        where: { tenantId, createdAt: { gte: startDate, lte: endDate }, status: NotificationStatus.FAILED },
       }),
       this.db.notificationLog.count({
-        where: { tenantId, createdAt: { gte: startDate, lte: endDate }, readAt: { not: null } },
       }),
       this.db.notificationLog.count({
-        where: { tenantId, createdAt: { gte: startDate, lte: endDate }, status: NotificationStatus.PENDING },
       }),
     ]);
 
@@ -350,18 +312,15 @@ export class NotificationRepository {
     };
   }
 
-  async getStatsByChannel(tenantId: string, startDate: Date, endDate: Date) {
     const channels = Object.values(NotificationChannel);
     const results: Record<string, any> = {};
 
     for (const channel of channels) {
       const [total, sent, failed] = await Promise.all([
         this.db.notificationLog.count({
-          where: { tenantId, channel, createdAt: { gte: startDate, lte: endDate } },
         }),
         this.db.notificationLog.count({
           where: {
-            tenantId,
             channel,
             createdAt: { gte: startDate, lte: endDate },
             status: { in: [NotificationStatus.SENT, NotificationStatus.DELIVERED] },
@@ -369,7 +328,6 @@ export class NotificationRepository {
         }),
         this.db.notificationLog.count({
           where: {
-            tenantId,
             channel,
             createdAt: { gte: startDate, lte: endDate },
             status: NotificationStatus.FAILED,
@@ -383,11 +341,9 @@ export class NotificationRepository {
     return results;
   }
 
-  async getStatsByEvent(tenantId: string, startDate: Date, endDate: Date, limit = 10) {
     const events = await this.db.notificationLog.groupBy({
       by: ['triggerEvent'],
       where: {
-        tenantId,
         createdAt: { gte: startDate, lte: endDate },
         triggerEvent: { not: null },
       },
@@ -405,7 +361,6 @@ export class NotificationRepository {
   async bulkCreate(notifications: CreateNotificationRecord[]) {
     return this.db.notificationLog.createMany({
       data: notifications.map((n) => ({
-        tenantId: n.tenantId,
         userId: n.userId,
         channel: n.channel,
         recipient: n.recipient,
@@ -421,20 +376,16 @@ export class NotificationRepository {
     });
   }
 
-  async getUnreadCountByPriority(tenantId: string, userId: string) {
     const unreadStatuses = {
       in: [NotificationStatus.SENT, NotificationStatus.DELIVERED, NotificationStatus.PENDING],
     };
 
     const [high, medium, low] = await Promise.all([
       this.db.notificationLog.count({
-        where: { tenantId, userId, priority: NotificationPriority.HIGH, status: unreadStatuses },
       }),
       this.db.notificationLog.count({
-        where: { tenantId, userId, priority: NotificationPriority.MEDIUM, status: unreadStatuses },
       }),
       this.db.notificationLog.count({
-        where: { tenantId, userId, priority: NotificationPriority.LOW, status: unreadStatuses },
       }),
     ]);
 
@@ -447,8 +398,6 @@ export class NotificationRepository {
     });
   }
 
-  async getDispatchStats(tenantId: string, startDate: Date) {
-    return this.getStats(tenantId, startDate, new Date());
   }
 
   async updateMany(where: any, data: any) {
@@ -458,15 +407,10 @@ export class NotificationRepository {
   // ── Methods required by retry-failed.job.ts ───────────────────────────────
 
   /**
-   * Returns distinct tenantIds that have notification logs.
-   * Used by the retry job to process failures per-tenant.
    */
   async getDistinctTenants(): Promise<string[]> {
     const rows = await this.db.notificationLog.findMany({
-      distinct: ['tenantId'],
-      select: { tenantId: true },
     });
-    return rows.map((r) => r.tenantId);
   }
 
   // ── Methods required by send-notification.job.ts (digest) ─────────────────
@@ -478,7 +422,6 @@ export class NotificationRepository {
    * digest marker in metadata.
    */
   async createDigest(data: {
-    tenantId: string;
     userId: string;
     type: 'daily' | 'weekly';
     title: string;
@@ -488,7 +431,6 @@ export class NotificationRepository {
   }) {
     return this.db.notificationLog.create({
       data: {
-        tenantId: data.tenantId,
         userId: data.userId,
         channel: NotificationChannel.IN_APP,
         recipient: data.userId,

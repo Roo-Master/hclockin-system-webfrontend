@@ -48,15 +48,11 @@ export class RetryFailedJob {
     const startTime = Date.now();
 
     try {
-      // Get all tenants (in a real implementation, you'd get from tenant service)
-      const tenants = await this.getTenants();
       
       let totalRetried = 0;
       let totalSuccess = 0;
       let totalFailed = 0;
 
-      for (const tenantId of tenants) {
-        const result = await this.processTenantFailures(tenantId);
         totalRetried += result.retried;
         totalSuccess += result.success;
         totalFailed += result.failed;
@@ -96,7 +92,6 @@ export class RetryFailedJob {
     try {
       const notification = await this.notificationRepository.findById(
         notificationId,
-        '', // tenantId would be needed in real implementation
       );
 
       if (!notification) {
@@ -117,27 +112,21 @@ export class RetryFailedJob {
   }
 
   /**
-   * Retry all failed notifications for a tenant
    */
-  async retryAllForTenant(tenantId: string): Promise<{
     retried: number;
     success: number;
     failed: number;
   }> {
-    this.logger.log(`Retrying all failed notifications for tenant: ${tenantId}`);
-    return await this.processTenantFailures(tenantId, true);
   }
 
   /**
    * Get retry statistics
    */
-  async getRetryStats(tenantId: string): Promise<{
     pendingRetries: number;
     maxRetriesReached: number;
     averageRetryCount: number;
     retrySuccessRate: number;
   }> {
-    const failed = await this.notificationRepository.findFailed(tenantId);
     
     const pendingRetries = failed.filter(n => n.retryCount < this.config.maxRetries).length;
     const maxRetriesReached = failed.filter(n => n.retryCount >= this.config.maxRetries).length;
@@ -173,10 +162,8 @@ export class RetryFailedJob {
   // ==================== Private Methods ====================
 
   private async processTenantFailures(
-    tenantId: string,
     retryAll = false,
   ): Promise<{ retried: number; success: number; failed: number }> {
-    const failedNotifications = await this.notificationRepository.findFailed(tenantId);
     
     // Filter notifications that can be retried
     const retryable = failedNotifications.filter(n => 
@@ -228,7 +215,6 @@ export class RetryFailedJob {
 
       // Prepare payload for retry
       const payload = {
-        tenantId: notification.tenantId,
         userId: notification.userId,
         event: notification.triggerEvent as NotificationTriggerEvent,
         priority: notification.priority as NotificationPriority,
@@ -329,18 +315,12 @@ export class RetryFailedJob {
   }
 
   private async getTenants(): Promise<string[]> {
-    // In a real implementation, fetch from tenant service
     // For now, return a mock or query from database
     try {
-      // This assumes you have a way to get all tenants
-      // const tenants = await this.tenantRepository.findAll();
-      // return tenants.map(t => t.id);
       
-      // Mock implementation - in production, replace with actual tenant query
       const result = await this.notificationRepository.getDistinctTenants();
       return result;
     } catch (error) {
-      this.logger.warn('Could not fetch tenants, using empty array');
       return [];
     }
   }

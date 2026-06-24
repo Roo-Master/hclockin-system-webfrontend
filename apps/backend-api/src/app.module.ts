@@ -1,41 +1,15 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { DatabaseModule } from './database/database.module';
-import { QueueModule } from './queue/queue.module';
-import { WebsocketModule } from './websocket/websocket.module';
-import { JobsModule } from './jobs/jobs.module';
-import { TenantModule } from './tenant/tenant.module';
-import { DepartmentModule } from './department/department.module';
-import { EmployeeModule } from './employee/employee.module';
-import { LeaveModule } from './leave/leave.module';
-import { SettingsModule } from './settings/settings.module';
 import { AuthModule } from './auth/auth.module';
-import { DeviceModule } from './device/device.module';
-import { RosterModule } from './roster/roster.module';
-import { AttendanceModule } from './attendance/attendance.module';
-import { ReconciliationModule } from './reconciliation/reconciliation.module';
-import { ReportsModule } from './reports/reports.module';
-import { NotificationsModule } from './notifications/notifications.module';
-import { PayrollModule } from './payroll/payroll.module';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
     DatabaseModule,
-    QueueModule,
-    WebsocketModule,
-    JobsModule,
-    TenantModule,
-    DepartmentModule,
-    EmployeeModule,
-    LeaveModule,
-    SettingsModule,
     AuthModule,
-    DeviceModule,
-    RosterModule,
-    AttendanceModule,
-    ReconciliationModule,
-    ReportsModule,
-    NotificationsModule,
-    PayrollModule,
   ],
 })
 export class AppModule {}

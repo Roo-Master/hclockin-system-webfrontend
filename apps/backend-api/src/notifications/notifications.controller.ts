@@ -13,7 +13,6 @@ import { NotificationsService, SendNotificationDto, NotificationQuery } from './
 
 // Mock user - replace with actual authenticated user
 const MOCK_USER = {
-  tenantId: 'tenant-001',
   id: 'user-001',
 };
 
@@ -31,7 +30,6 @@ export class NotificationsController {
     @Query('endDate') endDate?: string,
   ) {
     const query: NotificationQuery = {
-      tenantId: MOCK_USER.tenantId,
       page: page ? parseInt(page) : 1,
       limit: limit ? parseInt(limit) : 20,
     };
@@ -50,7 +48,6 @@ export class NotificationsController {
     @Query('endDate') endDate?: string,
   ) {
     return this.notificationsService.getStats(
-      MOCK_USER.tenantId,
       startDate ? new Date(startDate) : undefined,
       endDate ? new Date(endDate) : undefined,
     );
@@ -58,7 +55,6 @@ export class NotificationsController {
 
   @Get(':id')
   async findOne(@Param('id') id: string) {
-    return this.notificationsService.findOne(id, MOCK_USER.tenantId);
   }
 
   @Post('send')
@@ -66,7 +62,6 @@ export class NotificationsController {
   async send(@Body() dto: SendNotificationDto) {
     return this.notificationsService.send({
       ...dto,
-      tenantId: MOCK_USER.tenantId,
     });
   }
 
@@ -76,7 +71,6 @@ export class NotificationsController {
     @Body() data: { userId: string; phoneNumber: string; message: string }
   ) {
     return this.notificationsService.sendSMS(
-      MOCK_USER.tenantId,
       data.userId,
       data.phoneNumber,
       data.message,
@@ -89,7 +83,6 @@ export class NotificationsController {
     @Body() data: { userId: string; email: string; subject: string; body: string }
   ) {
     return this.notificationsService.sendEmail(
-      MOCK_USER.tenantId,
       data.userId,
       data.email,
       data.subject,
@@ -103,7 +96,6 @@ export class NotificationsController {
     @Body() data: { userId: string; direction: string; timestamp: Date; id: string }
   ) {
     return this.notificationsService.sendAttendanceNotification(
-      MOCK_USER.tenantId,
       data.userId,
       data,
     );
@@ -112,6 +104,5 @@ export class NotificationsController {
   @Put(':id/retry')
   @HttpCode(HttpStatus.OK)
   async retryFailed(@Param('id') id: string) {
-    return this.notificationsService.retryFailed(MOCK_USER.tenantId, id);
   }
 }

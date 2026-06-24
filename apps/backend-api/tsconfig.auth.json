@@ -1,0 +1,5 @@
+{
+  "extends": "./tsconfig.json",
+  "include": ["src/auth/**/*", "src/database/**/*"],
+  "exclude": ["src/tenant", "src/super-admin", "src/websocket"]
+}

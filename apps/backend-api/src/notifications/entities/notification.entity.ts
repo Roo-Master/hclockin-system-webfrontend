@@ -3,7 +3,6 @@ import { NotificationAction } from '../types/notification.types';
 
 export class NotificationEntity {
   id: string;
-  tenantId: string;
   userId: string;
   channel: NotificationChannel;
   recipient: string;
